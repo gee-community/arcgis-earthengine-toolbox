@@ -5,7 +5,10 @@ import ee
 import os
 import json
 import requests
+import numpy as np
 import xarray
+import rasterio
+from rasterio.transform import from_origin
 
 class Toolbox:
     def __init__(self):
@@ -17,11 +20,12 @@ class Toolbox:
         # List of tool classes associated with this toolbox
         tools = []
         tools.append(GEEAuth)
-        tools.append(AddImage2Map)
+        #tools.append(AddImage2Map)
         tools.append(AddImgCol2Map)
         tools.append(AddFeatCol2Map)
-        tools.append(DownloadSmallImage)
-        tools.append(DownloadImagePixels)
+        #tools.append(DownloadSmallImage)
+        #tools.append(DownloadImagePixels)
+        tools.append(DownloadLargeImage)
         
         self.tools = tools
 
@@ -43,7 +47,7 @@ class GEEAuth:
             datatype="DEFile",
             direction="Input",
             parameterType="Optional")
-
+        
         params = [param0]
         return params
 
@@ -64,9 +68,11 @@ class GEEAuth:
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        # Read JSON key file
-        #json_key = 'D:/GEE_connector/crafty-apex-361902-d01e7b50d1ba.json'
+
+        # Read input parameters 
         json_key = parameters[0].valueAsText
+
+        # Read JSON key file
         if json_key :
             arcpy.AddMessage(json_key)
             os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = json_key
@@ -81,7 +87,7 @@ class GEEAuth:
         def authenticate_earth_engine():
             try:
                 ee.Authenticate()
-                ee.Initialize(project='crafty-apex-361902')
+                ee.Initialize()
                 arcpy.AddMessage("Authentication successful")
             except Exception as e:
                 arcpy.AddMessage(f"Authentication failed: {e}")    
@@ -178,7 +184,7 @@ class AddImage2Map:
                 band_tmp = image.select(iband)
                 proj = band_tmp.projection()
                 res = proj.nominalScale().getInfo()
-                band_res_list.append(iband + '_' + str(round(res))+'m')
+                band_res_list.append(iband + '--' + str(round(res))+'--m')
                 
             parameters[1].filter.list = band_res_list
         
@@ -207,7 +213,7 @@ class AddImage2Map:
             if "'" in band_str :
                 band_str = band_str.replace("'","")
             bands = band_str.split(';')
-            bands_only = [iband.split('_')[0] for iband in bands]
+            bands_only = [iband.split('--')[0] for iband in bands]
             vis_params['bands'] = bands_only
 
         # Add min and max values if specified 
@@ -251,7 +257,7 @@ class AddImage2Map:
         tsl = aprxMap.addDataFromPath(map_url)
         # Add band information to map name
         if band_str :
-            tsl.name = img_label + '_' + '_'.join(bands_only)
+            tsl.name = img_label + '--' + '--'.join(bands_only)
         else :
             tsl.name = img_label 
         
@@ -281,7 +287,7 @@ class AddImgCol2Map:
             displayName="Specify GEE Image Collection Tag",
             datatype="GPString",
             direction="Input",
-            parameterType="Required")
+            parameterType="Optional")
         param0.dialogref = "Browse all available datasets from GEE website, copy and paste the asset tag here."
 
         param1 = arcpy.Parameter(
@@ -442,7 +448,10 @@ class AddImgCol2Map:
         if img_id and not parameters[5].filter.list :
             # Only initialize ee when asset tag is given 
             ee.Initialize()
-            img_tag = asset_tag + '/' + img_id
+            if asset_tag :
+                img_tag = asset_tag + '/' + img_id
+            else :
+                img_tag = img_id 
             image = ee.Image(img_tag)
             band_names = image.bandNames()
             band_list = band_names.getInfo()
@@ -452,8 +461,12 @@ class AddImgCol2Map:
                 band_tmp = image.select(iband)
                 proj = band_tmp.projection()
                 res = proj.nominalScale().getInfo()
-                band_res_list.append(iband + '_' + str(round(res))+'m')
+                band_res_list.append(iband + '--' + str(round(res))+'--m')
             parameters[5].filter.list = band_res_list
+
+        # Reset band filter list when asset tag changes 
+        if (not img_id) and (not parameters[0].valueAsText)  :
+            parameters[5].filter.list = []
         
         return
 
@@ -477,7 +490,10 @@ class AddImgCol2Map:
         palette_str = parameters[9].valueAsText
 
         # Construct asset tag for selected image
-        img_tag = asset_tag + '/' + img_id 
+        if asset_tag :
+            img_tag = asset_tag + '/' + img_id
+        else :
+            img_tag = img_id 
 
         # Define visualization parameters
         vis_params = {}
@@ -488,7 +504,7 @@ class AddImgCol2Map:
             if "'" in band_str :
                 band_str = band_str.replace("'","")
             bands = band_str.split(';')
-            bands_only = [iband.split('_')[0] for iband in bands]
+            bands_only = [iband.split('--')[0] for iband in bands]
             # Ignore the resolution part 
             vis_params['bands'] = bands_only
 
@@ -533,7 +549,7 @@ class AddImgCol2Map:
         tsl = aprxMap.addDataFromPath(map_url)
         # Add band information to map name 
         if band_str :
-            tsl.name = img_tag + '_' + '_'.join(bands_only)
+            tsl.name = img_tag + '--' + '--'.join(bands_only)
         else :
             tsl.name = img_tag  
         
@@ -715,7 +731,7 @@ class AddFeatCol2Map:
         added to the display."""
         return
     
-# Download GEE Image in Small Chunk Max. 48MB
+# Download GEE Image by GetDownloadURL Max. 48MB
 class DownloadSmallImage:
     
     def __init__(self):
@@ -743,29 +759,37 @@ class DownloadSmallImage:
             direction="Input",
             multiValue=True, 
             parameterType="Optional")
-
+        
         param2 = arcpy.Parameter(
+            name="scale",
+            displayName="Specify the Scale for Download",
+            datatype="GPDouble",
+            direction="Input",
+            multiValue=False, 
+            parameterType="Optional")        
+
+        param3 = arcpy.Parameter(
             name="in_poly",
             displayName="Choose a Polygon or Polyline as Region of Interest",
             datatype="GPFeatureLayer",
             direction="Input",
             parameterType="Optional")
         
-        param3 = arcpy.Parameter(
+        param4 = arcpy.Parameter(
             name="use_extent",
             displayName="Use current map view extent",
             datatype="GPBoolean",
             direction="Input",
             parameterType="Optional")
 
-        param4 = arcpy.Parameter(
+        param5 = arcpy.Parameter(
             name="out_tiff",
             displayName="Specify the Output File Name",
             datatype="DEFile",
             direction="Output",
             parameterType="Required")
         
-        params = [param0,param1,param2, param3, param4]
+        params = [param0,param1,param2, param3, param4, param5]
         return params
 
     def isLicensed(self):
@@ -792,15 +816,29 @@ class DownloadSmallImage:
                 band_tmp = image.select(iband)
                 proj = band_tmp.projection()
                 res = proj.nominalScale().getInfo()
-                band_res_list.append(iband + '_' + str(round(res))+'m')
+                band_res_list.append(iband + '--' + str(round(res))+'--m')
                 
             parameters[1].filter.list = band_res_list
 
+        # Capture the suggested scale value based on selected bands 
+        band_str = parameters[1].valueAsText
+        if band_str :
+            # Remove ' in band string in case users add it
+            if "'" in band_str :
+                band_str = band_str.replace("'","")
+            bands = band_str.split(';')
+            scale_only = [float(iband.split('--')[1]) for iband in bands]
+            parameters[2].value = max(scale_only)
+
         # Disable input feature if map extent is used
-        if parameters[3].value :
-            parameters[2].enabled = False
+        if parameters[4].value : # map extent selected 
+            parameters[3].enabled = False
         else :
-            parameters[2].enabled = True  
+            parameters[3].enabled = True  
+
+        # Reset band filter list when asset tag is empty 
+        if not asset_tag :
+            parameters[1].filter.list = []
             
         return
 
@@ -813,9 +851,10 @@ class DownloadSmallImage:
         """The source code of the tool."""
         asset_tag  = parameters[0].valueAsText
         band_str   = parameters[1].valueAsText
-        in_poly    = parameters[2].valueAsText
-        use_extent = parameters[3].valueAsText
-        out_tiff   = parameters[4].valueAsText
+        scale      = parameters[2].valueAsText
+        in_poly    = parameters[3].valueAsText
+        use_extent = parameters[4].valueAsText
+        out_tiff   = parameters[5].valueAsText
 
         # Define a function to project a point to WGS 84 (EPSG 4326)
         def project_to_wgs84(x, y, in_spatial_ref):
@@ -834,7 +873,7 @@ class DownloadSmallImage:
             if "'" in band_str :
                 band_str = band_str.replace("'","")
             bands = band_str.split(';')
-            bands_only = [iband.split('_')[0] for iband in bands]
+            bands_only = [iband.split('--')[0] for iband in bands]
             params_dict['bands'] = bands_only
 
         # Make sure output file name ends with .tif 
@@ -917,7 +956,8 @@ class DownloadSmallImage:
         image = image.clip(roi)
 
         params_dict['region'] = roi # The region to clip and download
-        #params_dict['scale'] = 30 # Resolution in meters per pixel (30m for Landsat)
+        if scale :
+            params_dict['scale'] = float(scale) # Resolution in meters per pixel
         params_dict['format'] = 'GEO_TIFF' # The file format of the downloaded image
 
         # Specify the download parameters
@@ -930,16 +970,12 @@ class DownloadSmallImage:
         with open(out_tiff, 'wb') as fd:
             fd.write(response.content)
 
-        # # Download image from URL to zipped tiff
-        # out_zip = out_tiff.replace('.tif','.zip')
-        # response = requests.get(download_url)
-        # with open(out_zip, 'wb') as fd:
-        # fd.write(response.content)
-        
-        # # Unzip file to tiff
-        # with zipfile.ZipFile(out_zip) as z:
-        #     z.extractall(os.path.dirname(out_tiff))
-        # os.remove(out_zip)        
+        arcpy.AddMessage(out_tiff)
+
+        # Add out tiff to map layer
+        aprx = arcpy.mp.ArcGISProject("CURRENT")
+        aprxMap = aprx.activeMap
+        aprxMap.addDataFromPath(out_tiff) 
 
         return
 
@@ -948,7 +984,7 @@ class DownloadSmallImage:
         added to the display."""
         return
 
-# Download by Getting Image Pixels Max. 3 Bands and 48MB     
+# Download by Getting Pixels, Max. 3 Bands and 48MB     
 class DownloadImagePixels:
     
     def __init__(self):
@@ -1026,7 +1062,7 @@ class DownloadImagePixels:
                 band_tmp = image.select(iband)
                 proj = band_tmp.projection()
                 res = proj.nominalScale().getInfo()
-                band_res_list.append(iband + '_' + str(round(res))+'m')
+                band_res_list.append(iband + '--' + str(round(res))+'--m')
                 
             parameters[1].filter.list = band_res_list
 
@@ -1036,11 +1072,27 @@ class DownloadImagePixels:
         else :
             parameters[2].enabled = True  
 
+        # Reset band filter list when asset tag is empty 
+        if not asset_tag :
+            parameters[1].filter.list = []
+
         return
 
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+
+        # Make sure maximum 3 bands selected 
+        band_str   = parameters[1].valueAsText
+        if band_str:
+            if "'" in band_str :
+                band_str = band_str.replace("'","")
+            bands = band_str.split(';')
+            if len(bands) > 3 :
+                parameters[1].setErrorMessage("You can only select up to 3 bands.")
+            else :
+                parameters[1].clearMessage()
+
         return
 
     def execute(self, parameters, messages):
@@ -1078,7 +1130,7 @@ class DownloadImagePixels:
             if "'" in band_str :
                 band_str = band_str.replace("'","")
             bands = band_str.split(';')
-            bands_only = [iband.split('_')[0] for iband in bands]
+            bands_only = [iband.split('--')[0] for iband in bands]
             params_dict['bandIds'] = bands_only
 
         # Make sure output file name ends with .tif 
@@ -1159,7 +1211,7 @@ class DownloadImagePixels:
 
         params_dict['region'] = roi.toGeoJSON()
 
-        arcpy.AddMessage(roi.toGeoJSON())
+        #arcpy.AddMessage(roi.toGeoJSON())
 
         # Clip image to ROI only
         #image = image.clip(multi_polygon)
@@ -1171,7 +1223,11 @@ class DownloadImagePixels:
         with open(out_tiff, 'wb') as f:
             f.write(pixels)
 
-
+        arcpy.AddMessage('Saving file to path: '+ out_tiff)
+        # Add out tiff to map layer
+        aprx = arcpy.mp.ArcGISProject("CURRENT")
+        aprxMap = aprx.activeMap
+        aprxMap.addDataFromPath(out_tiff)
 
         return
 
@@ -1180,7 +1236,7 @@ class DownloadImagePixels:
         added to the display."""
         return
 
-# Download GEE Image in Large Size through XEE
+# Download GEE Image in Large Size through XEE + RasterIO
 class DownloadLargeImage:
     
     def __init__(self):
@@ -1193,44 +1249,93 @@ class DownloadLargeImage:
     def getParameterInfo(self):
         """Define the tool parameters."""
 
+        # Image collection inputs are optional
         param0 = arcpy.Parameter(
-            name="asset_tag",
-            displayName="Specify GEE Image Asset Tag",
+            name="ic_asset_tag",
+            displayName="Specify GEE Image Collection Asset Tag",
             datatype="GPString",
             direction="Input",
-            parameterType="Required")
-        param0.dialogref = ""
+            parameterType="Optional")
+        param0.dialogref = "Browse all available datasets from GEE website, copy and paste the asset tag here."
 
         param1 = arcpy.Parameter(
+            name="filter_dates",
+            displayName="Filter by dates in YYYY-MM-DD",
+            datatype="GPValueTable",
+            direction="Input", 
+            parameterType="Optional")
+        param1.columns = [['GPString','Starting Date'],['GPString', 'Ending Date']] 
+        param1.value = [['2014-03-01','2014-05-01']]
+
+        param2 = arcpy.Parameter(
+            name="filter_bounds",
+            displayName="Filter by location in coordinates",
+            datatype="GPValueTable",
+            direction="Input", 
+            parameterType="Optional")
+        param2.columns = [['GPString','Longitude'],['GPString', 'Latitude']]
+
+        param3 = arcpy.Parameter(
+            name="use_centroid",
+            displayName="Use the center of the current map view extent",
+            datatype="GPBoolean",
+            direction="Input",
+            parameterType="Optional")
+        
+        param4 = arcpy.Parameter(
+            name="img_asset_tag",
+            displayName="Specify Image Asset Tag or Select Image ID",
+            datatype="GPString",
+            direction="Input",
+            multiValue=True,
+            parameterType="Required")
+
+        param5 = arcpy.Parameter(
             name="bands",
             displayName="Specify the Bands for Download",
             datatype="GPString",
             direction="Input",
             multiValue=True, 
-            parameterType="Optional")
+            parameterType="Required")
+        
+        param6 = arcpy.Parameter(
+            name="scale",
+            displayName="Specify the Scale for Download",
+            datatype="GPDouble",
+            direction="Input",
+            multiValue=False, 
+            parameterType="Required")        
 
-        param2 = arcpy.Parameter(
+        param7 = arcpy.Parameter(
             name="in_poly",
-            displayName="Choose a Polygon or Polyline as Region of Interest",
+            displayName="Choose a Polygon as Region of Interest",
             datatype="GPFeatureLayer",
             direction="Input",
             parameterType="Optional")
         
-        param3 = arcpy.Parameter(
+        param8 = arcpy.Parameter(
             name="use_extent",
-            displayName="Use current map view extent",
+            displayName="Use the Current Map View Extent as Region of Interest",
             datatype="GPBoolean",
             direction="Input",
             parameterType="Optional")
 
-        param4 = arcpy.Parameter(
-            name="out_tiff",
-            displayName="Specify the Output File Name",
-            datatype="DEFile",
-            direction="Output",
+        param9 = arcpy.Parameter(
+            name="out_folder",
+            displayName="Specify the Output Folder",
+            datatype="DEFolder",
+            direction="Input",
             parameterType="Required")
         
-        params = [param0,param1,param2, param3, param4]
+        param10 = arcpy.Parameter(
+            name="load_tiff",
+            displayName="Load Output Files into Map View after Download",
+            datatype="GPBoolean",
+            direction="Input",
+            parameterType="Optional")
+        
+        params = [param0,param1,param2, param3, param4, param5,
+                  param6,param7,param8, param9, param10]
         return params
 
     def isLicensed(self):
@@ -1242,13 +1347,92 @@ class DownloadLargeImage:
         validation is performed.  This method is called whenever a parameter
         has been changed."""
 
-        # Check band list of a given asset
-        # Only update filter list once to avoid extra computation  
+        # Define a function to project a point to WGS 84 (EPSG 4326)
+        def project_to_wgs84(x, y, in_spatial_ref):
+            point = arcpy.Point(x, y)
+            point_geom = arcpy.PointGeometry(point, in_spatial_ref)
+            wgs84 = arcpy.SpatialReference(4326)
+            point_geom_wgs84 = point_geom.projectAs(wgs84)
+            return point_geom_wgs84.centroid.X, point_geom_wgs84.centroid.Y
+
+        # Get the filter dates
+        if parameters[1].valueAsText :
+            val_list = parameters[1].values
+            start_date = val_list[0][0]
+            end_date = val_list[0][1]
+        else :
+            start_date = None
+            end_date = None
+            
+        # Get the filter bounds
+        if parameters[3].value : # use map extent
+            # Disable input coordinates if map extent is used
+            parameters[2].enabled = False
+            # Get the current project
+            aprx = arcpy.mp.ArcGISProject("CURRENT")
+            # Get the active map view
+            view = aprx.activeView
+            # Get the current camera object, which includes the map view extent
+            camera = view.camera  
+        
+            # Extract the projection and the boundary coordinates (extent)
+            spatial_ref = camera.getExtent().spatialReference
+            xmin = camera.getExtent().XMin
+            ymin = camera.getExtent().YMin
+            xmax = camera.getExtent().XMax
+            ymax = camera.getExtent().YMax   
+            # Check if projection code is 4326 
+            poly_prj = spatial_ref.PCSCode
+            # Always using latitude and longtiude for ee.Geometry, ee will automatically transform
+            if str(poly_prj) not in 'EPSG:4326' : 
+                # Convert the extent corners to EPSG 4326
+                xmin, ymin = project_to_wgs84(xmin, ymin, spatial_ref)
+                xmax, ymax = project_to_wgs84(xmax, ymax, spatial_ref)
+            # Get the centroid of map extent 
+            lon = (xmin+xmax)/2
+            lat = (ymin+ymax)/2
+        else : # use input lat/lon
+            parameters[2].enabled = True  
+            if parameters[2].valueAsText :
+                val_list = parameters[2].values
+                lon = val_list[0][0]
+                lat = val_list[0][1]
+            else :
+                lon = None
+                lat = None
+
+        # Check image list of a given collection asset 
         asset_tag = parameters[0].valueAsText
-        if asset_tag and not parameters[1].filter.list:
+
+        # Image collection size could be huge, may take long time to load image IDs without filters
+        # Only retrieve the list of images, when either filter dates or filter bounds are selected
+        if asset_tag and ((start_date and end_date) or (lon and lat)):
             # Only initialize ee when asset tag is given 
             ee.Initialize()
-            image = ee.Image(asset_tag)
+            collection = ee.ImageCollection(asset_tag)
+            # Filter image collection as specified
+            if lon is not None and lat is not None :
+                collection = collection.filterBounds(ee.Geometry.Point((float(lon), float(lat))))
+            if start_date is not None and end_date is not None  :
+                collection = collection.filterDate(start_date, end_date)
+            # Get image IDs from collection
+            image_ids = collection.aggregate_array('system:index').getInfo()
+            parameters[4].filter.list = image_ids
+
+        # Check the band list of the first selected image, assuming all selected images have the same bands  
+        img_ids = parameters[4].valueAsText
+        # Update only when filter list is empty 
+        if img_ids and not parameters[5].filter.list :
+            # Get the first select image 
+            img_id = img_ids.split(';')[0]
+            # Only initialize ee when image asset tag is given 
+            if asset_tag :
+                img_tag = asset_tag + '/' + img_id
+            else :
+                # If asset tag is not given, have to initilize ee here
+                ee.Initialize()
+                img_tag = img_id 
+            image = ee.Image(img_tag)
             band_names = image.bandNames()
             band_list = band_names.getInfo()
             # Add band resolution information to display 
@@ -1257,15 +1441,28 @@ class DownloadLargeImage:
                 band_tmp = image.select(iband)
                 proj = band_tmp.projection()
                 res = proj.nominalScale().getInfo()
-                band_res_list.append(iband + '_' + str(round(res))+'m')
-                
-            parameters[1].filter.list = band_res_list
+                band_res_list.append(iband + '--' + str(round(res))+'--m')
+            parameters[5].filter.list = band_res_list
+
+        # Reset band filter list when asset tag changes 
+        if (not parameters[4].valueAsText) and (not parameters[0].valueAsText)  :
+            parameters[5].filter.list = []
+
+        # Capture the suggested scale value based on selected bands 
+        band_str = parameters[5].valueAsText
+        if band_str :  
+            # Remove ' in band string in case users add it
+            if "'" in band_str :
+                band_str = band_str.replace("'","")
+            bands = band_str.split(';')
+            scale_only = [float(iband.split('--')[1]) for iband in bands]
+            parameters[6].value = max(scale_only)
 
         # Disable input feature if map extent is used
-        if parameters[3].value :
-            parameters[2].enabled = False
+        if parameters[8].value : # map extent selected 
+            parameters[7].enabled = False
         else :
-            parameters[2].enabled = True  
+            parameters[7].enabled = True  
             
         return
 
@@ -1276,11 +1473,15 @@ class DownloadLargeImage:
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        # Multiple images could be selected 
         asset_tag  = parameters[0].valueAsText
-        band_str   = parameters[1].valueAsText
-        in_poly    = parameters[2].valueAsText
-        use_extent = parameters[3].valueAsText
-        out_tiff   = parameters[4].valueAsText
+        img_ids    = parameters[4].valueAsText
+        band_str   = parameters[5].valueAsText
+        scale      = parameters[6].valueAsText
+        in_poly    = parameters[7].valueAsText
+        use_extent = parameters[8].valueAsText
+        out_folder = parameters[9].valueAsText
+        load_tiff  = parameters[10].valueAsText
 
         # Define a function to project a point to WGS 84 (EPSG 4326)
         def project_to_wgs84(x, y, in_spatial_ref):
@@ -1289,122 +1490,170 @@ class DownloadLargeImage:
             wgs84 = arcpy.SpatialReference(4326)
             point_geom_wgs84 = point_geom.projectAs(wgs84)
             return point_geom_wgs84.centroid.X, point_geom_wgs84.centroid.Y
-
-        # Initialize parameters for getDownloadURL
-        params_dict = {}
         
-        # Add bands to vis_params if specfied 
-        if band_str :
-            # Remove ' in band string in case users add it
-            if "'" in band_str :
-                band_str = band_str.replace("'","")
-            bands = band_str.split(';')
-            bands_only = [iband.split('_')[0] for iband in bands]
-            params_dict['bands'] = bands_only
-
-        # Make sure output file name ends with .tif 
-        if not out_tiff.endswith('.tif') :
-            out_tiff = out_tiff + '.tif'
+        # Define a function to clip each image
+        def clip_image(image, polygon):
+            return image.clip(polygon)
         
-        # Initialize GEE 
+        # Filter image by bands if specified 
+        #if band_str : # now band_str is required
+        # Remove ' in band string in case user adds it
+        if "'" in band_str :
+            band_str = band_str.replace("'","")
+        bands = band_str.split(';')
+        bands_only = [iband.split('--')[0] for iband in bands]
+        arcpy.AddMessage('Bands selected: ' + ','.join(bands_only))
+
+        # Initialize GEE and get asset 
         ee.Initialize()
-        # Check GEE image projection
-        image = ee.Image(asset_tag)
-        # CRS could be other projections than 'EPSG:4326' for some GEE assets
-        # When multiple band, select one for projection   
-        img_prj = image.select(0).projection().crs().getInfo()
-        arcpy.AddMessage('Image projection is '+ img_prj)
 
-        # Get the region of interests
-        # Use map view extent if checked 
-        if use_extent == 'true' :
-            # Get the current project
-            aprx = arcpy.mp.ArcGISProject("CURRENT")
-            # Get the active map view
-            map_view = aprx.activeView
-            # Get the current camera object, which includes the map view extent
-            camera = map_view.camera  
-        
-            # Extract the projection and the boundary coordinates (extent)
-            spatial_ref = camera.getExtent().spatialReference
-            xmin = camera.getExtent().XMin
-            ymin = camera.getExtent().YMin
-            xmax = camera.getExtent().XMax
-            ymax = camera.getExtent().YMax   
-            # Check if projection code is 4326 
-            poly_prj = spatial_ref.PCSCode
-            arcpy.AddMessage('Current map view projection is '+ str(poly_prj))
-            if str(poly_prj) not in img_prj : 
-                arcpy.AddMessage('Projecting the coordinates of map view extent to '+ img_prj + ' ...')
-                # Convert the extent corners to EPSG 4326
-                xmin_wgs84, ymin_wgs84 = project_to_wgs84(xmin, ymin, spatial_ref)
-                xmax_wgs84, ymax_wgs84 = project_to_wgs84(xmax, ymax, spatial_ref)
-                roi = ee.Geometry.BBox(xmin_wgs84, ymin_wgs84, xmax_wgs84, ymax_wgs84)
+        icount = 1
+        out_tiff_list = []
+        # Iterate each selected image 
+        for img_id in img_ids.split(';') :
+            # For image collection, concatenate to get the image asset tag
+            if asset_tag :
+                img_tag = asset_tag + '/' + img_id
             else :
-                # use the map extent directly if it is already 4326
-                roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
+                img_tag = img_id 
+            # Must be image collection to convert to xarray 
+            image = ee.ImageCollection(ee.Image(img_tag))
+            # Filter image by selected bands
+            image = image.select(bands_only)
 
-        # Use input feature layer as ROI
-        else :
-            spatial_ref = arcpy.Describe(in_poly).spatialReference
-            poly_prj = spatial_ref.PCSCode
-            arcpy.AddMessage('Input feature layer projection is '+ str(poly_prj))
-            
-            # Project input feature to GEE image coordinate system if needed
-            target_poly = in_poly
-            if str(poly_prj) not in img_prj :
-                arcpy.AddMessage('Projecting input feature layer to GEE image cooridnate system ...')
-                out_sr = arcpy.SpatialReference(int(img_prj.split(':')[1]))
-                arcpy.Project_management(in_poly, "poly_temp", out_sr)
-                target_poly = 'poly_temp'
+            # Only needs to run the ROI and scale once
+            if icount == 1 : 
+                # Check GEE image projection
+                # CRS could be other projections than 'EPSG:4326' for some GEE assets
+                # When multiple band, select the first one for projection   
+                img_prj = image.first().select(0).projection().crs().getInfo()
+                arcpy.AddMessage('Image projection is '+ img_prj)
 
-            # convert input feature to geojson
-            arcpy.FeaturesToJSON_conversion(target_poly, 'temp.geojson', "FORMATTED", "", "", "GEOJSON")
+                # Get the region of interests
+                # Use map view extent if checked 
+                if use_extent == 'true' :
+                    # Get the current project
+                    aprx = arcpy.mp.ArcGISProject("CURRENT")
+                    # Get the active map view
+                    map_view = aprx.activeView
+                    # Get the current camera object, which includes the map view extent
+                    camera = map_view.camera  
+                
+                    # Extract the projection and the boundary coordinates (extent)
+                    spatial_ref = camera.getExtent().spatialReference
+                    xmin = camera.getExtent().XMin
+                    ymin = camera.getExtent().YMin
+                    xmax = camera.getExtent().XMax
+                    ymax = camera.getExtent().YMax   
+                    # Check if projection code is EPSG:4326 
+                    # GEE uses EPSG:4326 for filtering and clipping by default  
+                    poly_prj = spatial_ref.PCSCode # projected
+                    if poly_prj == 0 :
+                        poly_prj = spatial_ref.GCSCode # geographic
+                    arcpy.AddMessage('Current map view projection is '+ str(poly_prj))
+                    if str(poly_prj) not in 'EPSG:4326' : 
+                        arcpy.AddMessage('Projecting the coordinates of map view extent to EPSG:4326 ...')
+                        # Convert the extent corners to EPSG 4326
+                        xmin_wgs84, ymin_wgs84 = project_to_wgs84(xmin, ymin, spatial_ref)
+                        xmax_wgs84, ymax_wgs84 = project_to_wgs84(xmax, ymax, spatial_ref)
+                        roi = ee.Geometry.BBox(xmin_wgs84, ymin_wgs84, xmax_wgs84, ymax_wgs84)
+                    else :
+                        # use the map extent directly if it is already 4326
+                        roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
+                # Use input feature layer as ROI
+                else :
+                    spatial_ref = arcpy.Describe(in_poly).spatialReference
+                    poly_prj = spatial_ref.PCSCode
+                    if poly_prj == 0 :
+                        poly_prj = spatial_ref.GCSCode
+                    arcpy.AddMessage('Input feature layer projection is '+ str(poly_prj))
+                    
+                    # Project input feature to GEE image coordinate system if needed
+                    target_poly = in_poly
+                    if str(poly_prj) not in 'EPSG:4326' :
+                        arcpy.AddMessage('Projecting input feature layer to EPSG:4326 ...')
+                        out_sr = arcpy.SpatialReference(4326)
+                        arcpy.Project_management(in_poly, "poly_temp", out_sr)
+                        target_poly = 'poly_temp'
 
-            # Read the GeoJSON file
-            upper_path = os.path.dirname(arcpy.env.workspace)
-            file_geojson = os.path.join(upper_path, 'temp.geojson')
-            with open(file_geojson) as f:
-                geojson_data = json.load(f)
+                    # convert input feature to geojson
+                    arcpy.FeaturesToJSON_conversion(target_poly, 'temp.geojson', "FORMATTED", "", "", "GEOJSON")
 
-            # Collect polygon object coordinates
-            coords = []
-            for feature in geojson_data['features'] :
-                coords.append(feature['geometry']['coordinates'])
-            arcpy.AddMessage('Total number of polygon objects: '+ str(len(coords)))
+                    # Read the GeoJSON file
+                    upper_path = os.path.dirname(arcpy.env.workspace)
+                    file_geojson = os.path.join(upper_path, 'temp.geojson')
+                    with open(file_geojson) as f:
+                        geojson_data = json.load(f)
 
-            # Create an Earth Engine MultiPolygon from the GeoJSON
-            roi = ee.Geometry.MultiPolygon(coords)
-            # Delete temporary geojson 
-            arcpy.management.Delete(file_geojson)
+                    # Collect polygon object coordinates
+                    coords = []
+                    for feature in geojson_data['features'] :
+                        coords.append(feature['geometry']['coordinates'])
+                    arcpy.AddMessage('Total number of polygon objects: '+ str(len(coords)))
 
-        # Clip image to ROI only
-        image = image.clip(roi)
+                    # Create an Earth Engine MultiPolygon from the GeoJSON
+                    roi = ee.Geometry.MultiPolygon(coords)
+                    # Delete temporary geojson 
+                    arcpy.management.Delete(file_geojson)
 
-        params_dict['region'] = roi # The region to clip and download
-        #params_dict['scale'] = 30 # Resolution in meters per pixel (30m for Landsat)
-        params_dict['format'] = 'GEO_TIFF' # The file format of the downloaded image
+                # Get the scale for xarray  
+                if scale :
+                    scale_ds = float(scale)
+                else :
+                    # get scale from the first selected band
+                    scale_ds = image.first().select(0).projection().nominalScale().getInfo()
+                    arcpy.AddMessage('Scale of the first selected band is used: '+ str(scale_ds))
+                # Use the crs code from the first selected band
+                crs = image.first().select(0).projection().getInfo()['crs']
 
-        # Specify the download parameters
-        download_url = image.getDownloadURL(params_dict)
+            # Clip the image using input polygon
+            #if in_poly :
+            #    arcpy.AddMessage('Clip image by the input polygon ...') 
+            #    image = image.map(lambda image: clip_image(image, roi))
 
-        arcpy.AddMessage('Download URL is: ' + download_url)
-        arcpy.AddMessage('Downloading to ' + out_tiff + ' ...')
+            # Use Xarray + RasterIO
+            # Convert image to xarray dataset
+            ds = xarray.open_dataset(image, engine='ee', crs=crs, scale=scale_ds, geometry=roi)
+            transform = from_origin(ds['X'].values[0], ds['Y'].values[0], scale_ds, -scale_ds)
+            meta = {
+                'driver': 'GTiff',
+                'height': ds[bands_only[0]].shape[2],
+                'width': ds[bands_only[0]].shape[1],
+                'count': len(bands_only),  # Number of bands
+                'dtype': ds[bands_only[0]].dtype,  # Data type of the array
+                'crs': crs,  # Coordinate Reference System, change if needed
+                'transform': transform
+            }
 
-        response = requests.get(download_url)
-        with open(out_tiff, 'wb') as fd:
-            fd.write(response.content)
+            # Store band names
+            band_names = {}
+            i = 1
+            for iband in bands_only :
+                band_names['band_'+str(i)] = iband
+                i += 1 
 
-        # # Download image from URL to zipped tiff
-        # out_zip = out_tiff.replace('.tif','.zip')
-        # response = requests.get(download_url)
-        # with open(out_zip, 'wb') as fd:
-        # fd.write(response.content)
-        
-        # # Unzip file to tiff
-        # with zipfile.ZipFile(out_zip) as z:
-        #     z.extractall(os.path.dirname(out_tiff))
-        # os.remove(out_zip)        
+            # Create output file name based on image tags  
+            out_tiff = os.path.join(out_folder, img_tag.replace('/','_')+ '.tif')
+            out_tiff_list.append(out_tiff)
+
+            # Write the array to a multiband GeoTIFF file
+            arcpy.AddMessage('Save image to '+ out_tiff + ' ...')
+            i = 1
+            with rasterio.open(out_tiff, 'w', **meta) as dst:
+                for iband in bands_only :
+                    dst.write(np.transpose(ds[iband].values[0]), i)  # Write the band
+                    i += 1
+                # write band names into output tiff 
+                dst.update_tags(**band_names)
+
+            icount += 1
+
+        # Add out tiff to map layer
+        if load_tiff == 'true' :
+            aprx = arcpy.mp.ArcGISProject("CURRENT")
+            aprxMap = aprx.activeMap
+            for out_tiff in out_tiff_list :
+                aprxMap.addDataFromPath(out_tiff)
 
         return
 
