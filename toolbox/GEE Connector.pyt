@@ -308,8 +308,8 @@ class AddImgCol2Map:
         param2.columns = [['GPString','Longitude'],['GPString', 'Latitude']]
 
         param3 = arcpy.Parameter(
-            name="use_extent",
-            displayName="Use the centroid of the current map view extent",
+            name="use_centroid",
+            displayName="Use the center of the current map view extent",
             datatype="GPBoolean",
             direction="Input",
             parameterType="Optional")
@@ -406,6 +406,8 @@ class AddImgCol2Map:
             ymax = camera.getExtent().YMax   
             # Check if projection code is 4326 
             poly_prj = spatial_ref.PCSCode
+            if poly_prj == 0 : # projected is not used, try geographic
+                poly_prj = spatial_ref.GCSCode
             # Always using latitude and longtiude for ee.Geometry, ee will automatically transform
             if str(poly_prj) not in 'EPSG:4326' : 
                 # Convert the extent corners to EPSG 4326
@@ -598,62 +600,95 @@ class AddFeatCol2Map:
         param0.dialogref = "Browse all available datasets from GEE website, copy and paste the asset tag here."
 
         param1 = arcpy.Parameter(
+            name="filter_props",
+            displayName="Filter by Properties",
+            datatype="GPValueTable",
+            direction="Input", 
+            parameterType="Optional")
+        param1.columns = [['GPString','Property Name'],['GPString', 'Filter Value']] 
+
+        param2 = arcpy.Parameter(
+            name="filter_dates",
+            displayName="Filter by dates in YYYY-MM-DD",
+            datatype="GPValueTable",
+            direction="Input", 
+            parameterType="Optional")
+        param2.columns = [['GPString','Starting Date'],['GPString', 'Ending Date']] 
+        #param2.value = [['2014-03-01','2014-05-01']]
+
+        param3 = arcpy.Parameter(
+            name="filter_bounds",
+            displayName="Filter by location in coordinates",
+            datatype="GPValueTable",
+            direction="Input", 
+            parameterType="Optional")
+        param3.columns = [['GPString','Longitude'],['GPString', 'Latitude']]
+
+        param4 = arcpy.Parameter(
+            name="use_centroid",
+            displayName="Use the center of the current map view extent",
+            datatype="GPBoolean",
+            direction="Input",
+            parameterType="Optional")
+                        
+        param5 = arcpy.Parameter(
             name="color",
             displayName="Specify the color for visualization",
             datatype="GPString",
             direction="Input",
             parameterType="Optional")
         
-        param2 = arcpy.Parameter(
-            name="point_shape",
-            displayName="Specify the point shape for visualization",
-            datatype="GPString",
-            direction="Input",
-            parameterType="Optional")
-        param2.filter.list = ['circle','square','diamond','cross','plus','triangle']
+        # param2 = arcpy.Parameter(
+        #     name="point_shape",
+        #     displayName="Specify the point shape for visualization",
+        #     datatype="GPString",
+        #     direction="Input",
+        #     parameterType="Optional")
+        # param2.filter.list = ['circle','square','diamond','cross','plus','triangle']
         
-        param3 = arcpy.Parameter(
-            name="point_size",
-            displayName="Specify the point size for visualization",
-            datatype="GPDouble",
-            direction="Input",
-            parameterType="Optional")
-        param3.filter.list = [2,4,6,8,10]
+        # param3 = arcpy.Parameter(
+        #     name="point_size",
+        #     displayName="Specify the point size for visualization",
+        #     datatype="GPDouble",
+        #     direction="Input",
+        #     parameterType="Optional")
+        # param3.filter.list = [2,4,6,8,10]
         
-        param4 = arcpy.Parameter(
-            name="line_width",
-            displayName="Specify the line width for visualization ",
-            datatype="GPDouble",
-            direction="Input",
-            parameterType="Optional")
-        param4.filter.list = [1,2,3,4,5]
+        # param4 = arcpy.Parameter(
+        #     name="line_width",
+        #     displayName="Specify the line width for visualization ",
+        #     datatype="GPDouble",
+        #     direction="Input",
+        #     parameterType="Optional")
+        # param4.filter.list = [1,2,3,4,5]
         
-        param5 = arcpy.Parameter(
-            name="line_type",
-            displayName="Specify the line type for visualization",
-            datatype="GPString",
-            direction="Input",
-            parameterType="Optional")
-        param5.filter.list = ['solid','dotted','dashed']
+        # param5 = arcpy.Parameter(
+        #     name="line_type",
+        #     displayName="Specify the line type for visualization",
+        #     datatype="GPString",
+        #     direction="Input",
+        #     parameterType="Optional")
+        # param5.filter.list = ['solid','dotted','dashed']
         
-        param6 = arcpy.Parameter(
-            name="fill_color",
-            displayName="Specify the fill color of polygons for visualization",
-            datatype="GPString",
-            direction="Input",
-            parameterType="Optional")
+        # param6 = arcpy.Parameter(
+        #     name="fill_color",
+        #     displayName="Specify the fill color of polygons for visualization",
+        #     datatype="GPString",
+        #     direction="Input",
+        #     parameterType="Optional")
 
-        param7 = arcpy.Parameter(
-            name="opacity",
-            displayName="Specify the opacity for visualization",
-            datatype="GPDouble",
-            direction="Input",
-            parameterType="Optional")
-        # Set the value range
-        param7.filter.type = "Range"
-        param7.filter.list = [0, 1]
+        # param7 = arcpy.Parameter(
+        #     name="opacity",
+        #     displayName="Specify the opacity for visualization",
+        #     datatype="GPDouble",
+        #     direction="Input",
+        #     parameterType="Optional")
+        # # Set the value range
+        # param7.filter.type = "Range"
+        # param7.filter.list = [0, 1]
     
-        params = [param0,param1,param2,param3,param4,param5,param6,param7]
+        params = [param0,param1,param2,param3,param4,param5]
+                  #,param2,param3,param4,param5,param6,param7]
         return params
 
     def isLicensed(self):
@@ -664,65 +699,189 @@ class AddFeatCol2Map:
         """Modify the values and properties of parameters before internal
         validation is performed.  This method is called whenever a parameter
         has been changed."""
+
+        # # Define a function to check the geometry type of a feature.
+        # # Filter by geometry type could be computationally expensive
+        # def filter_by_geometry_types(feature, geo_types):
+        #     # geo_types: List of Polygon, Point, LineString, MultiPolygon, MultiPoint, MultiLineString, GeometryCollection
+        #     # Get the geometry of the feature.
+        #     geom = feature.geometry()
+            
+        #     # Check if the geometry type is 'Polygon'.
+        #     return ee.List(geo_types).contains(geom.type())       
         
+        if parameters[0].valueAsText and not parameters[1].filters[0].list :
+            asset_tag = parameters[0].valueAsText 
+            ee.Initialize()
+            fc = ee.FeatureCollection(asset_tag)
+            prop_names = fc.first().propertyNames().getInfo()
+            parameters[1].filters[0].list = sorted(prop_names)   
+
+        # Reset filter list 
+        if not parameters[0].valueAsText :
+            parameters[1].filters[0].list = []
+
+        # Disable input coordinates if map extent is used 
+        if parameters[4].value :
+            parameters[3].enabled = False
+        else :
+            parameters[3].enabled = True        
+
         return
 
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
-        return
+
+        # Make sure property name is only used once 
+        prop_list = []
+        if parameters[1].valueAsText :
+            val_list = parameters[1].values
+            for row in val_list :
+                prop_name = row[0]
+                if prop_name not in prop_list :
+                    prop_list.append(prop_name)
+                else :
+                    parameters[1].setErrorMessage(f"The property name '{prop_name}' is used more than once. Please use unique property names.")
+                    return
 
     def execute(self, parameters, messages):
         """
         The source code of the tool.
         """
+        # Define a function to project a point to WGS 84 (EPSG 4326)
+        def project_to_wgs84(x, y, in_spatial_ref):
+            point = arcpy.Point(x, y)
+            point_geom = arcpy.PointGeometry(point, in_spatial_ref)
+            wgs84 = arcpy.SpatialReference(4326)
+            point_geom_wgs84 = point_geom.projectAs(wgs84)
+            return point_geom_wgs84.centroid.X, point_geom_wgs84.centroid.Y
+        
         asset_tag  = parameters[0].valueAsText
-        feat_color = parameters[1].valueAsText
-        point_shape= parameters[2].valueAsText
-        point_size = parameters[3].valueAsText
-        line_width = parameters[4].valueAsText
-        line_type  = parameters[5].valueAsText
-        fill_color = parameters[6].valueAsText
-        opacity    = parameters[7].valueAsText
+        feat_color = parameters[2].valueAsText
+
+        # point_shape= parameters[2].valueAsText
+        # point_size = parameters[3].valueAsText
+        # line_width = parameters[4].valueAsText
+        # line_type  = parameters[5].valueAsText
+        # fill_color = parameters[6].valueAsText
+        # opacity    = parameters[7].valueAsText
+
+
 
         # Define visualization parameters
         vis_params = {}
-
         # Add color to vis_params if specified 
         if feat_color :
             vis_params['color'] = feat_color
-        # Add point shape and size if specified 
-        if point_shape :
-            vis_params['pointShape'] = point_shape
-        if point_size :
-            vis_params['pointSize'] = int(point_size)
-        # Add line width and type if specified
-        if line_width :
-            vis_params['width'] = int(line_width)
-        if line_type :
-            vis_params['lineType'] = line_type 
+        # # Add point shape and size if specified 
+        # if point_shape :
+        #     vis_params['pointShape'] = point_shape
+        # if point_size :
+        #     vis_params['pointSize'] = int(point_size)
+        # # Add line width and type if specified
+        # if line_width :
+        #     vis_params['width'] = int(line_width)
+        # if line_type :
+        #     vis_params['lineType'] = line_type 
         
-        # Add fill color and opacity if specified 
-        if fill_color :
-            vis_params['fillColor'] = fill_color
-        if opacity :
-            vis_params['fillColorOpacity'] = float(opacity) 
+        # # Add fill color and opacity if specified 
+        # if fill_color :
+        #     vis_params['fillColor'] = fill_color
+        # if opacity :
+        #     vis_params['fillColorOpacity'] = float(opacity) 
         
         # Initialize GEE, initial project is saved in Gcloud application default login JSON
         ee.Initialize()
         # Get image by label  
-        collection = ee.FeatureCollection(asset_tag)
-        # Get the map ID and token
-        map_id_dict = collection.getMapId(vis_params)
+        fc = ee.FeatureCollection(asset_tag)
 
-        # Construct the URL
-        map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
+        # Filter by properties
+        if parameters[1].valueAsText :
+            val_list = parameters[1].values
+            # Could be multiple filter properties 
+            for row in val_list :
+                prop_name = row[0]
+                # property value could be integer, float or string 
+                try:
+                    prop_val = int(row[1])
+                except ValueError:
+                    try:
+                        prop_val = float(row[1])
+                    except ValueError:
+                        prop_val = row[1]
 
-        # Add map URL to the current ArcMap 
-        aprx = arcpy.mp.ArcGISProject("CURRENT")
-        aprxMap = aprx.listMaps("Map")[0]
-        tsl = aprxMap.addDataFromPath(map_url)
-        tsl.name = asset_tag 
+                # Check if prop_val is a string and format accordingly
+                if isinstance(prop_val, str):
+                    # If prop_val is a string, wrap it in single quotes
+                    filter_condition = "{} == '{}'".format(prop_name, prop_val)
+                else:
+                    # If prop_val is an integer or float, no quotes needed
+                    filter_condition = "{} == {}".format(prop_name, prop_val)
+
+                arcpy.AddMessage('Filter by property: ' + filter_condition)
+                fc = fc.filter(filter_condition)
+
+        # Filter by dates if specified 
+        if parameters[2].valueAsText :
+            val_list = parameters[2].values
+            start_date = val_list[0][0]
+            end_date = val_list[0][1]
+            fc = fc.filterDate(start_date, end_date)
+
+        # Filter by bounds if specified 
+        if parameters[4].value : # Use map extent
+            # Get the current project
+            aprx = arcpy.mp.ArcGISProject("CURRENT")
+            # Get the active map view
+            view = aprx.activeView
+            # Get the current camera object, which includes the map view extent
+            camera = view.camera  
+        
+            # Extract the projection and the boundary coordinates (extent)
+            spatial_ref = camera.getExtent().spatialReference
+            xmin = camera.getExtent().XMin
+            ymin = camera.getExtent().YMin
+            xmax = camera.getExtent().XMax
+            ymax = camera.getExtent().YMax   
+            # Check if projection code is 4326 
+            poly_prj = spatial_ref.PCSCode
+            if poly_prj == 0 :
+                poly_prj = spatial_ref.GCSCode
+            # Always using latitude and longtiude for ee.Geometry, ee will automatically transform
+            if str(poly_prj) not in 'EPSG:4326' : 
+                # Convert the extent corners to EPSG 4326
+                xmin, ymin = project_to_wgs84(xmin, ymin, spatial_ref)
+                xmax, ymax = project_to_wgs84(xmax, ymax, spatial_ref)
+            # Get the centroid of map extent 
+            lon = (xmin+xmax)/2
+            lat = (ymin+ymax)/2
+            fc = fc.filterBounds(ee.Geometry.Point((float(lon), float(lat))))
+        else : # use input coordinates 
+            if parameters[3].valueAsText :
+                val_list = parameters[3].values
+                lon = val_list[0][0]
+                lat = val_list[0][1]
+                fc = fc.filterBounds(ee.Geometry.Point((float(lon), float(lat))))
+            else : # no filter by bounds 
+                lon = None
+                lat = None       
+
+        # Feature collection could contain zero record after filters
+        if fc.size().getInfo()>0 :
+            # Get the map ID and token
+            map_id_dict = fc.getMapId(vis_params)
+
+            # Construct the URL
+            map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
+
+            # Add map URL to the current ArcMap 
+            aprx = arcpy.mp.ArcGISProject("CURRENT")
+            aprxMap = aprx.listMaps("Map")[0]
+            tsl = aprxMap.addDataFromPath(map_url)
+            tsl.name = asset_tag 
+        else :
+            arcpy.AddWarning("No data record returned after applying filters! Please reset the filters and try again.")
                 
         return
 
