@@ -1,11 +1,10 @@
 # ArcGEE Connector
-An ArcPro Python toolbox for connection to Google Earth Engine
+An ArcPro Python toolbox for connection to Google Earth Engine (GEE)
 
 ## Introduction 
+ArcGEE is a Python toolbox for ArcGIS that seamlessly connects the Google Earth Engine API with ArcPro. This integration empowers users to explore, download, analyze, and visualize an extensive repository of Google Earth Engine datasets directly within ArcPro, while also enabling the upload of local datasets to Google Earth Engine assets. By leveraging Google Earth Engine’s scalable computing power and advanced machine learning models, ArcGEE provides a powerful, no-code solution for big data analytics, combining the strengths of both platforms for an enhanced, efficient workflow.
 
-
-
-## Installation 
+## Conda Environement Setup For Earth Engine API  
 
 ### Step 1 - Open ArcGIS Python Command Prompt 
 
@@ -25,6 +24,11 @@ Create a new conda environment, initialize conda for the proper shell if needed,
     conda install xee rasterio -c conda-forge
 
 After running the above commands, close Python Command Prompt, and start ArcPro. The default environment is now "gee". The `earthengine-api` is ready for authentication. 
+
+## Download ArcGEE Connector Toolbox
+
+The user can download the ArcGEE Connector Toolbox at this link `https://github.com/di-private/redlands-desktop-engine/tree/woolpert_dev/toolbox`. Download the entire toolbox folder and move it to the ArcPro connected direcotry, the toolbox will automatially appear in the Catalog. 
+
 
 ## Google Cloud SDK
 
