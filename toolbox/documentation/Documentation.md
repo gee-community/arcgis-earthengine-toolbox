@@ -13,7 +13,7 @@ Go to **Start Menu** -> **All Apps** -> **ArcGIS folder** -> **Python Command Pr
 
 ### Step 2 - Create a conda environment
 
-Create a new conda environment, initialize conda for the proper shell if needed, activate the environement, disable SSL verification, install `arcpy` and `earthengine-api`, activate package within ArcPro, install additional package `xee` and `rasterio`, by using the following commands. 
+Create a new conda environment, initialize conda for the proper shell if needed, activate the environment, disable SSL verification, install `arcpy` and `earthengine-api`, activate package within ArcPro, install additional package `xee` and `rasterio`, by using the following commands. 
 
     conda create conda-forge::mamba esri::python -n gee
     conda init cmd.exe 
