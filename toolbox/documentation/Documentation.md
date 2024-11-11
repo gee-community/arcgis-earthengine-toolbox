@@ -11,19 +11,43 @@ ArcGEE is a Python toolbox for ArcGIS that seamlessly connects the Google Earth 
 Go to **Start Menu** -> **All Apps** -> **ArcGIS folder** -> **Python Command Prompt**, click to run 
 
 
-### Step 2 - Create a conda environment
+### Step 2 - Set up the Conda Environment
 
-Create a new conda environment, initialize conda for the proper shell if needed, activate the environement, disable SSL verification, install `arcpy` and `earthengine-api`, activate package within ArcPro, install additional package `xee` and `rasterio`, by using the following commands. 
+1. Create a new conda environment `gee` using the version of python from esri channel. 
 
-    conda create conda-forge::mamba esri::python -n gee
-    conda init cmd.exe 
-    conda activate gee 
-    conda config --set ssl_verify false
-    mamba install arcpy earthengine-api -c esri -c conda-forge 
-    proswap gee 
-    conda install xee rasterio -c conda-forge
+    `conda create esri::python -n gee`
 
-After running the above commands, close Python Command Prompt, and start ArcPro. The default environment is now "gee". The `earthengine-api` is ready for authentication. 
+
+2. (Optional) Initialize conda for the proper shell if needed. If you can successfully run `conda activate`, you can skip this command. 
+
+    `conda init cmd.exe` 
+
+3. Activate the new conda environement `gee`. 
+
+    `conda activate gee` 
+
+4. (Optional) Disable the SSL verification if needed. If you can successfully install `arcpy` and `earthengine-api`, you can skip this command.
+
+    `conda config --set ssl_verify false`
+
+5. Install `arcpy` and 
+
+    `conda install arcpy  -c esri`
+
+6. Install `earthengine-api`, `xarray`, and `xee`. It is recommended to use `conda install` instead of `mamba install`, because `mamba install` may not work properly with `earthengine-api` and `xee`. 
+
+    `conda install earthengine-api xarray xee -c conda-forge`
+
+7. Install specific versions of `gdal` and `rasterio`. The default version of `gdal=3.9.2` and `rasterio=1.3.10` are incompatible.
+
+    `conda install -c conda-forge gdal=3.8.1 rasterio=1.3.9`
+    
+8. Activate package `gee` within ArcPro
+
+    `proswap gee` 
+    
+
+After running the above commands, close Python Command Prompt, and start ArcPro. The default environment is now `gee`. The `earthengine-api` is ready for authentication. 
 
 ## Download ArcGEE Connector Toolbox
 
