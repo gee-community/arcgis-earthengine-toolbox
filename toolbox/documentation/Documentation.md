@@ -13,36 +13,48 @@ Go to **Start Menu** -> **All Apps** -> **ArcGIS folder** -> **Python Command Pr
 
 ### Step 2 - Set up the Conda Environment
 
-1. Create a new conda environment `gee` using the version of python from esri channel. 
+By default, conda will always install the newest version of the selected package. However, it is not always the case for ArcGIS users. For example, `ArcPro 3.4` has `python=3.11.10` installed, while `ArcPro 3.3` has `python=3.11.8` installed. Therefore, it is necessary to check the pacakge version first before installation.  
 
-    `conda create esri::python -n gee`
+1. List all available conda environements using the following command. The default ArcPro package should be `arcgispro-py3`. 
+
+    `conda env list`
+
+2. List the versions of `python` and `arcpy` installed in `arcgispro-py3` package. The user needs to install the same versions in the new conda environement. For example, `ArcPro 3.3` should have the `python=3.11.8` and `arcpy=3.3`.
+
+    `conda list python`
+
+    `conda list arcpy`
+
+3. Create a new conda environment named `gee` using the listed python version from esri channel. For example, if the listed version is `python=3.11.8`, replace the `LISTED_PYTHON_VERSION` with `3.11.8`. 
+
+    `conda create esri::python=LISTED_PYTHON_VERSION -n gee`
 
 
-2. (Optional) Initialize conda for the proper shell if needed. If you can successfully run `conda activate`, you can skip this command. 
+4. (**Optional**) Initialize conda for the proper shell. It is suggested to run this command for the first time of using `conda activate`. After runing the following command, please make sure to restart the Python Command Prompt. 
 
     `conda init cmd.exe` 
 
-3. Activate the new conda environement `gee`. 
+5. Activate the new conda environement `gee`. 
 
     `conda activate gee` 
 
-4. (Optional) Disable the SSL verification if needed. If you can successfully install `arcpy` and `earthengine-api`, you can skip this command.
+6. (**Optional**) Disable the SSL verification. It is suggested to run this command for the first time of using `conda install`.
 
     `conda config --set ssl_verify false`
 
-5. Install `arcpy` and 
+7. Install `arcpy` with the listed version from esri channel. For example, if the listed version is `arcpy=3.3`, replace the `LISTED_ARCPY_VERSION` with `3.3`.   
 
-    `conda install arcpy  -c esri`
+    `conda install arcpy=LISTED_ARCPY_VERSION -c esri`
 
-6. Install `earthengine-api`, `xarray`, and `xee`. It is recommended to use `conda install` instead of `mamba install`, because `mamba install` may not work properly with `earthengine-api` and `xee`. 
+8. Install `earthengine-api`, `xarray`, and `xee` from conda forge channel. It is recommended to use `conda install` instead of `mamba install`, because `mamba install` may not work properly with `earthengine-api` and `xee`. 
 
     `conda install earthengine-api xarray xee -c conda-forge`
 
-7. Install specific versions of `gdal` and `rasterio`. The default version of `gdal=3.9.2` and `rasterio=1.3.10` are incompatible.
+9. Install specific versions of `gdal` and `rasterio`. The current default version of `gdal=3.9.2` and `rasterio=1.3.10` are incompatible.
 
-    `conda install -c conda-forge gdal=3.8.1 rasterio=1.3.9`
+    `conda install gdal=3.8.1 rasterio=1.3.9 -c conda-forge`
     
-8. Activate package `gee` within ArcPro
+10. Activate package `gee` within ArcPro
 
     `proswap gee` 
     
