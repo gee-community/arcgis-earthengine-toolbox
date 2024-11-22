@@ -19,6 +19,62 @@ import arcgee
 
 # logger = logging.getLogger(__name__)
 
+""" Define functions"""
+
+
+# Project a point to WGS 84 (EPSG 4326)
+def project_to_wgs84(x, y, in_spatial_ref):
+    point = arcpy.Point(x, y)
+    point_geom = arcpy.PointGeometry(point, in_spatial_ref)
+    wgs84 = arcpy.SpatialReference(4326)
+    point_geom_wgs84 = point_geom.projectAs(wgs84)
+    return point_geom_wgs84.centroid.X, point_geom_wgs84.centroid.Y
+
+
+# Get centroid of input image
+def get_image_centroid(img_obj, error_margin):
+    # get centroid geometry from input image
+    centroid = img_obj.geometry().centroid(error_margin)
+    # coordinates in list
+    centroid_coords = centroid.coordinates().getInfo()
+    # get image extent
+    extent = img_obj.geometry().bounds(error_margin)
+    # coordinates in list
+    extent_coords = extent.coordinates().get(0).getInfo()
+    return centroid_coords, extent_coords
+
+
+# Zoom project map view to point
+def zoom_to_point(aprx, point_coords, extent_coords):
+    # get current project map view
+    view = aprx.activeView
+    # Create an extent around the centroid
+    centroid_x, centroid_y = point_coords
+    bottom_left = extent_coords[0]
+    top_right = extent_coords[2]
+    x_min = bottom_left[0]
+    y_min = bottom_left[1]
+    x_max = top_right[0]
+    y_max = top_right[1]
+    width = x_max - x_min
+    height = y_max - y_min
+    zoom_buffer = max(width, height) * 0.3
+
+    extent = arcpy.Extent(
+        centroid_x - zoom_buffer,  # xmin
+        centroid_y - zoom_buffer,  # ymin
+        centroid_x + zoom_buffer,  # xmax
+        centroid_y + zoom_buffer,  # ymax
+    )
+
+    # Set the map view to the new extent
+    view.camera.setExtent(extent)
+
+    return
+
+
+""" Toolbox """
+
 
 class Toolbox:
     def __init__(self):
@@ -29,13 +85,15 @@ class Toolbox:
 
         # List of tool classes associated with this toolbox
         tools = []
+        # authenticate
         tools.append(CheckProjectID)
         tools.append(GEEAuth)
-        # tools.append(AddImage2Map)
-        tools.append(AddImgCol2Map)
-        tools.append(AddFeatCol2Map)
-        # tools.append(DownloadSmallImage)
-        # tools.append(DownloadImagePixels)
+        # explore
+        tools.append(AddImg2MapbyTag)
+        tools.append(AddImgCol2MapbyTag)
+        tools.append(AddImgCol2MapbyObj)
+        tools.append(AddFeatCol2MapbyTag)
+        tools.append(AddFeatCol2MapbyObj)
         tools.append(DownloadLargeImage)
         tools.append(DownloadImgCol2Gif)
         tools.append(Upload2GCS)
@@ -119,9 +177,9 @@ class GEEAuth:
     def getParameterInfo(self):
         """Define the tool parameters."""
         param0 = arcpy.Parameter(
-            name="json_key",
-            displayName="Choose the JSON key file of the target Google Cloud project",
-            datatype="DEFile",
+            name="project_id",
+            displayName="Specify the Google project ID for Earth Engine authentication",
+            datatype="GPString",
             direction="Input",
             parameterType="Optional",
         )
@@ -148,12 +206,7 @@ class GEEAuth:
         """The source code of the tool."""
 
         # Read input parameters
-        json_key = parameters[0].valueAsText
-
-        # Read JSON key file
-        if json_key:
-            arcpy.AddMessage(json_key)
-            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = json_key
+        project_id = parameters[0].valueAsText
 
         # Define functions
         def clear_credentials():
@@ -164,16 +217,19 @@ class GEEAuth:
                     "Previous credentials are removed. Re-authenticate now ..."
                 )
 
-        def authenticate_earth_engine():
+        def authenticate_earth_engine(project_id):
             try:
                 ee.Authenticate()
-                ee.Initialize()
+                if project_id:
+                    ee.Initialize(project=project_id)
+                else:
+                    ee.Initialize()
                 arcpy.AddMessage("Authentication successful")
             except Exception as e:
                 arcpy.AddMessage(f"Authentication failed: {e}")
 
         clear_credentials()
-        authenticate_earth_engine()
+        authenticate_earth_engine(project_id)
         return
 
     def postExecute(self, parameters):
@@ -695,12 +751,12 @@ class GCSFile2Asset:
         return
 
 
-# Add GEE Image Collection to Map
-class AddImgCol2Map:
+# Add GEE Image Collection to Map by Asset Tag
+class AddImgCol2MapbyTag:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Add GEE Image Collection to Map"
+        self.label = "Add GEE Image Collection to Map by Asset Tag"
         self.description = ""
         self.category = ""
         self.canRunInBackgroud = False
@@ -710,10 +766,10 @@ class AddImgCol2Map:
 
         param0 = arcpy.Parameter(
             name="asset_tag",
-            displayName="Specify GEE Image Collection Tag",
+            displayName="Specify GEE Image Collection Asset Tag",
             datatype="GPString",
             direction="Input",
-            parameterType="Optional",
+            parameterType="Required",
         )
         param0.dialogref = "Browse all available datasets from GEE website, copy and paste the asset tag here."
 
@@ -912,7 +968,7 @@ class AddImgCol2Map:
                 band_tmp = image.select(iband)
                 proj = band_tmp.projection()
                 res = proj.nominalScale().getInfo()
-                band_res_list.append(iband + "--" + str(round(res)) + "--m")
+                band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
             parameters[5].filter.list = band_res_list
 
         # Reset band filter list when asset tag changes
@@ -987,9 +1043,9 @@ class AddImgCol2Map:
         # Initialize GEE, initial project is saved in Gcloud application default login JSON
         ee.Initialize()
         # Get image by label
-        dem = ee.Image(img_tag)
+        img = ee.Image(img_tag)
         # Get the map ID and token
-        map_id_dict = dem.getMapId(vis_params)
+        map_id_dict = img.getMapId(vis_params)
 
         # Construct the URL
         map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
@@ -1004,6 +1060,13 @@ class AddImgCol2Map:
         else:
             tsl.name = img_tag
 
+        # Zoom to image centroid if provided by dataset
+        try:
+            centroid_coords, bounds_coords = get_image_centroid(img, 1)
+            zoom_to_point(aprx, centroid_coords, bounds_coords)
+        except:
+            pass
+
         return
 
     def postExecute(self, parameters):
@@ -1012,12 +1075,477 @@ class AddImgCol2Map:
         return
 
 
-# Add GEE Feature Collection to Map
-class AddFeatCol2Map:
+# Add GEE Image Collection to Map by Serialized Object JSON
+class AddImgCol2MapbyObj:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Add GEE Feature Collection to Map"
+        self.label = "Add GEE Image Collection to Map by Serialized Object"
+        self.description = ""
+        self.category = ""
+        self.canRunInBackgroud = False
+
+    def getParameterInfo(self):
+        """Define the tool parameters."""
+
+        param0 = arcpy.Parameter(
+            name="ee_obj",
+            displayName="Select the JSON file of the serialized object",
+            datatype="DEFile",
+            direction="Input",
+            parameterType="Required",
+        )
+        # only displays JSON files
+        param0.filter.list = ["json"]
+
+        param1 = arcpy.Parameter(
+            name="image",
+            displayName="Select image by image ID",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+
+        param2 = arcpy.Parameter(
+            name="bands",
+            displayName="Specify three bands for RGB visualization",
+            datatype="GPString",
+            direction="Input",
+            multiValue=True,
+            parameterType="Optional",
+        )
+
+        param3 = arcpy.Parameter(
+            name="min_val",
+            displayName="Specify the minimum value for visualization",
+            datatype="GPDouble",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param4 = arcpy.Parameter(
+            name="max_val",
+            displayName="Specify the maximum value for visualization",
+            datatype="GPDouble",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param5 = arcpy.Parameter(
+            name="gamma",
+            displayName="Specify gamma correction factors",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param6 = arcpy.Parameter(
+            name="palette",
+            displayName="Specify color palette in CSS-style color strings for visualization",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        params = [
+            param0,
+            param1,
+            param2,
+            param3,
+            param4,
+            param5,
+            param6,
+        ]
+        return params
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+
+        # Get image list of a given collection object
+        json_path = parameters[0].valueAsText
+        if json_path:
+            # Only initialize ee when asset tag is given
+            ee.Initialize()
+            collection = arcgee.data.load_ee_result(json_path)
+            # Only fill the filter list when it is empty
+            if not parameters[1].filter.list:
+                # Get image IDs from collection
+                image_ids = collection.aggregate_array("system:index").getInfo()
+                parameters[1].filter.list = image_ids
+
+            # Check band list of the selected image
+            img_id = parameters[1].valueAsText
+            # Update only when filter list is empty
+            if img_id and not parameters[2].filter.list:
+                # retrieve image tag from collection
+                asset_tag = collection.get("system:id").getInfo()
+                img_tag = asset_tag + "/" + img_id
+                image = ee.Image(img_tag)
+                band_names = image.bandNames()
+                band_list = band_names.getInfo()
+                # Add band resolution information to display
+                band_res_list = []
+                for iband in band_list:
+                    band_tmp = image.select(iband)
+                    proj = band_tmp.projection()
+                    res = proj.nominalScale().getInfo()
+                    band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
+                parameters[2].filter.list = band_res_list
+
+        # Reset image filter list
+        if not json_path:
+            parameters[1].filter.list = []
+
+        # Reset band filter list when asset tag changes
+        if (not parameters[1].valueAsText) and (not json_path):
+            parameters[2].filter.list = []
+
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter. This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+        json_path = parameters[0].valueAsText
+        img_id = parameters[1].valueAsText
+        band_str = parameters[2].valueAsText
+        min_val = parameters[3].valueAsText
+        max_val = parameters[4].valueAsText
+        gamma_str = parameters[5].valueAsText
+        palette_str = parameters[6].valueAsText
+
+        ee.Initialize()
+        # load collection object
+        collection = arcgee.data.load_ee_result(json_path)
+        # Get image tag for layer name
+        asset_tag = collection.get("system:id").getInfo()
+        img_tag = asset_tag + "/" + img_id
+        # Get image by label
+        img = ee.Image(img_tag)
+
+        # Define visualization parameters
+        vis_params = {}
+
+        # Add bands to vis_params if specfied
+        if band_str:
+            # Remove ' in band string in case users add it
+            if "'" in band_str:
+                band_str = band_str.replace("'", "")
+            bands = band_str.split(";")
+            bands_only = [iband.split("--")[0] for iband in bands]
+            # Ignore the resolution part
+            vis_params["bands"] = bands_only
+
+        # Add min and max values if specified
+        if min_val:
+            vis_params["min"] = float(min_val)
+        if max_val:
+            vis_params["max"] = float(max_val)
+
+        # Add gamma correction factors if specified
+        if gamma_str:
+            # Remove ' in gamma string in case users add it
+            if "'" in gamma_str:
+                gamma_str = gamma_str.replace("'", "")
+            gamma = [float(item) for item in gamma_str.split(",")]
+            vis_params["gamma"] = gamma
+
+        # Add color palette if specified
+        if palette_str:
+            # arcpy.AddMessage(palette_str)
+            # Remove ' in palette string in case users add it
+            if "'" in palette_str:
+                palette_str = palette_str.replace("'", "")
+            # Convert palette string to list if specified
+            palette = palette_str.split(",")
+            # arcpy.AddMessage(palette)
+            vis_params["palette"] = palette
+
+        # Get the map ID and token
+        map_id_dict = img.getMapId(vis_params)
+
+        # Construct the URL
+        map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
+
+        # Add map URL to the current ArcMap
+        aprx = arcpy.mp.ArcGISProject("CURRENT")
+        aprxMap = aprx.listMaps("Map")[0]
+        tsl = aprxMap.addDataFromPath(map_url)
+        # Add band information to map name
+        if band_str:
+            tsl.name = img_tag + "--" + "--".join(bands_only)
+        else:
+            tsl.name = img_tag
+
+        # Zoom to image centroid if provided by dataset
+        try:
+            centroid_coords, bounds_coords = get_image_centroid(img, 1)
+            zoom_to_point(aprx, centroid_coords, bounds_coords)
+        except:
+            pass
+
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and
+        added to the display."""
+        return
+
+
+# Add GEE Image to Map by Asset Tag
+class AddImg2MapbyTag:
+
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Add GEE Image to Map by Asset Tag"
+        self.description = ""
+        self.category = ""
+        self.canRunInBackgroud = False
+
+    def getParameterInfo(self):
+        """Define the tool parameters."""
+        param0 = arcpy.Parameter(
+            name="asset_tag",
+            displayName="Specify GEE Image Asset Tag",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+
+        param1 = arcpy.Parameter(
+            name="bands",
+            displayName="Specify three bands for RGB visualization",
+            datatype="GPString",
+            direction="Input",
+            multiValue=True,
+            parameterType="Optional",
+        )
+
+        param2 = arcpy.Parameter(
+            name="min_val",
+            displayName="Specify the minimum value for visualization",
+            datatype="GPDouble",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param3 = arcpy.Parameter(
+            name="max_val",
+            displayName="Specify the maximum value for visualization",
+            datatype="GPDouble",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param4 = arcpy.Parameter(
+            name="gamma",
+            displayName="Specify gamma correction factors",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param5 = arcpy.Parameter(
+            name="palette",
+            displayName="Specify color palette in CSS-style color strings for visualization",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        params = [
+            param0,
+            param1,
+            param2,
+            param3,
+            param4,
+            param5,
+        ]
+        return params
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+
+        # Define a function to project a point to WGS 84 (EPSG 4326)
+        def project_to_wgs84(x, y, in_spatial_ref):
+            point = arcpy.Point(x, y)
+            point_geom = arcpy.PointGeometry(point, in_spatial_ref)
+            wgs84 = arcpy.SpatialReference(4326)
+            point_geom_wgs84 = point_geom.projectAs(wgs84)
+            return point_geom_wgs84.centroid.X, point_geom_wgs84.centroid.Y
+
+        # Check band list of the selected image
+        img_tag = parameters[0].valueAsText
+        # Update only when filter list is empty
+        if img_tag and not parameters[1].filter.list:
+            # Only initialize ee when asset tag is given
+            ee.Initialize()
+            image = ee.Image(img_tag)
+            band_names = image.bandNames()
+            band_list = band_names.getInfo()
+            # Add band resolution information to display
+            band_res_list = []
+            for iband in band_list:
+                band_tmp = image.select(iband)
+                proj = band_tmp.projection()
+                res = proj.nominalScale().getInfo()
+                band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
+            parameters[1].filter.list = band_res_list
+
+        # Reset band filter list when asset tag changes
+        if not img_tag:
+            parameters[1].filter.list = []
+
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter. This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+
+        # Get centroid of input image
+        def get_image_centroid(img_obj, error_margin):
+            # get centroid geometry from input image
+            centroid = img_obj.geometry().centroid(error_margin)
+            # coordinates in list
+            centroid_coords = centroid.coordinates().getInfo()
+            # get image extent
+            extent = img_obj.geometry().bounds(error_margin)
+            # coordinates in list
+            extent_coords = extent.coordinates().get(0).getInfo()
+            return centroid_coords, extent_coords
+
+        # Zoom project map view to point
+        def zoom_to_point(aprx, point_coords, extent_coords):
+            # get current project map view
+            view = aprx.activeView
+            # Create an extent around the centroid
+            centroid_x, centroid_y = point_coords
+            bottom_left = extent_coords[0]
+            top_right = extent_coords[2]
+            x_min = bottom_left[0]
+            y_min = bottom_left[1]
+            x_max = top_right[0]
+            y_max = top_right[1]
+            width = x_max - x_min
+            height = y_max - y_min
+            zoom_buffer = max(width, height) * 0.3
+
+            extent = arcpy.Extent(
+                centroid_x - zoom_buffer,  # xmin
+                centroid_y - zoom_buffer,  # ymin
+                centroid_x + zoom_buffer,  # xmax
+                centroid_y + zoom_buffer,  # ymax
+            )
+
+            # Set the map view to the new extent
+            view.camera.setExtent(extent)
+
+            return
+
+        img_tag = parameters[0].valueAsText
+        band_str = parameters[1].valueAsText
+        min_val = parameters[2].valueAsText
+        max_val = parameters[3].valueAsText
+        gamma_str = parameters[4].valueAsText
+        palette_str = parameters[5].valueAsText
+
+        # Define visualization parameters
+        vis_params = {}
+
+        # Add bands to vis_params if specfied
+        if band_str:
+            # Remove ' in band string in case users add it
+            if "'" in band_str:
+                band_str = band_str.replace("'", "")
+            bands = band_str.split(";")
+            bands_only = [iband.split("--")[0] for iband in bands]
+            # Ignore the resolution part
+            vis_params["bands"] = bands_only
+
+        # Add min and max values if specified
+        if min_val:
+            vis_params["min"] = float(min_val)
+        if max_val:
+            vis_params["max"] = float(max_val)
+
+        # Add gamma correction factors if specified
+        if gamma_str:
+            # Remove ' in gamma string in case users add it
+            if "'" in gamma_str:
+                gamma_str = gamma_str.replace("'", "")
+            gamma = [float(item) for item in gamma_str.split(",")]
+            vis_params["gamma"] = gamma
+
+        # Add color palette if specified
+        if palette_str:
+            # arcpy.AddMessage(palette_str)
+            # Remove ' in palette string in case users add it
+            if "'" in palette_str:
+                palette_str = palette_str.replace("'", "")
+            # Convert palette string to list if specified
+            palette = palette_str.split(",")
+            # arcpy.AddMessage(palette)
+            vis_params["palette"] = palette
+
+        # Initialize GEE, initial project is saved in Gcloud application default login JSON
+        ee.Initialize()
+        # Get image by label
+        img = ee.Image(img_tag)
+        # Get the map ID and token
+        map_id_dict = img.getMapId(vis_params)
+
+        # Construct the URL
+        map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
+
+        # Add map URL to the current ArcMap
+        aprx = arcpy.mp.ArcGISProject("CURRENT")
+        aprxMap = aprx.listMaps("Map")[0]
+        tsl = aprxMap.addDataFromPath(map_url)
+        # Add band information to map name
+        if band_str:
+            tsl.name = img_tag + "--" + "--".join(bands_only)
+        else:
+            tsl.name = img_tag
+
+        # Zoom to image centroid if provided by dataset
+        try:
+            centroid_coords, bounds_coords = get_image_centroid(img, 1)
+            zoom_to_point(aprx, centroid_coords, bounds_coords)
+        except:
+            pass
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and
+        added to the display."""
+        return
+
+
+# Add GEE Feature Collection to Map by Asset Tag
+class AddFeatCol2MapbyTag:
+
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Add GEE Feature Collection to Map by Asset Tag"
         self.description = ""
         self.category = ""
         self.canRunInBackgroud = False
@@ -1206,15 +1734,6 @@ class AddFeatCol2Map:
         """
         The source code of the tool.
         """
-
-        # Define a function to project a point to WGS 84 (EPSG 4326)
-        def project_to_wgs84(x, y, in_spatial_ref):
-            point = arcpy.Point(x, y)
-            point_geom = arcpy.PointGeometry(point, in_spatial_ref)
-            wgs84 = arcpy.SpatialReference(4326)
-            point_geom_wgs84 = point_geom.projectAs(wgs84)
-            return point_geom_wgs84.centroid.X, point_geom_wgs84.centroid.Y
-
         asset_tag = parameters[0].valueAsText
         feat_color = parameters[5].valueAsText
 
@@ -1322,6 +1841,188 @@ class AddFeatCol2Map:
             else:  # no filter by bounds
                 lon = None
                 lat = None
+
+        # Feature collection could contain zero record after filters
+        if fc.size().getInfo() > 0:
+            # Get the map ID and token
+            map_id_dict = fc.getMapId(vis_params)
+
+            # Construct the URL
+            map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
+
+            # Add map URL to the current ArcMap
+            aprx = arcpy.mp.ArcGISProject("CURRENT")
+            aprxMap = aprx.listMaps("Map")[0]
+            tsl = aprxMap.addDataFromPath(map_url)
+            tsl.name = asset_tag
+        else:
+            arcpy.AddWarning(
+                "No data record returned after applying filters! Please reset the filters and try again."
+            )
+
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and
+        added to the display."""
+        return
+
+
+# Add GEE Feature Collection to Map by Serialized Object JSON
+class AddFeatCol2MapbyObj:
+
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Add GEE Feature Collection to Map by Serialized Object"
+        self.description = ""
+        self.category = ""
+        self.canRunInBackgroud = False
+
+    def getParameterInfo(self):
+        """
+        Define the tool parameters.
+
+        vis_params = {
+            "color": "000000",
+            "pointShape": "circle",
+            "pointSize": 3,
+            "width": 2,
+            "lineType": "solid",
+            "fillColor": '00FF00',
+            "opacity": 0.8,
+
+            "colorOpacity": 1,
+            "fillColorOpacity": 0.66,
+        }
+        """
+
+        param0 = arcpy.Parameter(
+            name="ee_obj",
+            displayName="Select the JSON file of the serialized object",
+            datatype="DEFile",
+            direction="Input",
+            parameterType="Required",
+        )
+        # only displays JSON files
+        param0.filter.list = ["json"]
+
+        param1 = arcpy.Parameter(
+            name="color",
+            displayName="Specify the color for visualization",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        # param2 = arcpy.Parameter(
+        #     name="point_shape",
+        #     displayName="Specify the point shape for visualization",
+        #     datatype="GPString",
+        #     direction="Input",
+        #     parameterType="Optional")
+        # param2.filter.list = ['circle','square','diamond','cross','plus','triangle']
+
+        # param3 = arcpy.Parameter(
+        #     name="point_size",
+        #     displayName="Specify the point size for visualization",
+        #     datatype="GPDouble",
+        #     direction="Input",
+        #     parameterType="Optional")
+        # param3.filter.list = [2,4,6,8,10]
+
+        # param4 = arcpy.Parameter(
+        #     name="line_width",
+        #     displayName="Specify the line width for visualization ",
+        #     datatype="GPDouble",
+        #     direction="Input",
+        #     parameterType="Optional")
+        # param4.filter.list = [1,2,3,4,5]
+
+        # param5 = arcpy.Parameter(
+        #     name="line_type",
+        #     displayName="Specify the line type for visualization",
+        #     datatype="GPString",
+        #     direction="Input",
+        #     parameterType="Optional")
+        # param5.filter.list = ['solid','dotted','dashed']
+
+        # param6 = arcpy.Parameter(
+        #     name="fill_color",
+        #     displayName="Specify the fill color of polygons for visualization",
+        #     datatype="GPString",
+        #     direction="Input",
+        #     parameterType="Optional")
+
+        # param7 = arcpy.Parameter(
+        #     name="opacity",
+        #     displayName="Specify the opacity for visualization",
+        #     datatype="GPDouble",
+        #     direction="Input",
+        #     parameterType="Optional")
+        # # Set the value range
+        # param7.filter.type = "Range"
+        # param7.filter.list = [0, 1]
+
+        params = [param0, param1]
+        # ,param2,param3,param4,param5,param6,param7]
+        return params
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter. This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        """
+        The source code of the tool.
+        """
+        json_path = parameters[0].valueAsText
+        feat_color = parameters[1].valueAsText
+
+        ee.Initialize()
+        # load collection object
+        fc = arcgee.data.load_ee_result(json_path)
+        asset_tag = fc.get("system:id").getInfo()
+
+        # point_shape= parameters[2].valueAsText
+        # point_size = parameters[3].valueAsText
+        # line_width = parameters[4].valueAsText
+        # line_type  = parameters[5].valueAsText
+        # fill_color = parameters[6].valueAsText
+        # opacity    = parameters[7].valueAsText
+
+        # Define visualization parameters
+        vis_params = {}
+        # Add color to vis_params if specified
+        if feat_color:
+            vis_params["color"] = feat_color
+
+        # # Add point shape and size if specified
+        # if point_shape :
+        #     vis_params['pointShape'] = point_shape
+        # if point_size :
+        #     vis_params['pointSize'] = int(point_size)
+        # # Add line width and type if specified
+        # if line_width :
+        #     vis_params['width'] = int(line_width)
+        # if line_type :
+        #     vis_params['lineType'] = line_type
+
+        # # Add fill color and opacity if specified
+        # if fill_color :
+        #     vis_params['fillColor'] = fill_color
+        # if opacity :
+        #     vis_params['fillColorOpacity'] = float(opacity)
 
         # Feature collection could contain zero record after filters
         if fc.size().getInfo() > 0:
@@ -1578,7 +2279,7 @@ class DownloadLargeImage:
                 band_tmp = image.select(iband)
                 proj = band_tmp.projection()
                 res = proj.nominalScale().getInfo()
-                band_res_list.append(iband + "--" + str(round(res)) + "--m")
+                band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
             parameters[5].filter.list = band_res_list
 
         # Reset band filter list when asset tag changes
@@ -1664,7 +2365,11 @@ class DownloadLargeImage:
                 # CRS could be other projections than 'EPSG:4326' for some GEE assets
                 # When multiple band, select the first one for projection
                 img_prj = image.first().select(0).projection().crs().getInfo()
-                arcpy.AddMessage("Image projection is " + img_prj)
+                # img_prj could be None type
+                if img_prj:
+                    arcpy.AddMessage("Image projection is " + img_prj)
+                else:
+                    arcpy.AddMessage("Image does not contain projection information.")
 
                 # Get the region of interests
                 # Use map view extent if checked
@@ -1761,8 +2466,11 @@ class DownloadLargeImage:
                         "Scale of the first selected band is used: " + str(scale_ds)
                     )
                 # Use the crs code from the first selected band
-                crs = image.first().select(0).projection().getInfo()["crs"]
-
+                # crs information could be missing, then use EPSG:4283 as default
+                try:
+                    crs = image.first().select(0).projection().getInfo()["crs"]
+                except:
+                    crs = "EPSG:4283"
             # Clip the image using input polygon
             # if in_poly :
             #    arcpy.AddMessage('Clip image by the input polygon ...')
@@ -2321,7 +3029,7 @@ class ApplyFilter:
             direction="Input",
             parameterType="Required",
         )
-        param0.filter.list = ["FeatureCollection", "Image", "ImageCollection"]
+        param0.filter.list = ["FeatureCollection", "ImageCollection"]
 
         param1 = arcpy.Parameter(
             name="asset_tag",
@@ -2446,14 +3154,17 @@ class ApplyFilter:
             ee_object = ee_object.filter(constructed_filter)
 
         # Serialize the filtered Earth Engine object to a string
-        serialized_object = ee_object.serialize()
+        # serialized_object = ee_object.serialize()
 
         # Save the serialized string as JSON to the specified output path
         if not out_json.endswith(".json"):
             out_json = out_json + ".json"
 
-        with open(out_json, "w") as f:
-            json.dump({"ee_object": serialized_object}, f)
+        # use Kel's code
+        arcgee.data.save_ee_result(ee_object, out_json)
+
+        # with open(out_json, "w") as f:
+        #    json.dump({"ee_object": serialized_object}, f)
 
         return
 
@@ -3050,7 +3761,7 @@ class EEOpTool:
         return
 
 
-# Add Earth Engine result to ArcGIS map
+# Add GEE Asset Object to ArcGIS map
 class EEMapTool:
     def __init__(self):
         self.label = "Add EE to Map"
