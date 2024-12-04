@@ -1,9 +1,3 @@
-# ArcGEE Connector
-An ArcPro Python toolbox for connection to Google Earth Engine (GEE)
-
-## Introduction 
-ArcGEE is a Python toolbox for ArcGIS that seamlessly connects the Google Earth Engine API with ArcPro. This integration empowers users to explore, download, analyze, and visualize an extensive repository of Google Earth Engine datasets directly within ArcPro, while also enabling the upload of local datasets to Google Earth Engine assets. By leveraging Google Earth Engine’s scalable computing power and advanced machine learning models, ArcGEE provides a powerful, no-code solution for big data analytics, combining the strengths of both platforms for an enhanced, efficient workflow.
-
 ## Conda Environement Setup For Earth Engine API  
 
 ### Step 1 - Open ArcGIS Python Command Prompt 
@@ -83,19 +77,4 @@ For the first time of Earth Engine authentication, it is OK to proceed without a
 
 Log in to the Google Cloud Console and select the target project.
 Go to "IAM & Admin" - > "Service Accounts" - >  select the target "Email" - > choose tab "KEYS" - > Click "ADD KEY" drop-down menu, then select "Create new key" - > Select JSON as the Key type and click Create, then the JSON file will be automatically downloaded to local system and saved to the "Download" folder. 
-Move the JSON file to the desired folder for storage and future use.  
-
-## Key Features
-
- - Add EE to Map 
- - Add GEE Feature Collection to Map 
- - Add GEE Image or Image Collection to Map
- - Apply Filters to GEE Datasets
- - Apply Map Functions to GEE Datasets
- - Download GEE Image Collection to GIF
- - Download GEE Image in Large Size
- - EE Load Asset
- - EE Operation
- - GEE Authentication
- - Upload Files to Goolge Cloud Storage
- 
+Move the JSON file to the desired folder for storage and future use.
