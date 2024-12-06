@@ -1,3 +1,5 @@
+# Installation
+
 ## Conda Environement Setup For Earth Engine API  
 
 ### Step 1 - Open ArcGIS Python Command Prompt 
@@ -6,6 +8,8 @@ Go to **Start Menu** -> **All Apps** -> **ArcGIS folder** -> **Python Command Pr
 
 
 ### Step 2 - Set up the Conda Environment
+
+Before starting the installation, ensure that you have the necessary account permissions to create a conda environment and install the required packages. If ArcPro was installed by an administrator, you will need administrator-level permissions to complete the installation.  
 
 By default, conda will always install the newest version of the selected package. However, it is not always the case for ArcGIS users. For example, `ArcPro 3.4` has `python=3.11.10` installed, while `ArcPro 3.3` has `python=3.11.8` installed. Therefore, it is necessary to check the pacakge version first before installation.  
 
@@ -36,7 +40,7 @@ By default, conda will always install the newest version of the selected package
 
     `conda config --set ssl_verify false`
 
-7. Install `arcpy` with the listed version from esri channel. For example, if the listed version is `arcpy=3.3`, replace the `LISTED_ARCPY_VERSION` with `3.3`.   
+7. Install `arcpy` with the listed version from esri channel. There are multiple builds for the same version of `arcpy`. Check this [link](https://anaconda.org/Esri/arcpy/files?sort=basename&sort_order=desc) for all available `arcpy` versions. For example, if the listed version is `arcpy=3.3` and the build is `py311_arcgispro_52636`, replace the `LISTED_ARCPY_VERSION` with `3.3==py311_arcgispro_52636`.   
 
     `conda install arcpy=LISTED_ARCPY_VERSION -c esri`
 
@@ -57,7 +61,7 @@ After running the above commands, close Python Command Prompt, and start ArcPro.
 
 ## Download ArcGEE Connector Toolbox
 
-The user can download the ArcGEE Connector Toolbox at this link `https://github.com/di-private/redlands-desktop-engine/tree/woolpert_dev/toolbox`. Download the entire toolbox folder and move it to the ArcPro connected direcotry, the toolbox will automatially appear in the Catalog. 
+The user can download the ArcGEE Connector Toolbox at this [link](https://github.com/di-private/redlands-desktop-engine/tree/woolpert_dev/toolbox). Download the entire toolbox folder and move it to the ArcPro connected direcotry, the toolbox will automatially appear in the Catalog. 
 
 
 ## Google Cloud SDK

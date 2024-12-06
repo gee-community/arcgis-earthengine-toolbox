@@ -85,50 +85,68 @@ class Toolbox:
 
         # List of tool classes associated with this toolbox
         tools = []
-        # authenticate
-        tools.append(CheckProjectID)
+
+        # authentication tools
+        tools.append(ChangeProjectID)
         tools.append(GEEAuth)
-        # explore
+
+        # data exploration tools
         tools.append(AddImg2MapbyTag)
+        tools.append(AddImg2MapbyObj)
         tools.append(AddImgCol2MapbyTag)
         tools.append(AddImgCol2MapbyObj)
         tools.append(AddFeatCol2MapbyTag)
         tools.append(AddFeatCol2MapbyObj)
+
+        # data management tools
         tools.append(DownloadLargeImage)
         tools.append(DownloadImgCol2Gif)
         tools.append(Upload2GCS)
         tools.append(GCSFile2Asset)
+        tools.append(SaveAsset2JSON)
+
+        # data processing tools
         tools.append(ApplyFilter)
-        tools.append(EELoadTool)
-        tools.append(EEOpTool)
-        tools.append(EEMapTool)
         tools.append(ApplyMapFunction)
         tools.append(RunPythonScript)
         tools.append(ApplyReducer)
+        tools.append(EEOpTool)
+
         self.tools = tools
 
 
-# Check Current Project ID
-class CheckProjectID:
+""" Authentication Tools """
+
+
+# Change Project ID
+class ChangeProjectID:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Check Current Project ID"
+        self.label = "Change Project ID"
         self.description = ""
-        self.category = ""
+        self.category = "Authentication Tools"
         self.canRunInBackgroud = False
 
     def getParameterInfo(self):
         """Define the tool parameters."""
         param0 = arcpy.Parameter(
-            name="project_id",
+            name="current_id",
             displayName="Current project ID is shown below",
             datatype="GPString",
             direction="Input",
             parameterType="Optional",
         )
 
-        params = [param0]
+        param1 = arcpy.Parameter(
+            name="new_id",
+            displayName="Specify the new project ID",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+
+        params = [param0, param1]
         return params
 
     def isLicensed(self):
@@ -142,9 +160,12 @@ class CheckProjectID:
         # Initialize Earth Engine
         ee.Initialize()
         # Fetch the project ID from the credentials
-        project_id = ee.data.getAssetRoots()[0]["id"].split("/")[1]
-
-        parameters[0].value = project_id
+        # project_id = ee.data.getAssetRoots()[0]["id"].split("/")[1]
+        try:
+            project_id = ee.data.getProjectConfig()["name"].split("/")[1]
+            parameters[0].value = project_id
+        except:
+            parameters[0].value = "None"
 
         return
 
@@ -155,7 +176,9 @@ class CheckProjectID:
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-
+        new_id = parameters[1].valueAsText
+        ee.Initialize(project=new_id)
+        arcpy.AddMessage(ee.data.getProjectConfig()["name"].split("/")[1])
         return
 
     def postExecute(self, parameters):
@@ -171,14 +194,14 @@ class GEEAuth:
         """Define the tool (tool name is the name of the class)."""
         self.label = "GEE Authentication"
         self.description = ""
-        self.category = ""
+        self.category = "Authentication Tools"
         self.canRunInBackgroud = False
 
     def getParameterInfo(self):
         """Define the tool parameters."""
         param0 = arcpy.Parameter(
             name="project_id",
-            displayName="Specify the Google project ID for Earth Engine authentication",
+            displayName="Specify the Google Cloud project ID for Earth Engine authentication",
             datatype="GPString",
             direction="Input",
             parameterType="Optional",
@@ -238,28 +261,78 @@ class GEEAuth:
         return
 
 
-# Run User-Provided Python Script
-class RunPythonScript:
+""" Data Exploration Tools """
+
+
+# Add GEE Image to Map by Asset Tag
+class AddImg2MapbyTag:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Run User-Provided Python Script"
+        self.label = "Add GEE Image to Map by Asset Tag"
         self.description = ""
-        self.category = ""
+        self.category = "Data Exploration Tools"
         self.canRunInBackgroud = False
 
     def getParameterInfo(self):
         """Define the tool parameters."""
         param0 = arcpy.Parameter(
-            name="py_script",
-            displayName="Choose the python script to run",
-            datatype="DEFile",
+            name="asset_tag",
+            displayName="Specify GEE Image Asset Tag",
+            datatype="GPString",
             direction="Input",
             parameterType="Required",
         )
-        param0.filter.list = ["py"]
 
-        params = [param0]
+        param1 = arcpy.Parameter(
+            name="bands",
+            displayName="Specify three bands for RGB visualization",
+            datatype="GPString",
+            direction="Input",
+            multiValue=True,
+            parameterType="Optional",
+        )
+
+        param2 = arcpy.Parameter(
+            name="min_val",
+            displayName="Specify the minimum value for visualization",
+            datatype="GPDouble",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param3 = arcpy.Parameter(
+            name="max_val",
+            displayName="Specify the maximum value for visualization",
+            datatype="GPDouble",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param4 = arcpy.Parameter(
+            name="gamma",
+            displayName="Specify gamma correction factors",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param5 = arcpy.Parameter(
+            name="palette",
+            displayName="Specify color palette in CSS-style color strings for visualization",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        params = [
+            param0,
+            param1,
+            param2,
+            param3,
+            param4,
+            param5,
+        ]
         return params
 
     def isLicensed(self):
@@ -270,6 +343,29 @@ class RunPythonScript:
         """Modify the values and properties of parameters before internal
         validation is performed.  This method is called whenever a parameter
         has been changed."""
+
+        # Check band list of the selected image
+        img_tag = parameters[0].valueAsText
+        # Update only when filter list is empty
+        if img_tag and not parameters[1].filter.list:
+            # Only initialize ee when asset tag is given
+            ee.Initialize()
+            image = ee.Image(img_tag)
+            band_names = image.bandNames()
+            band_list = band_names.getInfo()
+            # Add band resolution information to display
+            band_res_list = []
+            for iband in band_list:
+                band_tmp = image.select(iband)
+                proj = band_tmp.projection()
+                res = proj.nominalScale().getInfo()
+                band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
+            parameters[1].filter.list = band_res_list
+
+        # Reset band filter list when asset tag changes
+        if not img_tag:
+            parameters[1].filter.list = []
+
         return
 
     def updateMessages(self, parameters):
@@ -279,14 +375,77 @@ class RunPythonScript:
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        import subprocess
+        img_tag = parameters[0].valueAsText
+        band_str = parameters[1].valueAsText
+        min_val = parameters[2].valueAsText
+        max_val = parameters[3].valueAsText
+        gamma_str = parameters[4].valueAsText
+        palette_str = parameters[5].valueAsText
 
-        # Read input parameters
-        py_script = parameters[0].valueAsText
+        # Define visualization parameters
+        vis_params = {}
 
-        # Run the script as an external process
-        subprocess.run(["python", py_script])
+        # Add bands to vis_params if specfied
+        if band_str:
+            # Remove ' in band string in case users add it
+            if "'" in band_str:
+                band_str = band_str.replace("'", "")
+            bands = band_str.split(";")
+            bands_only = [iband.split("--")[0] for iband in bands]
+            # Ignore the resolution part
+            vis_params["bands"] = bands_only
 
+        # Add min and max values if specified
+        if min_val:
+            vis_params["min"] = float(min_val)
+        if max_val:
+            vis_params["max"] = float(max_val)
+
+        # Add gamma correction factors if specified
+        if gamma_str:
+            # Remove ' in gamma string in case users add it
+            if "'" in gamma_str:
+                gamma_str = gamma_str.replace("'", "")
+            gamma = [float(item) for item in gamma_str.split(",")]
+            vis_params["gamma"] = gamma
+
+        # Add color palette if specified
+        if palette_str:
+            # arcpy.AddMessage(palette_str)
+            # Remove ' in palette string in case users add it
+            if "'" in palette_str:
+                palette_str = palette_str.replace("'", "")
+            # Convert palette string to list if specified
+            palette = palette_str.split(",")
+            # arcpy.AddMessage(palette)
+            vis_params["palette"] = palette
+
+        # Initialize GEE, initial project is saved in Gcloud application default login JSON
+        ee.Initialize()
+        # Get image by label
+        img = ee.Image(img_tag)
+        # Get the map ID and token
+        map_id_dict = img.getMapId(vis_params)
+
+        # Construct the URL
+        map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
+
+        # Add map URL to the current ArcMap
+        aprx = arcpy.mp.ArcGISProject("CURRENT")
+        aprxMap = aprx.listMaps("Map")[0]
+        tsl = aprxMap.addDataFromPath(map_url)
+        # Add band information to map name
+        if band_str:
+            tsl.name = img_tag + "--" + "--".join(bands_only)
+        else:
+            tsl.name = img_tag
+
+        # Zoom to image centroid if provided by dataset
+        try:
+            centroid_coords, bounds_coords = get_image_centroid(img, 1)
+            zoom_to_point(aprx, centroid_coords, bounds_coords)
+        except:
+            pass
         return
 
     def postExecute(self, parameters):
@@ -295,304 +454,77 @@ class RunPythonScript:
         return
 
 
-# Upload Files to Google Cloud Storage and Convert to GEE Asset
-class Upload2GCS:
+# Add GEE Image to Map by Serialized Object in JSON
+class AddImg2MapbyObj:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Upload Files to Google Cloud Storage and Convert to GEE Asset"
+        self.label = "Add GEE Image to Map by Serialized Object"
         self.description = ""
-        self.category = ""
+        self.category = "Data Exploration Tools"
         self.canRunInBackgroud = False
 
     def getParameterInfo(self):
         """Define the tool parameters."""
         param0 = arcpy.Parameter(
-            name="project_id",
-            displayName="Specify the Google Cloud project ID",
-            datatype="GPString",
-            direction="Input",
-            parameterType="Required",
-        )
-
-        param1 = arcpy.Parameter(
-            name="bucket_name",
-            displayName="Select the storage bucket name",
-            datatype="GPString",
-            direction="Input",
-            parameterType="Required",
-        )
-
-        param2 = arcpy.Parameter(
-            name="bucket_folder",
-            displayName="Select the folder within the bucket",
-            datatype="GPString",
-            direction="Input",
-            parameterType="Required",
-        )
-
-        param3 = arcpy.Parameter(
-            name="files",
-            displayName="Choose a local file to upload",
+            name="ee_obj",
+            displayName="Select the JSON file of the serialized image object",
             datatype="DEFile",
             direction="Input",
             parameterType="Required",
-            multiValue=False,
         )
-
-        param4 = arcpy.Parameter(
-            name="upload_asset",
-            displayName="Upload the file to Google Earth Engine",
-            datatype="GPBoolean",
-            direction="Input",
-            parameterType="Optional",
-        )
-
-        param5 = arcpy.Parameter(
-            name="asset_type",
-            displayName="Choose asset type",
-            datatype="GPString",
-            direction="Input",
-            parameterType="Required",
-        )
-        param5.value = "image"
-        param5.filter.list = ["image", "table"]
-
-        param6 = arcpy.Parameter(
-            name="asset_id",
-            displayName="Specify asset id",
-            datatype="GPString",
-            direction="Input",
-            parameterType="Optional",
-        )
-
-        params = [param0, param1, param2, param3, param4, param5, param6]
-
-        return params
-
-    def isLicensed(self):
-        """Set whether the tool is licensed to execute."""
-        return True
-
-    def updateParameters(self, parameters):
-        """Modify the values and properties of parameters before internal
-        validation is performed.  This method is called whenever a parameter
-        has been changed."""
-
-        # Define a function to list all folders in the selected bucket
-        def list_folders_recursive(storage_client, bucket_name, prefix=""):
-            """Recursively lists all folders in a Google Cloud Storage bucket."""
-            # List blobs with a delimiter to group them by "folders"
-            blobs = storage_client.list_blobs(bucket_name, prefix=prefix, delimiter="/")
-
-            # Need this code to active blob prefixes, otherwise, blob.prefixes are empty
-            for blob in blobs:
-                blob_name = blob.name
-
-            folder_list = []
-            # Folders are stored in the prefixes attribute
-            if blobs.prefixes:
-                for folder in blobs.prefixes:
-                    folder_list.append(folder)
-                    # Recursively call the function to go deeper into the folder
-                    folder_list.extend(
-                        list_folders_recursive(
-                            storage_client, bucket_name, prefix=folder
-                        )
-                    )
-
-            return sorted(folder_list)
-
-        # Get the project ID first
-        if parameters[0].valueAsText and not parameters[2].valueAsText:
-            project_id = parameters[0].valueAsText
-            # Initialize a Cloud Storage client, for only once
-            if not hasattr(self, "storage_client"):
-                self.storage_client = storage.Client(project=project_id)
-
-            # List the bucket names when the filter list is empty
-            if not parameters[1].filter.list:
-                # Get the list of all bucket names in this project
-                buckets = self.storage_client.list_buckets()
-                bucket_names = []
-                for bucket in buckets:
-                    bucket_names.append(bucket.name)
-
-                # Add bucket names to filter list
-                parameters[1].filter.list = bucket_names
-
-            # When bucket name is selected, list all available folders
-            if not parameters[2].filter.list and parameters[1].valueAsText:
-                bucket_name = parameters[1].valueAsText
-                parameters[2].filter.list = list_folders_recursive(
-                    self.storage_client, bucket_name
-                )
-
-        # Enable additional input when uploading to earth engine checked
-        if parameters[4].value:
-            parameters[5].enabled = True
-            parameters[6].enabled = True
-            # give a default asset ID when project ID is provided
-            if parameters[0].valueAsText:
-                parameters[6].value = (
-                    "projects/" + parameters[0].valueAsText + "/assets/"
-                )
-        else:
-            parameters[5].enabled = False
-            parameters[6].enabled = False
-
-        return
-
-    def updateMessages(self, parameters):
-        """Modify the messages created by internal validation for each tool
-        parameter. This method is called after internal validation."""
-        return
-
-    def execute(self, parameters, messages):
-        """The source code of the tool."""
-
-        # Upload local file to Google Cloud Storage bucket
-        def upload_to_bucket(
-            storage_client, bucket_name, source_file_name, destination_blob_name
-        ):
-            """Uploads a file to the bucket."""
-            # Get the bucket that the file will be uploaded to
-            bucket = storage_client.bucket(bucket_name)
-
-            # Create a new blob and upload the file's content
-            blob = bucket.blob(destination_blob_name)
-
-            # Upload the file
-            blob.upload_from_filename(source_file_name)
-
-            full_blob_name = bucket_name + "/" + destination_blob_name
-            arcpy.AddMessage(f"File {source_file_name} uploaded to {full_blob_name}.")
-
-        # Upload Google Cloud Storage file to Earth Engine
-        def upload_to_earth_engine(asset_type, asset_id, bucket_uri):
-            import subprocess
-
-            # Define the Earth Engine CLI command
-            command = [
-                "earthengine",
-                "upload",
-                asset_type,
-                "--asset_id=" + asset_id,
-                bucket_uri,
-            ]
-
-            # Run the command
-            process = subprocess.run(
-                command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-
-            # Output the result
-            arcpy.AddMessage(process.stdout.decode("utf-8"))
-
-        # Read input parameters
-        bucket_name = parameters[1].valueAsText
-        bucket_folder = parameters[2].valueAsText
-        files = parameters[3].valueAsText
-
-        self.storage_client = storage.Client(project=parameters[0].valueAsText)
-
-        # If user creates a new folder, make sure it ends with /
-        if not bucket_folder.endswith("/"):
-            bucket_folder = bucket_folder + "/"
-
-        # Get the list of selected files
-        # Remove ' in files in case users add it
-        if "'" in files:
-            files = files.replace("'", "")
-        file_list = files.split(";")
-
-        # Upload files to the selected bucket name
-        for ifile in file_list:
-            file_name = os.path.basename(ifile)
-            out_file = bucket_folder + file_name
-            upload_to_bucket(self.storage_client, bucket_name, ifile, out_file)
-
-        # Upload file to earth engine
-        if parameters[4].value:
-            asset_type = parameters[5].valueAsText
-            asset_id = parameters[6].valueAsText
-            bucket_uri = "gs://" + bucket_name + "/" + out_file
-            arcpy.AddMessage("Uploading " + bucket_uri)
-            upload_to_earth_engine(asset_type, asset_id, bucket_uri)
-
-        return
-
-    def postExecute(self, parameters):
-        """This method takes place after outputs are processed and
-        added to the display."""
-        return
-
-
-# Convert GCS File to GEE Asset
-class GCSFile2Asset:
-
-    def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
-        self.label = "Convert Google Cloud Storage File to GEE Asset"
-        self.description = ""
-        self.category = ""
-        self.canRunInBackgroud = False
-
-    def getParameterInfo(self):
-        """Define the tool parameters."""
-        param0 = arcpy.Parameter(
-            name="project_id",
-            displayName="Specify the Google Cloud project ID",
-            datatype="GPString",
-            direction="Input",
-            parameterType="Required",
-        )
+        # only displays JSON files
+        param0.filter.list = ["json"]
 
         param1 = arcpy.Parameter(
-            name="bucket_name",
-            displayName="Select the storage bucket name",
+            name="bands",
+            displayName="Specify three bands for RGB visualization",
             datatype="GPString",
             direction="Input",
+            multiValue=True,
             parameterType="Optional",
         )
 
         param2 = arcpy.Parameter(
-            name="bucket_folder",
-            displayName="Select the folder within the bucket",
-            datatype="GPString",
+            name="min_val",
+            displayName="Specify the minimum value for visualization",
+            datatype="GPDouble",
             direction="Input",
             parameterType="Optional",
         )
 
         param3 = arcpy.Parameter(
-            name="files",
-            displayName="Select the file within the folder or specify the gsutil URI",
-            datatype="GPString",
+            name="max_val",
+            displayName="Specify the maximum value for visualization",
+            datatype="GPDouble",
             direction="Input",
-            parameterType="Required",
-            multiValue=False,
+            parameterType="Optional",
         )
 
         param4 = arcpy.Parameter(
-            name="asset_type",
-            displayName="Choose asset type",
-            datatype="GPString",
-            direction="Input",
-            parameterType="Required",
-        )
-        param4.value = "image"
-        param4.filter.list = ["image", "table"]
-
-        param5 = arcpy.Parameter(
-            name="asset_id",
-            displayName="Specify asset id",
+            name="gamma",
+            displayName="Specify gamma correction factors",
             datatype="GPString",
             direction="Input",
             parameterType="Optional",
         )
 
-        params = [param0, param1, param2, param3, param4, param5]
+        param5 = arcpy.Parameter(
+            name="palette",
+            displayName="Specify color palette in CSS-style color strings for visualization",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Optional",
+        )
 
+        params = [
+            param0,
+            param1,
+            param2,
+            param3,
+            param4,
+            param5,
+        ]
         return params
 
     def isLicensed(self):
@@ -604,88 +536,27 @@ class GCSFile2Asset:
         validation is performed.  This method is called whenever a parameter
         has been changed."""
 
-        # Define a function to list all folders in the selected bucket
-        def list_folders_recursive(storage_client, bucket_name, prefix=""):
-            """Recursively lists all folders in a Google Cloud Storage bucket."""
-            # List blobs with a delimiter to group them by "folders"
-            blobs = storage_client.list_blobs(bucket_name, prefix=prefix, delimiter="/")
+        # Check band list of the image object
+        json_path = parameters[0].valueAsText
+        # Update only when filter list is empty
+        if json_path and not parameters[1].filter.list:
+            # Only initialize ee when image object is given
+            # ee.Initialize()
+            image = arcgee.data.load_ee_result(json_path)
+            band_names = image.bandNames()
+            band_list = band_names.getInfo()
+            # Add band resolution information to display
+            band_res_list = []
+            for iband in band_list:
+                band_tmp = image.select(iband)
+                proj = band_tmp.projection()
+                res = proj.nominalScale().getInfo()
+                band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
+            parameters[1].filter.list = band_res_list
 
-            # Need this code to active blob prefixes, otherwise, blob.prefixes are empty
-            for blob in blobs:
-                blob_name = blob.name
-
-            folder_list = []
-            # Folders are stored in the prefixes attribute
-            if blobs.prefixes:
-                for folder in blobs.prefixes:
-                    folder_list.append(folder)
-                    # Recursively call the function to go deeper into the folder
-                    folder_list.extend(
-                        list_folders_recursive(
-                            storage_client, bucket_name, prefix=folder
-                        )
-                    )
-
-            return sorted(folder_list)
-
-        # List files within a folder in the selected bucket
-        def list_files_in_folder(storage_client, bucket_name, folder_name):
-            """
-            Lists only files within a specified folder in a Google Cloud Storage bucket.
-
-            :param bucket_name: Name of the GCS bucket.
-            :param folder_name: Path to the folder within the bucket (e.g., "folder/subfolder/").
-            :return: List of file paths within the specified folder.
-            """
-            blobs = storage_client.list_blobs(bucket_name, prefix=folder_name)
-            # for blob in blobs:
-            #    blob_name = blob.name
-
-            # Filter out any "folders" (items ending with a trailing slash)
-            files = [blob.name for blob in blobs if not blob.name.endswith("/")]
-
-            return files
-
-        # Get the project ID first
-        if parameters[0].valueAsText and not parameters[3].valueAsText:
-            project_id = parameters[0].valueAsText
-            # Initialize a Cloud Storage client, for only once
-            if not hasattr(self, "storage_client"):
-                self.storage_client = storage.Client(project=project_id)
-
-            # List the bucket names when the filter list is empty
-            if not parameters[1].filter.list:
-                # Get the list of all bucket names in this project
-                buckets = self.storage_client.list_buckets()
-                bucket_names = []
-                for bucket in buckets:
-                    bucket_names.append(bucket.name)
-
-                # Add bucket names to filter list
-                parameters[1].filter.list = bucket_names
-
-            # When bucket name is selected, list all available folders
-            if not parameters[2].filter.list and parameters[1].valueAsText:
-                bucket_name = parameters[1].valueAsText
-                parameters[2].filter.list = list_folders_recursive(
-                    self.storage_client, bucket_name
-                )
-
-            # When both bucket name and folder are selected, list all files
-            if (
-                not parameters[3].filter.list
-                and parameters[1].valueAsText
-                and parameters[2].valueAsText
-            ):
-                bucket_name = parameters[1].valueAsText
-                folder_name = parameters[2].valueAsText
-                parameters[3].filter.list = list_files_in_folder(
-                    self.storage_client, bucket_name, folder_name
-                )
-
-        # give a default asset path when project ID is provided
-        if parameters[0].valueAsText and not parameters[5].valueAsText:
-            parameters[5].value = "projects/" + parameters[0].valueAsText + "/assets/"
+        # Reset band filter list when asset tag changes
+        if not json_path:
+            parameters[1].filter.list = []
 
         return
 
@@ -696,53 +567,78 @@ class GCSFile2Asset:
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        json_path = parameters[0].valueAsText
+        band_str = parameters[1].valueAsText
+        min_val = parameters[2].valueAsText
+        max_val = parameters[3].valueAsText
+        gamma_str = parameters[4].valueAsText
+        palette_str = parameters[5].valueAsText
 
-        # Upload Google Cloud Storage file to Earth Engine
-        def upload_to_earth_engine(asset_type, asset_id, bucket_uri):
-            import subprocess
+        # Define visualization parameters
+        vis_params = {}
 
-            # Define the Earth Engine CLI command
-            command = [
-                "earthengine",
-                "upload",
-                asset_type,
-                "--asset_id=" + asset_id,
-                bucket_uri,
-            ]
+        # Add bands to vis_params if specfied
+        if band_str:
+            # Remove ' in band string in case users add it
+            if "'" in band_str:
+                band_str = band_str.replace("'", "")
+            bands = band_str.split(";")
+            bands_only = [iband.split("--")[0] for iband in bands]
+            # Ignore the resolution part
+            vis_params["bands"] = bands_only
 
-            # Run the command
-            process = subprocess.run(
-                command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
+        # Add min and max values if specified
+        if min_val:
+            vis_params["min"] = float(min_val)
+        if max_val:
+            vis_params["max"] = float(max_val)
 
-            # Output the result
-            arcpy.AddMessage(process.stdout.decode("utf-8"))
+        # Add gamma correction factors if specified
+        if gamma_str:
+            # Remove ' in gamma string in case users add it
+            if "'" in gamma_str:
+                gamma_str = gamma_str.replace("'", "")
+            gamma = [float(item) for item in gamma_str.split(",")]
+            vis_params["gamma"] = gamma
 
-        # Read input parameters
-        bucket_name = parameters[1].valueAsText
-        folder_name = parameters[2].valueAsText
-        files = parameters[3].valueAsText
-        asset_type = parameters[4].valueAsText
-        asset_id = parameters[5].valueAsText
+        # Add color palette if specified
+        if palette_str:
+            # arcpy.AddMessage(palette_str)
+            # Remove ' in palette string in case users add it
+            if "'" in palette_str:
+                palette_str = palette_str.replace("'", "")
+            # Convert palette string to list if specified
+            palette = palette_str.split(",")
+            # arcpy.AddMessage(palette)
+            vis_params["palette"] = palette
 
-        # create storage client since self.storage_client can not transfer from updateParameters here
-        self.storage_client = storage.Client(project=parameters[0].valueAsText)
+        # Initialize GEE, initial project is saved in Gcloud application default login JSON
+        # ee.Initialize()
+        # Get image by label
+        img = arcgee.data.load_ee_result(json_path)
+        img_tag = img.get("system:id").getInfo()
+        # Get the map ID and token
+        map_id_dict = img.getMapId(vis_params)
 
-        # Get the list of selected files
-        # Remove ' in files in case users add it
-        if "'" in files:
-            files = files.replace("'", "")
-        file_list = files.split(";")
+        # Construct the URL
+        map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
 
-        # file could be URI instead of relative path
-        if "gs://" not in file_list[0]:
-            bucket_uri = "gs://" + bucket_name + "/" + file_list[0]
+        # Add map URL to the current ArcMap
+        aprx = arcpy.mp.ArcGISProject("CURRENT")
+        aprxMap = aprx.listMaps("Map")[0]
+        tsl = aprxMap.addDataFromPath(map_url)
+        # Add band information to map name
+        if band_str:
+            tsl.name = img_tag + "--" + "--".join(bands_only)
         else:
-            bucket_uri = file_list[0]
+            tsl.name = img_tag
 
-        arcpy.AddMessage("Uploading " + bucket_uri)
-        upload_to_earth_engine(asset_type, asset_id, bucket_uri)
-
+        # Zoom to image centroid if provided by dataset
+        try:
+            centroid_coords, bounds_coords = get_image_centroid(img, 1)
+            zoom_to_point(aprx, centroid_coords, bounds_coords)
+        except:
+            pass
         return
 
     def postExecute(self, parameters):
@@ -758,7 +654,7 @@ class AddImgCol2MapbyTag:
         """Define the tool (tool name is the name of the class)."""
         self.label = "Add GEE Image Collection to Map by Asset Tag"
         self.description = ""
-        self.category = ""
+        self.category = "Data Exploration Tools"
         self.canRunInBackgroud = False
 
     def getParameterInfo(self):
@@ -1075,14 +971,14 @@ class AddImgCol2MapbyTag:
         return
 
 
-# Add GEE Image Collection to Map by Serialized Object JSON
+# Add GEE Image Collection to Map by Serialized Object in JSON
 class AddImgCol2MapbyObj:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
         self.label = "Add GEE Image Collection to Map by Serialized Object"
         self.description = ""
-        self.category = ""
+        self.category = "Data Exploration Tools"
         self.canRunInBackgroud = False
 
     def getParameterInfo(self):
@@ -1301,245 +1197,6 @@ class AddImgCol2MapbyObj:
         return
 
 
-# Add GEE Image to Map by Asset Tag
-class AddImg2MapbyTag:
-
-    def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
-        self.label = "Add GEE Image to Map by Asset Tag"
-        self.description = ""
-        self.category = ""
-        self.canRunInBackgroud = False
-
-    def getParameterInfo(self):
-        """Define the tool parameters."""
-        param0 = arcpy.Parameter(
-            name="asset_tag",
-            displayName="Specify GEE Image Asset Tag",
-            datatype="GPString",
-            direction="Input",
-            parameterType="Required",
-        )
-
-        param1 = arcpy.Parameter(
-            name="bands",
-            displayName="Specify three bands for RGB visualization",
-            datatype="GPString",
-            direction="Input",
-            multiValue=True,
-            parameterType="Optional",
-        )
-
-        param2 = arcpy.Parameter(
-            name="min_val",
-            displayName="Specify the minimum value for visualization",
-            datatype="GPDouble",
-            direction="Input",
-            parameterType="Optional",
-        )
-
-        param3 = arcpy.Parameter(
-            name="max_val",
-            displayName="Specify the maximum value for visualization",
-            datatype="GPDouble",
-            direction="Input",
-            parameterType="Optional",
-        )
-
-        param4 = arcpy.Parameter(
-            name="gamma",
-            displayName="Specify gamma correction factors",
-            datatype="GPString",
-            direction="Input",
-            parameterType="Optional",
-        )
-
-        param5 = arcpy.Parameter(
-            name="palette",
-            displayName="Specify color palette in CSS-style color strings for visualization",
-            datatype="GPString",
-            direction="Input",
-            parameterType="Optional",
-        )
-
-        params = [
-            param0,
-            param1,
-            param2,
-            param3,
-            param4,
-            param5,
-        ]
-        return params
-
-    def isLicensed(self):
-        """Set whether the tool is licensed to execute."""
-        return True
-
-    def updateParameters(self, parameters):
-        """Modify the values and properties of parameters before internal
-        validation is performed.  This method is called whenever a parameter
-        has been changed."""
-
-        # Define a function to project a point to WGS 84 (EPSG 4326)
-        def project_to_wgs84(x, y, in_spatial_ref):
-            point = arcpy.Point(x, y)
-            point_geom = arcpy.PointGeometry(point, in_spatial_ref)
-            wgs84 = arcpy.SpatialReference(4326)
-            point_geom_wgs84 = point_geom.projectAs(wgs84)
-            return point_geom_wgs84.centroid.X, point_geom_wgs84.centroid.Y
-
-        # Check band list of the selected image
-        img_tag = parameters[0].valueAsText
-        # Update only when filter list is empty
-        if img_tag and not parameters[1].filter.list:
-            # Only initialize ee when asset tag is given
-            ee.Initialize()
-            image = ee.Image(img_tag)
-            band_names = image.bandNames()
-            band_list = band_names.getInfo()
-            # Add band resolution information to display
-            band_res_list = []
-            for iband in band_list:
-                band_tmp = image.select(iband)
-                proj = band_tmp.projection()
-                res = proj.nominalScale().getInfo()
-                band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
-            parameters[1].filter.list = band_res_list
-
-        # Reset band filter list when asset tag changes
-        if not img_tag:
-            parameters[1].filter.list = []
-
-        return
-
-    def updateMessages(self, parameters):
-        """Modify the messages created by internal validation for each tool
-        parameter. This method is called after internal validation."""
-        return
-
-    def execute(self, parameters, messages):
-        """The source code of the tool."""
-
-        # Get centroid of input image
-        def get_image_centroid(img_obj, error_margin):
-            # get centroid geometry from input image
-            centroid = img_obj.geometry().centroid(error_margin)
-            # coordinates in list
-            centroid_coords = centroid.coordinates().getInfo()
-            # get image extent
-            extent = img_obj.geometry().bounds(error_margin)
-            # coordinates in list
-            extent_coords = extent.coordinates().get(0).getInfo()
-            return centroid_coords, extent_coords
-
-        # Zoom project map view to point
-        def zoom_to_point(aprx, point_coords, extent_coords):
-            # get current project map view
-            view = aprx.activeView
-            # Create an extent around the centroid
-            centroid_x, centroid_y = point_coords
-            bottom_left = extent_coords[0]
-            top_right = extent_coords[2]
-            x_min = bottom_left[0]
-            y_min = bottom_left[1]
-            x_max = top_right[0]
-            y_max = top_right[1]
-            width = x_max - x_min
-            height = y_max - y_min
-            zoom_buffer = max(width, height) * 0.3
-
-            extent = arcpy.Extent(
-                centroid_x - zoom_buffer,  # xmin
-                centroid_y - zoom_buffer,  # ymin
-                centroid_x + zoom_buffer,  # xmax
-                centroid_y + zoom_buffer,  # ymax
-            )
-
-            # Set the map view to the new extent
-            view.camera.setExtent(extent)
-
-            return
-
-        img_tag = parameters[0].valueAsText
-        band_str = parameters[1].valueAsText
-        min_val = parameters[2].valueAsText
-        max_val = parameters[3].valueAsText
-        gamma_str = parameters[4].valueAsText
-        palette_str = parameters[5].valueAsText
-
-        # Define visualization parameters
-        vis_params = {}
-
-        # Add bands to vis_params if specfied
-        if band_str:
-            # Remove ' in band string in case users add it
-            if "'" in band_str:
-                band_str = band_str.replace("'", "")
-            bands = band_str.split(";")
-            bands_only = [iband.split("--")[0] for iband in bands]
-            # Ignore the resolution part
-            vis_params["bands"] = bands_only
-
-        # Add min and max values if specified
-        if min_val:
-            vis_params["min"] = float(min_val)
-        if max_val:
-            vis_params["max"] = float(max_val)
-
-        # Add gamma correction factors if specified
-        if gamma_str:
-            # Remove ' in gamma string in case users add it
-            if "'" in gamma_str:
-                gamma_str = gamma_str.replace("'", "")
-            gamma = [float(item) for item in gamma_str.split(",")]
-            vis_params["gamma"] = gamma
-
-        # Add color palette if specified
-        if palette_str:
-            # arcpy.AddMessage(palette_str)
-            # Remove ' in palette string in case users add it
-            if "'" in palette_str:
-                palette_str = palette_str.replace("'", "")
-            # Convert palette string to list if specified
-            palette = palette_str.split(",")
-            # arcpy.AddMessage(palette)
-            vis_params["palette"] = palette
-
-        # Initialize GEE, initial project is saved in Gcloud application default login JSON
-        ee.Initialize()
-        # Get image by label
-        img = ee.Image(img_tag)
-        # Get the map ID and token
-        map_id_dict = img.getMapId(vis_params)
-
-        # Construct the URL
-        map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
-
-        # Add map URL to the current ArcMap
-        aprx = arcpy.mp.ArcGISProject("CURRENT")
-        aprxMap = aprx.listMaps("Map")[0]
-        tsl = aprxMap.addDataFromPath(map_url)
-        # Add band information to map name
-        if band_str:
-            tsl.name = img_tag + "--" + "--".join(bands_only)
-        else:
-            tsl.name = img_tag
-
-        # Zoom to image centroid if provided by dataset
-        try:
-            centroid_coords, bounds_coords = get_image_centroid(img, 1)
-            zoom_to_point(aprx, centroid_coords, bounds_coords)
-        except:
-            pass
-        return
-
-    def postExecute(self, parameters):
-        """This method takes place after outputs are processed and
-        added to the display."""
-        return
-
-
 # Add GEE Feature Collection to Map by Asset Tag
 class AddFeatCol2MapbyTag:
 
@@ -1547,7 +1204,7 @@ class AddFeatCol2MapbyTag:
         """Define the tool (tool name is the name of the class)."""
         self.label = "Add GEE Feature Collection to Map by Asset Tag"
         self.description = ""
-        self.category = ""
+        self.category = "Data Exploration Tools"
         self.canRunInBackgroud = False
 
     def getParameterInfo(self):
@@ -1868,14 +1525,14 @@ class AddFeatCol2MapbyTag:
         return
 
 
-# Add GEE Feature Collection to Map by Serialized Object JSON
+# Add GEE Feature Collection to Map by Serialized Object in JSON
 class AddFeatCol2MapbyObj:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
         self.label = "Add GEE Feature Collection to Map by Serialized Object"
         self.description = ""
-        self.category = ""
+        self.category = "Data Exploration Tools"
         self.canRunInBackgroud = False
 
     def getParameterInfo(self):
@@ -2050,6 +1707,9 @@ class AddFeatCol2MapbyObj:
         return
 
 
+""" Data Management Tools """
+
+
 # Download GEE Image in Large Size through XEE + RasterIO
 class DownloadLargeImage:
 
@@ -2057,7 +1717,7 @@ class DownloadLargeImage:
         """Define the tool (tool name is the name of the class)."""
         self.label = "Download GEE Image in Large Size"
         self.description = ""
-        self.category = ""
+        self.category = "Data Management Tools"
         self.canRunInBackgroud = False
 
     def getParameterInfo(self):
@@ -2539,7 +2199,7 @@ class DownloadImgCol2Gif:
         """Define the tool (tool name is the name of the class)."""
         self.label = "Download GEE Image Collection to GIF"
         self.description = ""
-        self.category = ""
+        self.category = "Data Management Tools"
         self.canRunInBackgroud = False
 
     def getParameterInfo(self):
@@ -3010,14 +2670,559 @@ class DownloadImgCol2Gif:
         return
 
 
-# Apply Filters to GEE Objects
+# Save GEE Asset to Serialized JSON File
+class SaveAsset2JSON:
+    def __init__(self):
+        self.label = "Save GEE Asset to Serialized JSON File"
+        self.description = ""
+        self.category = "Data Management Tools"
+        self.canRunInBackgroud = False
+
+    def getParameterInfo(self):
+        """Define the tool parameters."""
+
+        param0 = arcpy.Parameter(
+            displayName="Specify the GEE asset tag",
+            name="asset_tag",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input",
+        )
+
+        param1 = arcpy.Parameter(
+            displayName="Select the type of the GEE asset",
+            name="asset_type",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input",
+        )
+
+        param1.filter.list = ["FeatureCollection", "Image", "ImageCollection"]
+
+        param2 = arcpy.Parameter(
+            name="out_json",
+            displayName="Specify the output JSON file",
+            datatype="DEFile",
+            direction="Output",
+            parameterType="Required",
+        )
+
+        param2.filter.list = ["json"]
+
+        params = [param0, param1, param2]
+
+        return params
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter. This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+        asset_tag = parameters[0].valueAsText
+        data_type = parameters[1].valueAsText
+        out_json = parameters[2].valueAsText
+
+        ee.Initialize()
+
+        # Retrieve the Earth Engine object based on the asset tag and data type
+        if data_type == "FeatureCollection":
+            ee_object = ee.FeatureCollection(asset_tag)
+        elif data_type == "Image":
+            ee_object = ee.Image(asset_tag)
+        elif data_type == "ImageCollection":
+            ee_object = ee.ImageCollection(asset_tag)
+        else:
+            raise ValueError(f"Unsupported data type: {data_type}")
+
+        arcgee.data.save_ee_result(ee_object, out_json)
+
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and
+        added to the display."""
+        return
+
+
+# Upload Files to Google Cloud Storage and Convert to GEE Asset
+class Upload2GCS:
+
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Upload Files to Google Cloud Storage and Convert to GEE Asset"
+        self.description = ""
+        self.category = "Data Management Tools"
+        self.canRunInBackgroud = False
+
+    def getParameterInfo(self):
+        """Define the tool parameters."""
+        param0 = arcpy.Parameter(
+            name="project_id",
+            displayName="Specify the Google Cloud project ID",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+
+        param1 = arcpy.Parameter(
+            name="bucket_name",
+            displayName="Select the storage bucket name",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+
+        param2 = arcpy.Parameter(
+            name="bucket_folder",
+            displayName="Select the folder within the bucket",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+
+        param3 = arcpy.Parameter(
+            name="files",
+            displayName="Choose a local file to upload",
+            datatype="DEFile",
+            direction="Input",
+            parameterType="Required",
+            multiValue=False,
+        )
+
+        param4 = arcpy.Parameter(
+            name="upload_asset",
+            displayName="Upload the file to Google Earth Engine",
+            datatype="GPBoolean",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param5 = arcpy.Parameter(
+            name="asset_type",
+            displayName="Choose asset type",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+        param5.value = "image"
+        param5.filter.list = ["image", "table"]
+
+        param6 = arcpy.Parameter(
+            name="asset_id",
+            displayName="Specify asset id",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        params = [param0, param1, param2, param3, param4, param5, param6]
+
+        return params
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+
+        # Define a function to list all folders in the selected bucket
+        def list_folders_recursive(storage_client, bucket_name, prefix=""):
+            """Recursively lists all folders in a Google Cloud Storage bucket."""
+            # List blobs with a delimiter to group them by "folders"
+            blobs = storage_client.list_blobs(bucket_name, prefix=prefix, delimiter="/")
+
+            # Need this code to active blob prefixes, otherwise, blob.prefixes are empty
+            for blob in blobs:
+                blob_name = blob.name
+
+            folder_list = []
+            # Folders are stored in the prefixes attribute
+            if blobs.prefixes:
+                for folder in blobs.prefixes:
+                    folder_list.append(folder)
+                    # Recursively call the function to go deeper into the folder
+                    folder_list.extend(
+                        list_folders_recursive(
+                            storage_client, bucket_name, prefix=folder
+                        )
+                    )
+
+            return sorted(folder_list)
+
+        # Get the project ID first
+        if parameters[0].valueAsText and not parameters[2].valueAsText:
+            project_id = parameters[0].valueAsText
+            # Initialize a Cloud Storage client, for only once
+            if not hasattr(self, "storage_client"):
+                self.storage_client = storage.Client(project=project_id)
+
+            # List the bucket names when the filter list is empty
+            if not parameters[1].filter.list:
+                # Get the list of all bucket names in this project
+                buckets = self.storage_client.list_buckets()
+                bucket_names = []
+                for bucket in buckets:
+                    bucket_names.append(bucket.name)
+
+                # Add bucket names to filter list
+                parameters[1].filter.list = bucket_names
+
+            # When bucket name is selected, list all available folders
+            if not parameters[2].filter.list and parameters[1].valueAsText:
+                bucket_name = parameters[1].valueAsText
+                parameters[2].filter.list = list_folders_recursive(
+                    self.storage_client, bucket_name
+                )
+
+        # Enable additional input when uploading to earth engine checked
+        if parameters[4].value:
+            parameters[5].enabled = True
+            parameters[6].enabled = True
+            # give a default asset ID when project ID is provided
+            if parameters[0].valueAsText:
+                parameters[6].value = (
+                    "projects/" + parameters[0].valueAsText + "/assets/"
+                )
+        else:
+            parameters[5].enabled = False
+            parameters[6].enabled = False
+
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter. This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+
+        # Upload local file to Google Cloud Storage bucket
+        def upload_to_bucket(
+            storage_client, bucket_name, source_file_name, destination_blob_name
+        ):
+            """Uploads a file to the bucket."""
+            # Get the bucket that the file will be uploaded to
+            bucket = storage_client.bucket(bucket_name)
+
+            # Create a new blob and upload the file's content
+            blob = bucket.blob(destination_blob_name)
+
+            # Upload the file
+            blob.upload_from_filename(source_file_name)
+
+            full_blob_name = bucket_name + "/" + destination_blob_name
+            arcpy.AddMessage(f"File {source_file_name} uploaded to {full_blob_name}.")
+
+        # Upload Google Cloud Storage file to Earth Engine
+        def upload_to_earth_engine(asset_type, asset_id, bucket_uri):
+            import subprocess
+
+            # Define the Earth Engine CLI command
+            command = [
+                "earthengine",
+                "upload",
+                asset_type,
+                "--asset_id=" + asset_id,
+                bucket_uri,
+            ]
+
+            # Run the command
+            process = subprocess.run(
+                command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+
+            # Output the result
+            arcpy.AddMessage(process.stdout.decode("utf-8"))
+
+        # Read input parameters
+        bucket_name = parameters[1].valueAsText
+        bucket_folder = parameters[2].valueAsText
+        files = parameters[3].valueAsText
+
+        self.storage_client = storage.Client(project=parameters[0].valueAsText)
+
+        # If user creates a new folder, make sure it ends with /
+        if not bucket_folder.endswith("/"):
+            bucket_folder = bucket_folder + "/"
+
+        # Get the list of selected files
+        # Remove ' in files in case users add it
+        if "'" in files:
+            files = files.replace("'", "")
+        file_list = files.split(";")
+
+        # Upload files to the selected bucket name
+        for ifile in file_list:
+            file_name = os.path.basename(ifile)
+            out_file = bucket_folder + file_name
+            upload_to_bucket(self.storage_client, bucket_name, ifile, out_file)
+
+        # Upload file to earth engine
+        if parameters[4].value:
+            asset_type = parameters[5].valueAsText
+            asset_id = parameters[6].valueAsText
+            bucket_uri = "gs://" + bucket_name + "/" + out_file
+            arcpy.AddMessage("Uploading " + bucket_uri)
+            upload_to_earth_engine(asset_type, asset_id, bucket_uri)
+
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and
+        added to the display."""
+        return
+
+
+# Convert GCS File to GEE Asset
+class GCSFile2Asset:
+
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Convert Google Cloud Storage File to GEE Asset"
+        self.description = ""
+        self.category = "Data Management Tools"
+        self.canRunInBackgroud = False
+
+    def getParameterInfo(self):
+        """Define the tool parameters."""
+        param0 = arcpy.Parameter(
+            name="project_id",
+            displayName="Specify the Google Cloud project ID",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+
+        param1 = arcpy.Parameter(
+            name="bucket_name",
+            displayName="Select the storage bucket name",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param2 = arcpy.Parameter(
+            name="bucket_folder",
+            displayName="Select the folder within the bucket",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param3 = arcpy.Parameter(
+            name="files",
+            displayName="Select the file within the folder or specify the gsutil URI",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+            multiValue=False,
+        )
+
+        param4 = arcpy.Parameter(
+            name="asset_type",
+            displayName="Choose asset type",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+        param4.value = "image"
+        param4.filter.list = ["image", "table"]
+
+        param5 = arcpy.Parameter(
+            name="asset_id",
+            displayName="Specify asset id",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        params = [param0, param1, param2, param3, param4, param5]
+
+        return params
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+
+        # Define a function to list all folders in the selected bucket
+        def list_folders_recursive(storage_client, bucket_name, prefix=""):
+            """Recursively lists all folders in a Google Cloud Storage bucket."""
+            # List blobs with a delimiter to group them by "folders"
+            blobs = storage_client.list_blobs(bucket_name, prefix=prefix, delimiter="/")
+
+            # Need this code to active blob prefixes, otherwise, blob.prefixes are empty
+            for blob in blobs:
+                blob_name = blob.name
+
+            folder_list = []
+            # Folders are stored in the prefixes attribute
+            if blobs.prefixes:
+                for folder in blobs.prefixes:
+                    folder_list.append(folder)
+                    # Recursively call the function to go deeper into the folder
+                    folder_list.extend(
+                        list_folders_recursive(
+                            storage_client, bucket_name, prefix=folder
+                        )
+                    )
+
+            return sorted(folder_list)
+
+        # List files within a folder in the selected bucket
+        def list_files_in_folder(storage_client, bucket_name, folder_name):
+            """
+            Lists only files within a specified folder in a Google Cloud Storage bucket.
+
+            :param bucket_name: Name of the GCS bucket.
+            :param folder_name: Path to the folder within the bucket (e.g., "folder/subfolder/").
+            :return: List of file paths within the specified folder.
+            """
+            blobs = storage_client.list_blobs(bucket_name, prefix=folder_name)
+            # for blob in blobs:
+            #    blob_name = blob.name
+
+            # Filter out any "folders" (items ending with a trailing slash)
+            files = [blob.name for blob in blobs if not blob.name.endswith("/")]
+
+            return files
+
+        # Get the project ID first
+        if parameters[0].valueAsText and not parameters[3].valueAsText:
+            project_id = parameters[0].valueAsText
+            # Initialize a Cloud Storage client, for only once
+            if not hasattr(self, "storage_client"):
+                self.storage_client = storage.Client(project=project_id)
+
+            # List the bucket names when the filter list is empty
+            if not parameters[1].filter.list:
+                # Get the list of all bucket names in this project
+                buckets = self.storage_client.list_buckets()
+                bucket_names = []
+                for bucket in buckets:
+                    bucket_names.append(bucket.name)
+
+                # Add bucket names to filter list
+                parameters[1].filter.list = bucket_names
+
+            # When bucket name is selected, list all available folders
+            if not parameters[2].filter.list and parameters[1].valueAsText:
+                bucket_name = parameters[1].valueAsText
+                parameters[2].filter.list = list_folders_recursive(
+                    self.storage_client, bucket_name
+                )
+
+            # When both bucket name and folder are selected, list all files
+            if (
+                not parameters[3].filter.list
+                and parameters[1].valueAsText
+                and parameters[2].valueAsText
+            ):
+                bucket_name = parameters[1].valueAsText
+                folder_name = parameters[2].valueAsText
+                parameters[3].filter.list = list_files_in_folder(
+                    self.storage_client, bucket_name, folder_name
+                )
+
+        # give a default asset path when project ID is provided
+        if parameters[0].valueAsText and not parameters[5].valueAsText:
+            parameters[5].value = "projects/" + parameters[0].valueAsText + "/assets/"
+
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter. This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+
+        # Upload Google Cloud Storage file to Earth Engine
+        def upload_to_earth_engine(asset_type, asset_id, bucket_uri):
+            import subprocess
+
+            # Define the Earth Engine CLI command
+            command = [
+                "earthengine",
+                "upload",
+                asset_type,
+                "--asset_id=" + asset_id,
+                bucket_uri,
+            ]
+
+            # Run the command
+            process = subprocess.run(
+                command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+
+            # Output the result
+            arcpy.AddMessage(process.stdout.decode("utf-8"))
+
+        # Read input parameters
+        bucket_name = parameters[1].valueAsText
+        folder_name = parameters[2].valueAsText
+        files = parameters[3].valueAsText
+        asset_type = parameters[4].valueAsText
+        asset_id = parameters[5].valueAsText
+
+        # create storage client since self.storage_client can not transfer from updateParameters here
+        self.storage_client = storage.Client(project=parameters[0].valueAsText)
+
+        # Get the list of selected files
+        # Remove ' in files in case users add it
+        if "'" in files:
+            files = files.replace("'", "")
+        file_list = files.split(";")
+
+        # file could be URI instead of relative path
+        if "gs://" not in file_list[0]:
+            bucket_uri = "gs://" + bucket_name + "/" + file_list[0]
+        else:
+            bucket_uri = file_list[0]
+
+        arcpy.AddMessage("Uploading " + bucket_uri)
+        upload_to_earth_engine(asset_type, asset_id, bucket_uri)
+
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and
+        added to the display."""
+        return
+
+
+""" Data Processing Tools """
+
+
+# Apply Filters to GEE Object
 class ApplyFilter:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
         self.label = "Apply Filters to GEE Datasets"
         self.description = ""
-        self.category = ""
+        self.category = "Data Processing Tools"
         self.canRunInBackgroud = False
 
     def getParameterInfo(self):
@@ -3174,13 +3379,14 @@ class ApplyFilter:
         return
 
 
+# Apply Reducers to GEE Object
 class ApplyReducer:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
         self.label = "Apply Reducers to GEE Datasets"
         self.description = ""
-        self.category = ""
+        self.category = "Data Processing Tools"
         self.canRunInBackgroud = False
 
     def getParameterInfo(self):
@@ -3387,7 +3593,7 @@ class ApplyMapFunction:
         """Define the tool (tool name is the name of the class)."""
         self.label = "Apply Map Functions to GEE Datasets"
         self.description = ""
-        self.category = ""
+        self.category = "Data Processing Tools"
         self.canRunInBackgroud = False
 
     def getParameterInfo(self):
@@ -3529,51 +3735,28 @@ class ApplyMapFunction:
         return
 
 
-# Load asset from Earth Engine
-class EELoadTool:
+# Run User-Provided Python Script
+class RunPythonScript:
+
     def __init__(self):
-        self.label = "EE Load Asset"
-        self.description = "Tool to load asset from Earth Engine"
-        self.category = ""
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Run User-Provided Python Script"
+        self.description = ""
+        self.category = "Data Processing Tools"
         self.canRunInBackgroud = False
 
     def getParameterInfo(self):
         """Define the tool parameters."""
-
-        project_id = arcpy.Parameter(
-            displayName="Cloud Project ID",
-            name="project_id",
-            datatype="GPString",
-            parameterType="Required",
+        param0 = arcpy.Parameter(
+            name="py_script",
+            displayName="Choose the python script to run",
+            datatype="DEFile",
             direction="Input",
-        )
-
-        asset_id = arcpy.Parameter(
-            displayName="EE Asset ID",
-            name="asset_id",
-            datatype="GPString",
             parameterType="Required",
-            direction="Input",
         )
+        param0.filter.list = ["py"]
 
-        ee_type = arcpy.Parameter(
-            displayName="EE Type",
-            name="ee_type",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input",
-        )
-
-        out_value = arcpy.Parameter(
-            displayName="Output EE Value",
-            name="out_value",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Output",
-        )
-
-        params = [project_id, asset_id, ee_type, out_value]
-
+        params = [param0]
         return params
 
     def isLicensed(self):
@@ -3592,19 +3775,14 @@ class EELoadTool:
         return
 
     def execute(self, parameters, messages):
-        # TODO(kmarkert): check if EE is initialized and then
-        # not sure how auth may be handeled with model builder chain...
-        arcgee.data.auth(project=parameters[0].valueAsText)
+        """The source code of the tool."""
+        import subprocess
 
-        ee_type = parameters[2].valueAsText
-        load_method = getattr(getattr(ee, ee_type), "load")
+        # Read input parameters
+        py_script = parameters[0].valueAsText
 
-        # set up requet to Earth Engine
-        ee_result = load_method(parameters[1].valueAsText)
-
-        out_path = parameters[3].valueAsText
-
-        arcgee.data.save_ee_result(ee_result, out_path)
+        # Run the script as an external process
+        subprocess.run(["python", py_script])
 
         return
 
@@ -3619,6 +3797,8 @@ class EEOpTool:
     def __init__(self):
         self.label = "EE Operation"
         self.description = "Tool to run arbitrary Earth Engine operation"
+        self.category = "Data Processing Tools"
+        self.canRunInBackgroud = False
 
     def getParameterInfo(self):
         """Define the tool parameters."""
@@ -3761,6 +3941,9 @@ class EEOpTool:
         return
 
 
+########################################################
+################### Not in Use #########################
+########################################################
 # Add GEE Asset Object to ArcGIS map
 class EEMapTool:
     def __init__(self):
@@ -3858,10 +4041,6 @@ class EEMapTool:
         return
 
 
-########################################################
-################### Not in Use #########################
-########################################################
-#
 # Add GEE Image to Map
 class AddImage2Map:
 
