@@ -169,6 +169,257 @@ def get_polygon_coords(in_poly):
     return coords
 
 
+# Check whether use projection or crs code for image to xarray dataset
+def whether_use_projection(ic):
+    # Start with original projection
+    prj = ic.first().select(0).projection()
+    # Check crs code
+    crs_code = prj.crs().getInfo()
+    # Three scenarios: EPSG is unknown, EPSG is 4326, EPSG is others
+    if (crs_code is None) or (crs_code == "EPSG:4326"):
+        use_projection = True
+        arcpy.AddMessage("Open dataset with projection")
+    # ESPG is others
+    # ValueError: cannot convert float NaN to integer will occur if using projection
+    else:
+        use_projection = False
+        arcpy.AddMessage("Open dataset with CRS code")
+
+    return use_projection
+
+
+# Download GEE Image to GeoTiff
+def image_to_geotiff(
+    ic,
+    bands,
+    crs,
+    scale_ds,
+    roi,
+    use_projection,
+    out_tiff,
+):
+    import rasterio
+    from rasterio.transform import from_origin
+
+    prj = ic.first().select(0).projection()
+    crs_code = prj.crs().getInfo()
+
+    # When EPSG is unknown or 4326, use projection
+    if use_projection:
+        ds = xarray.open_dataset(
+            ic,
+            engine="ee",
+            projection=prj,
+            scale=scale_ds,
+            geometry=roi,
+        )
+        # Use either X/Y or lat/lon depending on the avaialability
+        if "X" in list(ds.variables.keys()):
+            arcpy.AddMessage("Use X/Y to define tranform")
+            transform = from_origin(
+                ds["X"].values[0], ds["Y"].values[-1], scale_ds, -scale_ds
+            )
+        else:
+            arcpy.AddMessage("Use lat/lon to define transform")
+            scale_x = abs(ds["lon"].values[0] - ds["lon"].values[1])
+            scale_y = abs(ds["lat"].values[0] - ds["lat"].values[1])
+            transform = from_origin(
+                ds["lon"].values[0], ds["lat"].values[-1], scale_x, -scale_y
+            )
+    # ESPG is others, use crs code
+    # ValueError: cannot convert float NaN to integer will occur if using projection
+    else:
+        ds = xarray.open_dataset(
+            ic, engine="ee", crs=crs_code, scale=scale_ds, geometry=roi
+        )
+        if "X" in list(ds.variables.keys()):
+            arcpy.AddMessage("Use X/Y to define tranform")
+            transform = from_origin(
+                ds["X"].values[0], ds["Y"].values[0], scale_ds, -scale_ds
+            )
+        else:
+            arcpy.AddMessage("Use lat/lon to define transform")
+            scale_x = abs(ds["lon"].values[0] - ds["lon"].values[1])
+            scale_y = abs(ds["lat"].values[0] - ds["lat"].values[1])
+            transform = from_origin(
+                ds["lon"].values[0], ds["lat"].values[0], scale_x, -scale_y
+            )
+    # Display transform parameters
+    arcpy.AddMessage(transform)
+
+    meta = {
+        "driver": "GTiff",
+        "height": ds[bands[0]].shape[2],
+        "width": ds[bands[0]].shape[1],
+        "count": len(bands),  # Number of bands
+        "dtype": ds[bands[0]].dtype,  # Data type of the array
+        "crs": crs,  # Coordinate Reference System, change if needed
+        "transform": transform,
+    }
+
+    # Store band names
+    band_names = {}
+    i = 1
+    for iband in bands:
+        band_names["band_" + str(i)] = iband
+        i += 1
+
+    # Write the array to a multiband GeoTIFF file
+    arcpy.AddMessage("Save image to " + out_tiff + " ...")
+    i = 1
+    with rasterio.open(out_tiff, "w", **meta) as dst:
+        for iband in bands:
+            if use_projection:
+                dst.write(np.flipud(np.transpose(ds[iband].values[0])), i)
+            else:
+                dst.write(np.transpose(ds[iband].values[0]), i)
+
+            i += 1
+        # write band names into output tiff
+        dst.update_tags(**band_names)
+    return
+
+
+# Upload local file to Google Cloud Storage bucket
+def upload_to_gcs_bucket(
+    storage_client, bucket_name, source_file_name, destination_blob_name
+):
+    arcpy.AddMessage("Upload to Google Cloud Storage ...")
+    """Uploads a file to the bucket."""
+    # Get the bucket that the file will be uploaded to
+    bucket = storage_client.bucket(bucket_name)
+
+    # Create a new blob and upload the file's content
+    blob = bucket.blob(destination_blob_name)
+
+    # Upload the file
+    blob.upload_from_filename(source_file_name)
+
+    full_blob_name = bucket_name + "/" + destination_blob_name
+    arcpy.AddMessage(f"File {source_file_name} has been uploaded to {full_blob_name}.")
+
+
+# Convert Google Cloud Storage file to Earth Engine asset
+def gcs_file_to_ee_asset(asset_type, asset_id, bucket_uri):
+    import subprocess
+
+    arcpy.AddMessage("Convert Google Cloud Storage file to Earth Engine asset ...")
+    arcpy.AddMessage("Upload " + bucket_uri + " to " + asset_id)
+    # Define the Earth Engine CLI command
+    command = [
+        "earthengine",
+        "upload",
+        asset_type,
+        "--asset_id=" + asset_id,
+        bucket_uri,
+    ]
+
+    # Run the command
+    process = subprocess.run(
+        command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+
+    # Output the result
+    arcpy.AddMessage(process.stdout.decode("utf-8"))
+
+
+# Create an Earth Engine image collection
+def create_image_collection(asset_folder):
+    import subprocess
+
+    arcpy.AddMessage("Create an Earth Engine image collection ...")
+    # Define the Earth Engine CLI command
+    command = [
+        "earthengine",
+        "create",
+        "collection",
+        asset_folder,
+    ]
+
+    # Run the command
+    process = subprocess.run(
+        command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+
+    # Output the result
+    arcpy.AddMessage(process.stdout.decode("utf-8"))
+
+
+# Create a folder on Earth Engine
+def create_ee_folder(asset_folder):
+    import subprocess
+
+    arcpy.AddMessage("Create an Earth Engine folder ...")
+    # Define the Earth Engine CLI command
+    command = [
+        "earthengine",
+        "create",
+        "folder",
+        asset_folder,
+    ]
+
+    # Run the command
+    process = subprocess.run(
+        command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+
+    # Output the result
+    arcpy.AddMessage(process.stdout.decode("utf-8"))
+
+
+# Check if an Earth Engine asset already exists
+def asset_exists(asset_id):
+    try:
+        # Try to retrieve asset information
+        ee.data.getAsset(asset_id)
+        return True
+    except ee.EEException:
+        # Asset does not exist
+        return False
+
+
+# List all folders in the bucket
+def list_folders_recursive(storage_client, bucket_name, prefix=""):
+    """Recursively lists all folders in a Google Cloud Storage bucket."""
+    # List blobs with a delimiter to group them by "folders"
+    blobs = storage_client.list_blobs(bucket_name, prefix=prefix, delimiter="/")
+
+    # Need this code to active blob prefixes, otherwise, blob.prefixes are empty
+    for blob in blobs:
+        blob_name = blob.name
+
+    folder_list = []
+    # Folders are stored in the prefixes attribute
+    if blobs.prefixes:
+        for folder in blobs.prefixes:
+            folder_list.append(folder)
+            # Recursively call the function to go deeper into the folder
+            folder_list.extend(
+                list_folders_recursive(storage_client, bucket_name, prefix=folder)
+            )
+
+    return sorted(folder_list)
+
+
+# List files within a folder in the bucket
+def list_files_in_folder(storage_client, bucket_name, folder_name):
+    """
+    Lists only files within a specified folder in a Google Cloud Storage bucket.
+
+    :param bucket_name: Name of the GCS bucket.
+    :param folder_name: Path to the folder within the bucket (e.g., "folder/subfolder/").
+    :return: List of file paths within the specified folder.
+    """
+    blobs = storage_client.list_blobs(bucket_name, prefix=folder_name)
+    # for blob in blobs:
+    #    blob_name = blob.name
+
+    # Filter out any "folders" (items ending with a trailing slash)
+    files = [blob.name for blob in blobs if not blob.name.endswith("/")]
+
+    return files
+
+
 """ Toolbox """
 
 
@@ -199,7 +450,7 @@ class Toolbox:
         tools.append(DownloadImgbyTag)
         tools.append(DownloadImgbyObj)
         tools.append(DownloadImgColbyTag)
-        tools.append(DownloadLargeImage)
+        tools.append(DownloadImgColbyObj)
         tools.append(DownloadImgCol2Gif)
         tools.append(Upload2GCS)
         tools.append(GCSFile2Asset)
@@ -1992,7 +2243,7 @@ class DownloadImgbyTag:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Download GEE Image by Asset Tag"
+        self.label = "Download Image by Asset Tag"
         self.description = ""
         self.category = "Data Management Tools"
         self.canRunInBackgroud = False
@@ -2003,7 +2254,7 @@ class DownloadImgbyTag:
         # Image collection inputs are optional
         param0 = arcpy.Parameter(
             name="asset_tag",
-            displayName="Specify GEE Image Asset Tag",
+            displayName="Specify the image asset tag",
             datatype="GPString",
             direction="Input",
             parameterType="Required",
@@ -2146,6 +2397,10 @@ class DownloadImgbyTag:
         bands_only = [iband.split("--")[0] for iband in bands]
         arcpy.AddMessage("Bands selected: " + ",".join(bands_only))
 
+        # make sure output file ends with tif
+        if not out_tiff.endswith(".tif"):
+            out_tiff = out_tiff + ".tif"
+
         # Check image projection
         image = ee.Image(asset_tag)
 
@@ -2183,93 +2438,16 @@ class DownloadImgbyTag:
         # Filter image by selected bands
         image = image.select(bands_only)
 
-        # Sometimes, crs information is not provided, always use original projection
-        prj = image.first().select(0).projection()
-
-        crs_code = prj.crs().getInfo()
-        # Three scenarios: EPSG is unknown, EPSG is 4326, EPSG is others
-        if (crs_code is None) or (crs_code == "EPSG:4326"):
-            use_projection = True
-            arcpy.AddMessage("Open dataset with projection")
-            ds = xarray.open_dataset(
-                image,
-                engine="ee",
-                projection=prj,
-                scale=scale_ds,
-                geometry=roi,
-            )
-            # Use either X/Y or lat/lon depending on the avaialability
-            if "X" in list(ds.variables.keys()):
-                arcpy.AddMessage("Use X/Y to define tranform")
-                transform = from_origin(
-                    ds["X"].values[0], ds["Y"].values[-1], scale_ds, -scale_ds
-                )
-            else:
-                arcpy.AddMessage("Use lat/lon to define transform")
-                scale_x = abs(ds["lon"].values[0] - ds["lon"].values[1])
-                scale_y = abs(ds["lat"].values[0] - ds["lat"].values[1])
-                transform = from_origin(
-                    ds["lon"].values[0], ds["lat"].values[-1], scale_x, -scale_y
-                )
-        # ESPG is others
-        else:
-            use_projection = False
-            arcpy.AddMessage("Open dataset with CRS code")
-            ds = xarray.open_dataset(
-                image, engine="ee", crs=crs_code, scale=scale_ds, geometry=roi
-            )
-            if "X" in list(ds.variables.keys()):
-                arcpy.AddMessage("Use X/Y to define tranform")
-                transform = from_origin(
-                    ds["X"].values[0], ds["Y"].values[0], scale_ds, -scale_ds
-                )
-            else:
-                arcpy.AddMessage("Use lat/lon to define transform")
-                scale_x = abs(ds["lon"].values[0] - ds["lon"].values[1])
-                scale_y = abs(ds["lat"].values[0] - ds["lat"].values[1])
-                transform = from_origin(
-                    ds["lon"].values[0], ds["lat"].values[0], scale_x, -scale_y
-                )
-
-        arcpy.AddMessage(transform)
-
-        meta = {
-            "driver": "GTiff",
-            "height": ds[bands_only[0]].shape[2],
-            "width": ds[bands_only[0]].shape[1],
-            "count": len(bands_only),  # Number of bands
-            "dtype": ds[bands_only[0]].dtype,  # Data type of the array
-            "crs": crs,  # Coordinate Reference System, change if needed
-            "transform": transform,
-        }
-
-        # Store band names
-        band_names = {}
-        i = 1
-        for iband in bands_only:
-            band_names["band_" + str(i)] = iband
-            i += 1
-
-        # make sure output file ends with tif
-        if not out_tiff.endswith(".tif"):
-            out_tiff = out_tiff + ".tif"
-
-        # Write the array to a multiband GeoTIFF file
-        arcpy.AddMessage("Save image to " + out_tiff + " ...")
-        i = 1
-        with rasterio.open(out_tiff, "w", **meta) as dst:
-            for iband in bands_only:
-                if use_projection:
-                    dst.write(np.flipud(np.transpose(ds[iband].values[0])), i)
-                else:
-                    dst.write(np.transpose(ds[iband].values[0]), i)
-
-                i += 1
-            # write band names into output tiff
-            dst.update_tags(**band_names)
+        # check if use projection
+        use_projection = whether_use_projection(image)
+        # download image as geotiff
+        image_to_geotiff(
+            image, bands_only, crs, scale_ds, roi, use_projection, out_tiff
+        )
 
         # Add out tiff to map layer
         if load_tiff == "true":
+            arcpy.AddMessage("Load image to map ...")
             aprx = arcpy.mp.ArcGISProject("CURRENT")
             aprxMap = aprx.activeMap
             aprxMap.addDataFromPath(out_tiff)
@@ -2287,7 +2465,7 @@ class DownloadImgbyObj:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Download GEE Image by Serialized Object"
+        self.label = "Download Image by Serialized Object"
         self.description = ""
         self.category = "Data Management Tools"
         self.canRunInBackgroud = False
@@ -2306,6 +2484,15 @@ class DownloadImgbyObj:
         param0.filter.list = ["json"]
 
         param1 = arcpy.Parameter(
+            name="current_tag",
+            displayName="The asset tag of the selected object is shown below",
+            datatype="GPString",
+            direction="Input",
+            multiValue=False,
+            parameterType="Optional",
+        )
+
+        param2 = arcpy.Parameter(
             name="bands",
             displayName="Select the bands",
             datatype="GPString",
@@ -2314,7 +2501,7 @@ class DownloadImgbyObj:
             parameterType="Required",
         )
 
-        param2 = arcpy.Parameter(
+        param3 = arcpy.Parameter(
             name="scale",
             displayName="Specify the scale",
             datatype="GPDouble",
@@ -2323,7 +2510,7 @@ class DownloadImgbyObj:
             parameterType="Required",
         )
 
-        param3 = arcpy.Parameter(
+        param4 = arcpy.Parameter(
             name="in_poly",
             displayName="Choose a polygon as region of interest",
             datatype="GPFeatureLayer",
@@ -2331,7 +2518,7 @@ class DownloadImgbyObj:
             parameterType="Optional",
         )
 
-        param4 = arcpy.Parameter(
+        param5 = arcpy.Parameter(
             name="use_extent",
             displayName="Use the current map view extent as region of interest",
             datatype="GPBoolean",
@@ -2339,7 +2526,7 @@ class DownloadImgbyObj:
             parameterType="Optional",
         )
 
-        param5 = arcpy.Parameter(
+        param6 = arcpy.Parameter(
             name="out_tiff",
             displayName="Specify the output file name",
             datatype="DEFile",
@@ -2347,9 +2534,9 @@ class DownloadImgbyObj:
             parameterType="Required",
         )
 
-        param5.filter.list = ["tif"]
+        param6.filter.list = ["tif"]
 
-        param6 = arcpy.Parameter(
+        param7 = arcpy.Parameter(
             name="load_tiff",
             displayName="Load images to map after download",
             datatype="GPBoolean",
@@ -2365,6 +2552,7 @@ class DownloadImgbyObj:
             param4,
             param5,
             param6,
+            param7,
         ]
         return params
 
@@ -2378,40 +2566,45 @@ class DownloadImgbyObj:
         has been changed."""
 
         json_path = parameters[0].valueAsText
-        # Update only when filter list is empty
-        if json_path and not parameters[1].filter.list:
+        if json_path:
+            # Display the asset tag of the selected object
             image = arcgee.data.load_ee_result(json_path)
-            band_names = image.bandNames()
-            band_list = band_names.getInfo()
-            # Add band resolution information to display
-            band_res_list = []
-            for iband in band_list:
-                band_tmp = image.select(iband)
-                proj = band_tmp.projection()
-                res = proj.nominalScale().getInfo()
-                band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
-            parameters[1].filter.list = band_res_list
+            parameters[1].value = image.get("system:id").getInfo()
+
+            # Update only when band filter list is empty
+            if not parameters[2].filter.list:
+                band_names = image.bandNames()
+                band_list = band_names.getInfo()
+                # Add band resolution information to display
+                band_res_list = []
+                for iband in band_list:
+                    band_tmp = image.select(iband)
+                    proj = band_tmp.projection()
+                    res = proj.nominalScale().getInfo()
+                    band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
+                parameters[2].filter.list = band_res_list
 
         # Reset band filter list when asset tag changes
         if not json_path:
-            parameters[1].filter.list = []
+            parameters[1].value = None
+            parameters[2].filter.list = []
 
         # Capture the suggested scale value based on selected bands
-        band_str = parameters[1].valueAsText
-        if band_str and not parameters[2].value:
+        band_str = parameters[2].valueAsText
+        if band_str and not parameters[3].value:
             # Remove ' in band string in case users add it
             if "'" in band_str:
                 band_str = band_str.replace("'", "")
             bands = band_str.split(";")
             scale_only = [float(iband.split("--")[1]) for iband in bands]
             # use the maximum scale of the selected band by default
-            parameters[2].value = max(scale_only)
+            parameters[3].value = max(scale_only)
 
         # Disable input feature if map extent is used
-        if parameters[4].value:  # map extent selected
-            parameters[3].enabled = False
+        if parameters[5].value:  # map extent selected
+            parameters[4].enabled = False
         else:
-            parameters[3].enabled = True
+            parameters[4].enabled = True
 
         return
 
@@ -2427,12 +2620,12 @@ class DownloadImgbyObj:
         """The source code of the tool."""
         # Multiple images could be selected
         json_path = parameters[0].valueAsText
-        band_str = parameters[1].valueAsText
-        scale = parameters[2].valueAsText
-        in_poly = parameters[3].valueAsText
-        use_extent = parameters[4].valueAsText
-        out_tiff = parameters[5].valueAsText
-        load_tiff = parameters[6].valueAsText
+        band_str = parameters[2].valueAsText
+        scale = parameters[3].valueAsText
+        in_poly = parameters[4].valueAsText
+        use_extent = parameters[5].valueAsText
+        out_tiff = parameters[6].valueAsText
+        load_tiff = parameters[7].valueAsText
 
         # Filter image by bands if specified
         # Remove ' in band string in case user adds it
@@ -2441,6 +2634,10 @@ class DownloadImgbyObj:
         bands = band_str.split(";")
         bands_only = [iband.split("--")[0] for iband in bands]
         arcpy.AddMessage("Bands selected: " + ",".join(bands_only))
+
+        # Make sure output file ends with tif
+        if not out_tiff.endswith(".tif"):
+            out_tiff = out_tiff + ".tif"
 
         # Check image projection
         image = arcgee.data.load_ee_result(json_path)
@@ -2479,92 +2676,16 @@ class DownloadImgbyObj:
         # Filter image by selected bands
         image = image.select(bands_only)
 
-        # Sometimes, crs information is not provided, always use original projection
-        prj = image.first().select(0).projection()
-
-        crs_code = prj.crs().getInfo()
-        # Three scenarios: EPSG is unknown, EPSG is 4326, EPSG is others
-        if (crs_code is None) or (crs_code == "EPSG:4326"):
-            use_projection = True
-            arcpy.AddMessage("Open dataset with projection")
-            ds = xarray.open_dataset(
-                image,
-                engine="ee",
-                projection=prj,
-                scale=scale_ds,
-                geometry=roi,
-            )
-            # Use either X/Y or lat/lon depending on the avaialability
-            if "X" in list(ds.variables.keys()):
-                arcpy.AddMessage("Use X/Y to define tranform")
-                transform = from_origin(
-                    ds["X"].values[0], ds["Y"].values[-1], scale_ds, -scale_ds
-                )
-            else:
-                arcpy.AddMessage("Use lat/lon to define transform")
-                scale_x = abs(ds["lon"].values[0] - ds["lon"].values[1])
-                scale_y = abs(ds["lat"].values[0] - ds["lat"].values[1])
-                transform = from_origin(
-                    ds["lon"].values[0], ds["lat"].values[-1], scale_x, -scale_y
-                )
-        # ESPG is others
-        else:
-            use_projection = False
-            arcpy.AddMessage("Open dataset with CRS code")
-            ds = xarray.open_dataset(
-                image, engine="ee", crs=crs_code, scale=scale_ds, geometry=roi
-            )
-            if "X" in list(ds.variables.keys()):
-                arcpy.AddMessage("Use X/Y to define tranform")
-                transform = from_origin(
-                    ds["X"].values[0], ds["Y"].values[0], scale_ds, -scale_ds
-                )
-            else:
-                arcpy.AddMessage("Use lat/lon to define transform")
-                scale_x = abs(ds["lon"].values[0] - ds["lon"].values[1])
-                scale_y = abs(ds["lat"].values[0] - ds["lat"].values[1])
-                transform = from_origin(
-                    ds["lon"].values[0], ds["lat"].values[0], scale_x, -scale_y
-                )
-
-        arcpy.AddMessage(transform)
-
-        meta = {
-            "driver": "GTiff",
-            "height": ds[bands_only[0]].shape[2],
-            "width": ds[bands_only[0]].shape[1],
-            "count": len(bands_only),  # Number of bands
-            "dtype": ds[bands_only[0]].dtype,  # Data type of the array
-            "crs": crs,  # Coordinate Reference System, change if needed
-            "transform": transform,
-        }
-
-        # Store band names
-        band_names = {}
-        i = 1
-        for iband in bands_only:
-            band_names["band_" + str(i)] = iband
-            i += 1
-
-        if not out_tiff.endswith(".tif"):
-            out_tiff = out_tiff + ".tif"
-
-        # Write the array to a multiband GeoTIFF file
-        arcpy.AddMessage("Save image to " + out_tiff + " ...")
-        i = 1
-        with rasterio.open(out_tiff, "w", **meta) as dst:
-            for iband in bands_only:
-                if use_projection:
-                    dst.write(np.flipud(np.transpose(ds[iband].values[0])), i)
-                else:
-                    dst.write(np.transpose(ds[iband].values[0]), i)
-
-                i += 1
-            # write band names into output tiff
-            dst.update_tags(**band_names)
+        # check if use projection
+        use_projection = whether_use_projection(image)
+        # download image as geotiff
+        image_to_geotiff(
+            image, bands_only, crs, scale_ds, roi, use_projection, out_tiff
+        )
 
         # Add out tiff to map layer
         if load_tiff == "true":
+            arcpy.AddMessage("Load image to map ...")
             aprx = arcpy.mp.ArcGISProject("CURRENT")
             aprxMap = aprx.activeMap
             aprxMap.addDataFromPath(out_tiff)
@@ -2577,12 +2698,12 @@ class DownloadImgbyObj:
         return
 
 
-# Download GEE Image Collection through XEE + RasterIO
+# Download GEE Image Collection by Asset Tag (XEE + RasterIO)
 class DownloadImgColbyTag:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Download GEE Image Collection by Asset Tag"
+        self.label = "Download Image Collection by Asset Tag"
         self.description = ""
         self.category = "Data Management Tools"
         self.canRunInBackgroud = False
@@ -2593,7 +2714,7 @@ class DownloadImgColbyTag:
         # Image collection inputs are optional
         param0 = arcpy.Parameter(
             name="ic_asset_tag",
-            displayName="Specify GEE Image Collection Asset Tag",
+            displayName="Specify the image collection asset tag",
             datatype="GPString",
             direction="Input",
             parameterType="Required",
@@ -2829,8 +2950,283 @@ class DownloadImgColbyTag:
         bands_only = [iband.split("--")[0] for iband in bands]
         arcpy.AddMessage("Bands selected: " + ",".join(bands_only))
 
+        # Get the region of interests
+        # Use map view extent if checked
+        if use_extent == "true":
+            xmin, ymin, xmax, ymax = get_map_view_extent()
+            roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
+        # Use input feature layer as ROI
+        else:
+            # Get input feature coordinates to list
+            coords = get_polygon_coords(in_poly)
+            # Create an Earth Engine MultiPolygon from the GeoJSON
+            roi = ee.Geometry.MultiPolygon(coords)
+
+        # Get the scale for xarray dataset
+        scale_ds = float(scale)
+
         # Check first image projection
         image = ee.Image(asset_tag + "/" + img_id_list[0])
+
+        # Get crs code for xarray metadata
+        # crs information could be missing, then use wkt from projection
+        try:
+            crs = image.select(0).projection().getInfo()["crs"]
+            arcpy.AddMessage("Image projection CRS is " + crs)
+        except:
+            # crs is not explictly defined
+            arcpy.AddMessage("Image projection CRS is unknown.")
+            wkt = image.select(0).projection().getInfo()["wkt"]
+            crs = rasterio.crs.CRS.from_wkt(wkt)
+
+        # Check if use projection or crs code
+        image = ee.ImageCollection(image)
+        use_projection = whether_use_projection(image)
+
+        out_tiff_list = []
+        # Iterate each selected image
+        for img_id in img_id_list:
+            # For image collection, concatenate to get the image asset tag
+            img_tag = asset_tag + "/" + img_id
+
+            # Create output file name based on image tags
+            out_tiff = os.path.join(out_folder, img_tag.replace("/", "_") + ".tif")
+            out_tiff_list.append(out_tiff)
+
+            arcpy.AddMessage("Download image: " + img_tag + " ...")
+            # Must be image collection to convert to xarray
+            image = ee.ImageCollection(ee.Image(img_tag))
+            # Filter image by selected bands
+            image = image.select(bands_only)
+
+            # download image as geotiff
+            image_to_geotiff(
+                image, bands_only, crs, scale_ds, roi, use_projection, out_tiff
+            )
+
+        # Add out tiff to map layer
+        if load_tiff == "true":
+            arcpy.AddMessage("Load image to map ...")
+            aprx = arcpy.mp.ArcGISProject("CURRENT")
+            aprxMap = aprx.activeMap
+            for out_tiff in out_tiff_list:
+                aprxMap.addDataFromPath(out_tiff)
+
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and
+        added to the display."""
+        return
+
+
+# Download GEE Image Collection by Serialized JSON Object (XEE + RasterIO)
+class DownloadImgColbyObj:
+
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Download Image Collection by Serialized Object"
+        self.description = ""
+        self.category = "Data Management Tools"
+        self.canRunInBackgroud = False
+
+    def getParameterInfo(self):
+        """Define the tool parameters."""
+
+        param0 = arcpy.Parameter(
+            name="ee_obj",
+            displayName="Select the JSON file of the serialized image object",
+            datatype="DEFile",
+            direction="Input",
+            parameterType="Required",
+        )
+        # only displays JSON files
+        param0.filter.list = ["json"]
+
+        param1 = arcpy.Parameter(
+            name="current_tag",
+            displayName="The asset tag of the selected object is shown below",
+            datatype="GPString",
+            direction="Input",
+            multiValue=False,
+            parameterType="Optional",
+        )
+
+        param2 = arcpy.Parameter(
+            name="img_list",
+            displayName="Select images to download",
+            datatype="GPString",
+            direction="Input",
+            multiValue=True,
+            parameterType="Required",
+        )
+
+        param3 = arcpy.Parameter(
+            name="bands",
+            displayName="Select the bands",
+            datatype="GPString",
+            direction="Input",
+            multiValue=True,
+            parameterType="Required",
+        )
+
+        param4 = arcpy.Parameter(
+            name="scale",
+            displayName="Specify the scale",
+            datatype="GPDouble",
+            direction="Input",
+            multiValue=False,
+            parameterType="Required",
+        )
+
+        param5 = arcpy.Parameter(
+            name="in_poly",
+            displayName="Choose a polygon as region of interest",
+            datatype="GPFeatureLayer",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param6 = arcpy.Parameter(
+            name="use_extent",
+            displayName="Use the current map view extent as region of interest",
+            datatype="GPBoolean",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param7 = arcpy.Parameter(
+            name="out_folder",
+            displayName="Specify the output folder",
+            datatype="DEFolder",
+            direction="Input",
+            parameterType="Required",
+        )
+
+        param8 = arcpy.Parameter(
+            name="load_tiff",
+            displayName="Load images to map after download",
+            datatype="GPBoolean",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        params = [
+            param0,
+            param1,
+            param2,
+            param3,
+            param4,
+            param5,
+            param6,
+            param7,
+            param8,
+        ]
+        return params
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+
+        json_path = parameters[0].valueAsText
+        if json_path:
+            collection = arcgee.data.load_ee_result(json_path)
+            # Display the asset tag of selected object
+            parameters[1].value = collection.get("system:id").getInfo()
+
+            # Only fill the image id filter list when it is empty
+            if not parameters[2].filter.list:
+                # Get image IDs from collection
+                image_ids = collection.aggregate_array("system:index").getInfo()
+                parameters[2].filter.list = image_ids
+
+            # Check band list of the selected image
+            img_ids = parameters[2].valueAsText
+            # Update only when filter list is empty
+            if img_ids and not parameters[3].filter.list:
+                # Get the first select image
+                img_id = img_ids.split(";")[0]
+                # retrieve image tag from collection
+                asset_tag = collection.get("system:id").getInfo()
+                img_tag = asset_tag + "/" + img_id
+                image = ee.Image(img_tag)
+                band_names = image.bandNames()
+                band_list = band_names.getInfo()
+                # Add band resolution information to display
+                band_res_list = []
+                for iband in band_list:
+                    band_tmp = image.select(iband)
+                    proj = band_tmp.projection()
+                    res = proj.nominalScale().getInfo()
+                    band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
+                parameters[3].filter.list = band_res_list
+
+        # Reset image filter list
+        if not json_path:
+            parameters[1].value = None
+            parameters[2].filter.list = []
+
+        # Reset band filter list when asset tag changes
+        if (not parameters[2].valueAsText) and (not json_path):
+            parameters[3].filter.list = []
+
+        # Capture the suggested scale value based on selected bands
+        band_str = parameters[3].valueAsText
+        if band_str and not parameters[4].value:
+            # Remove ' in band string in case users add it
+            if "'" in band_str:
+                band_str = band_str.replace("'", "")
+            bands = band_str.split(";")
+            scale_only = [float(iband.split("--")[1]) for iband in bands]
+            parameters[4].value = max(scale_only)
+
+        # Disable input feature if map extent is used
+        if parameters[6].value:  # map extent selected
+            parameters[5].enabled = False
+        else:
+            parameters[5].enabled = True
+
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter. This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        import rasterio
+        from rasterio.transform import from_origin
+
+        """The source code of the tool."""
+        # Multiple images could be selected
+        json_path = parameters[0].valueAsText
+        img_ids = parameters[2].valueAsText
+        band_str = parameters[3].valueAsText
+        scale = parameters[4].valueAsText
+        in_poly = parameters[5].valueAsText
+        use_extent = parameters[6].valueAsText
+        out_folder = parameters[7].valueAsText
+        load_tiff = parameters[8].valueAsText
+
+        # load collection object
+        collection = arcgee.data.load_ee_result(json_path)
+        # Get image tag for layer name
+        asset_tag = collection.get("system:id").getInfo()
+
+        img_id_list = img_ids.split(";")
+
+        # Filter image by bands if specified
+        # Remove ' in band string in case user adds it
+        if "'" in band_str:
+            band_str = band_str.replace("'", "")
+        bands = band_str.split(";")
+        bands_only = [iband.split("--")[0] for iband in bands]
+        arcpy.AddMessage("Bands selected: " + ",".join(bands_only))
 
         # Get the region of interests
         # Use map view extent if checked
@@ -2847,6 +3243,9 @@ class DownloadImgColbyTag:
         # Get the scale for xarray dataset
         scale_ds = float(scale)
 
+        # Check first image projection
+        image = ee.Image(asset_tag + "/" + img_id_list[0])
+
         # Get crs code for xarray metadata
         # crs information could be missing, then use wkt from projection
         try:
@@ -2858,16 +3257,9 @@ class DownloadImgColbyTag:
             wkt = image.select(0).projection().getInfo()["wkt"]
             crs = rasterio.crs.CRS.from_wkt(wkt)
 
-        # Prepare for xarray dataset transform
-        prj = image.select(0).projection()
-        crs_code = prj.crs().getInfo()
-        # Three scenarios: EPSG is unknown, EPSG is 4326, EPSG is others
-        if (crs_code is None) or (crs_code == "EPSG:4326"):
-            use_projection = True
-            arcpy.AddMessage("Open dataset with projection")
-        else:
-            use_projection = False
-            arcpy.AddMessage("Open dataset with CRS code")
+        # Check if use projection or crs code
+        image = ee.ImageCollection(image)
+        use_projection = whether_use_projection(image)
 
         out_tiff_list = []
         # Iterate each selected image
@@ -2875,515 +3267,24 @@ class DownloadImgColbyTag:
             # For image collection, concatenate to get the image asset tag
             img_tag = asset_tag + "/" + img_id
 
+            # Create output file name based on image tags
+            out_tiff = os.path.join(out_folder, img_tag.replace("/", "_") + ".tif")
+            out_tiff_list.append(out_tiff)
+
             arcpy.AddMessage("Download image: " + img_tag + " ...")
             # Must be image collection to convert to xarray
             image = ee.ImageCollection(ee.Image(img_tag))
             # Filter image by selected bands
             image = image.select(bands_only)
 
-            # convert to xarray
-            if use_projection:
-                ds = xarray.open_dataset(
-                    image,
-                    engine="ee",
-                    projection=prj,
-                    scale=scale_ds,
-                    geometry=roi,
-                )
-                # Use either X/Y or lat/lon depending on the avaialability
-                if "X" in list(ds.variables.keys()):
-                    arcpy.AddMessage("Use X/Y to define tranform")
-                    transform = from_origin(
-                        ds["X"].values[0], ds["Y"].values[-1], scale_ds, -scale_ds
-                    )
-                else:
-                    arcpy.AddMessage("Use lat/lon to define transform")
-                    scale_x = abs(ds["lon"].values[0] - ds["lon"].values[1])
-                    scale_y = abs(ds["lat"].values[0] - ds["lat"].values[1])
-                    transform = from_origin(
-                        ds["lon"].values[0], ds["lat"].values[-1], scale_x, -scale_y
-                    )
-            # use CRS
-            else:
-                ds = xarray.open_dataset(
-                    image, engine="ee", crs=crs_code, scale=scale_ds, geometry=roi
-                )
-                if "X" in list(ds.variables.keys()):
-                    arcpy.AddMessage("Use X/Y to define tranform")
-                    transform = from_origin(
-                        ds["X"].values[0], ds["Y"].values[0], scale_ds, -scale_ds
-                    )
-                else:
-                    arcpy.AddMessage("Use lat/lon to define transform")
-                    scale_x = abs(ds["lon"].values[0] - ds["lon"].values[1])
-                    scale_y = abs(ds["lat"].values[0] - ds["lat"].values[1])
-                    transform = from_origin(
-                        ds["lon"].values[0], ds["lat"].values[0], scale_x, -scale_y
-                    )
-
-            arcpy.AddMessage(transform)
-
-            meta = {
-                "driver": "GTiff",
-                "height": ds[bands_only[0]].shape[2],
-                "width": ds[bands_only[0]].shape[1],
-                "count": len(bands_only),  # Number of bands
-                "dtype": ds[bands_only[0]].dtype,  # Data type of the array
-                "crs": crs,  # Coordinate Reference System, change if needed
-                "transform": transform,
-            }
-
-            # Store band names
-            band_names = {}
-            i = 1
-            for iband in bands_only:
-                band_names["band_" + str(i)] = iband
-                i += 1
-
-            # Create output file name based on image tags
-            out_tiff = os.path.join(out_folder, img_tag.replace("/", "_") + ".tif")
-            out_tiff_list.append(out_tiff)
-
-            # Write the array to a multiband GeoTIFF file
-            arcpy.AddMessage("Save image to " + out_tiff + " ...")
-            i = 1
-            with rasterio.open(out_tiff, "w", **meta) as dst:
-                for iband in bands_only:
-                    if use_projection:
-                        dst.write(np.flipud(np.transpose(ds[iband].values[0])), i)
-                    else:
-                        dst.write(np.transpose(ds[iband].values[0]), i)
-
-                    i += 1
-                # write band names into output tiff
-                dst.update_tags(**band_names)
+            # download image as geotiff
+            image_to_geotiff(
+                image, bands_only, crs, scale_ds, roi, use_projection, out_tiff
+            )
 
         # Add out tiff to map layer
         if load_tiff == "true":
-            aprx = arcpy.mp.ArcGISProject("CURRENT")
-            aprxMap = aprx.activeMap
-            for out_tiff in out_tiff_list:
-                aprxMap.addDataFromPath(out_tiff)
-
-        return
-
-    def postExecute(self, parameters):
-        """This method takes place after outputs are processed and
-        added to the display."""
-        return
-
-
-class DownloadLargeImage:
-
-    def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
-        self.label = "Download GEE Image in Large Size"
-        self.description = ""
-        self.category = "Data Management Tools"
-        self.canRunInBackgroud = False
-
-    def getParameterInfo(self):
-        """Define the tool parameters."""
-
-        # Image collection inputs are optional
-        param0 = arcpy.Parameter(
-            name="ic_asset_tag",
-            displayName="Specify GEE Image Collection Asset Tag",
-            datatype="GPString",
-            direction="Input",
-            parameterType="Optional",
-        )
-        param0.dialogref = "Browse all available datasets from GEE website, copy and paste the asset tag here."
-
-        param1 = arcpy.Parameter(
-            name="filter_dates",
-            displayName="Filter by dates in YYYY-MM-DD",
-            datatype="GPValueTable",
-            direction="Input",
-            parameterType="Optional",
-        )
-        param1.columns = [["GPString", "Starting Date"], ["GPString", "Ending Date"]]
-        param1.value = [["2014-03-01", "2014-05-01"]]
-
-        param2 = arcpy.Parameter(
-            name="filter_bounds",
-            displayName="Filter by location in coordinates",
-            datatype="GPValueTable",
-            direction="Input",
-            parameterType="Optional",
-        )
-        param2.columns = [["GPString", "Longitude"], ["GPString", "Latitude"]]
-
-        param3 = arcpy.Parameter(
-            name="use_centroid",
-            displayName="Use the center of the current map view extent",
-            datatype="GPBoolean",
-            direction="Input",
-            parameterType="Optional",
-        )
-
-        param4 = arcpy.Parameter(
-            name="img_asset_tag",
-            displayName="Specify Image Asset Tag or Select Image ID",
-            datatype="GPString",
-            direction="Input",
-            multiValue=True,
-            parameterType="Required",
-        )
-
-        param5 = arcpy.Parameter(
-            name="bands",
-            displayName="Specify the Bands for Download",
-            datatype="GPString",
-            direction="Input",
-            multiValue=True,
-            parameterType="Required",
-        )
-
-        param6 = arcpy.Parameter(
-            name="scale",
-            displayName="Specify the Scale for Download",
-            datatype="GPDouble",
-            direction="Input",
-            multiValue=False,
-            parameterType="Required",
-        )
-
-        param7 = arcpy.Parameter(
-            name="in_poly",
-            displayName="Choose a Polygon as Region of Interest",
-            datatype="GPFeatureLayer",
-            direction="Input",
-            parameterType="Optional",
-        )
-
-        param8 = arcpy.Parameter(
-            name="use_extent",
-            displayName="Use the Current Map View Extent as Region of Interest",
-            datatype="GPBoolean",
-            direction="Input",
-            parameterType="Optional",
-        )
-
-        param9 = arcpy.Parameter(
-            name="out_folder",
-            displayName="Specify the Output Folder",
-            datatype="DEFolder",
-            direction="Input",
-            parameterType="Required",
-        )
-
-        param10 = arcpy.Parameter(
-            name="load_tiff",
-            displayName="Load Output Files into Map View after Download",
-            datatype="GPBoolean",
-            direction="Input",
-            parameterType="Optional",
-        )
-
-        params = [
-            param0,
-            param1,
-            param2,
-            param3,
-            param4,
-            param5,
-            param6,
-            param7,
-            param8,
-            param9,
-            param10,
-        ]
-        return params
-
-    def isLicensed(self):
-        """Set whether the tool is licensed to execute."""
-        return True
-
-    def updateParameters(self, parameters):
-        """Modify the values and properties of parameters before internal
-        validation is performed.  This method is called whenever a parameter
-        has been changed."""
-
-        # Define a function to project a point to WGS 84 (EPSG 4326)
-        def project_to_wgs84(x, y, in_spatial_ref):
-            point = arcpy.Point(x, y)
-            point_geom = arcpy.PointGeometry(point, in_spatial_ref)
-            wgs84 = arcpy.SpatialReference(4326)
-            point_geom_wgs84 = point_geom.projectAs(wgs84)
-            return point_geom_wgs84.centroid.X, point_geom_wgs84.centroid.Y
-
-        # Get the filter dates
-        if parameters[1].valueAsText:
-            val_list = parameters[1].values
-            start_date = val_list[0][0]
-            end_date = val_list[0][1]
-        else:
-            start_date = None
-            end_date = None
-
-        # Get the filter bounds
-        if parameters[3].value:  # use map extent
-            # Disable input coordinates if map extent is used
-            parameters[2].enabled = False
-            xmin, ymin, xmax, ymax = get_map_view_extent()
-            # Get the centroid of map extent
-            lon = (xmin + xmax) / 2
-            lat = (ymin + ymax) / 2
-        else:  # use input lat/lon
-            parameters[2].enabled = True
-            if parameters[2].valueAsText:
-                val_list = parameters[2].values
-                lon = val_list[0][0]
-                lat = val_list[0][1]
-            else:
-                lon = None
-                lat = None
-
-        # Check image list of a given collection asset
-        asset_tag = parameters[0].valueAsText
-
-        # Image collection size could be huge, may take long time to load image IDs without filters
-        # Only retrieve the list of images, when either filter dates or filter bounds are selected
-        if asset_tag and ((start_date and end_date) or (lon and lat)):
-            collection = ee.ImageCollection(asset_tag)
-            # Filter image collection as specified
-            if lon is not None and lat is not None:
-                collection = collection.filterBounds(
-                    ee.Geometry.Point((float(lon), float(lat)))
-                )
-            if start_date is not None and end_date is not None:
-                collection = collection.filterDate(start_date, end_date)
-            # Get image IDs from collection
-            image_ids = collection.aggregate_array("system:index").getInfo()
-            parameters[4].filter.list = image_ids
-
-        # Check the band list of the first selected image, assuming all selected images have the same bands
-        img_ids = parameters[4].valueAsText
-        # Update only when filter list is empty
-        if img_ids and not parameters[5].filter.list:
-            # Get the first select image
-            img_id = img_ids.split(";")[0]
-            # Only initialize ee when image asset tag is given
-            if asset_tag:
-                img_tag = asset_tag + "/" + img_id
-            else:
-                img_tag = img_id
-            image = ee.Image(img_tag)
-            band_names = image.bandNames()
-            band_list = band_names.getInfo()
-            # Add band resolution information to display
-            band_res_list = []
-            for iband in band_list:
-                band_tmp = image.select(iband)
-                proj = band_tmp.projection()
-                res = proj.nominalScale().getInfo()
-                band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
-            parameters[5].filter.list = band_res_list
-
-        # Reset band filter list when asset tag changes
-        if (not parameters[4].valueAsText) and (not parameters[0].valueAsText):
-            parameters[5].filter.list = []
-
-        # Capture the suggested scale value based on selected bands
-        band_str = parameters[5].valueAsText
-        if band_str:
-            # Remove ' in band string in case users add it
-            if "'" in band_str:
-                band_str = band_str.replace("'", "")
-            bands = band_str.split(";")
-            scale_only = [float(iband.split("--")[1]) for iband in bands]
-            parameters[6].value = max(scale_only)
-
-        # Disable input feature if map extent is used
-        if parameters[8].value:  # map extent selected
-            parameters[7].enabled = False
-        else:
-            parameters[7].enabled = True
-
-        return
-
-    def updateMessages(self, parameters):
-        """Modify the messages created by internal validation for each tool
-        parameter. This method is called after internal validation."""
-        return
-
-    def execute(self, parameters, messages):
-        import rasterio
-        from rasterio.transform import from_origin
-
-        """The source code of the tool."""
-        # Multiple images could be selected
-        asset_tag = parameters[0].valueAsText
-        img_ids = parameters[4].valueAsText
-        band_str = parameters[5].valueAsText
-        scale = parameters[6].valueAsText
-        in_poly = parameters[7].valueAsText
-        use_extent = parameters[8].valueAsText
-        out_folder = parameters[9].valueAsText
-        load_tiff = parameters[10].valueAsText
-
-        # Define a function to project a point to WGS 84 (EPSG 4326)
-        def project_to_wgs84(x, y, in_spatial_ref):
-            point = arcpy.Point(x, y)
-            point_geom = arcpy.PointGeometry(point, in_spatial_ref)
-            wgs84 = arcpy.SpatialReference(4326)
-            point_geom_wgs84 = point_geom.projectAs(wgs84)
-            return point_geom_wgs84.centroid.X, point_geom_wgs84.centroid.Y
-
-        # Define a function to clip each image
-        def clip_image(image, polygon):
-            return image.clip(polygon)
-
-        # Filter image by bands if specified
-        # if band_str : # now band_str is required
-        # Remove ' in band string in case user adds it
-        if "'" in band_str:
-            band_str = band_str.replace("'", "")
-        bands = band_str.split(";")
-        bands_only = [iband.split("--")[0] for iband in bands]
-        arcpy.AddMessage("Bands selected: " + ",".join(bands_only))
-
-        icount = 1
-        out_tiff_list = []
-        # Iterate each selected image
-        for img_id in img_ids.split(";"):
-            # For image collection, concatenate to get the image asset tag
-            if asset_tag:
-                img_tag = asset_tag + "/" + img_id
-            else:
-                img_tag = img_id
-            # Must be image collection to convert to xarray
-            image = ee.ImageCollection(ee.Image(img_tag))
-            # Filter image by selected bands
-            image = image.select(bands_only)
-
-            # Only needs to run the ROI and scale once
-            if icount == 1:
-                # Check GEE image projection
-                # CRS could be other projections than 'EPSG:4326' for some GEE assets
-                # When multiple band, select the first one for projection
-                img_prj = image.first().select(0).projection().crs().getInfo()
-                # img_prj could be None type
-                if img_prj:
-                    arcpy.AddMessage("Image projection is " + img_prj)
-                else:
-                    arcpy.AddMessage("Image does not contain projection information.")
-
-                # Get the region of interests
-                # Use map view extent if checked
-                if use_extent == "true":
-                    xmin, ymin, xmax, ymax = get_map_view_extent()
-                    roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
-                # Use input feature layer as ROI
-                else:
-                    spatial_ref = arcpy.Describe(in_poly).spatialReference
-                    poly_prj = spatial_ref.PCSCode
-                    if poly_prj == 0:
-                        poly_prj = spatial_ref.GCSCode
-                    arcpy.AddMessage(
-                        "Input feature layer projection is " + str(poly_prj)
-                    )
-
-                    # Project input feature to GEE image coordinate system if needed
-                    target_poly = in_poly
-                    if str(poly_prj) not in "EPSG:4326":
-                        arcpy.AddMessage(
-                            "Projecting input feature layer to EPSG:4326 ..."
-                        )
-                        out_sr = arcpy.SpatialReference(4326)
-                        arcpy.Project_management(in_poly, "poly_temp", out_sr)
-                        target_poly = "poly_temp"
-
-                    # convert input feature to geojson
-                    arcpy.FeaturesToJSON_conversion(
-                        target_poly, "temp.geojson", "FORMATTED", "", "", "GEOJSON"
-                    )
-
-                    # Read the GeoJSON file
-                    upper_path = os.path.dirname(arcpy.env.workspace)
-                    file_geojson = os.path.join(upper_path, "temp.geojson")
-                    with open(file_geojson) as f:
-                        geojson_data = json.load(f)
-
-                    # Collect polygon object coordinates
-                    coords = []
-                    for feature in geojson_data["features"]:
-                        coords.append(feature["geometry"]["coordinates"])
-                    arcpy.AddMessage(
-                        "Total number of polygon objects: " + str(len(coords))
-                    )
-
-                    # Create an Earth Engine MultiPolygon from the GeoJSON
-                    roi = ee.Geometry.MultiPolygon(coords)
-                    # Delete temporary geojson
-                    arcpy.management.Delete(file_geojson)
-
-                # Get the scale for xarray
-                if scale:
-                    scale_ds = float(scale)
-                else:
-                    # get scale from the first selected band
-                    scale_ds = (
-                        image.first().select(0).projection().nominalScale().getInfo()
-                    )
-                    arcpy.AddMessage(
-                        "Scale of the first selected band is used: " + str(scale_ds)
-                    )
-                # Use the crs code from the first selected band
-                # crs information could be missing, then use EPSG:4283 as default
-                try:
-                    crs = image.first().select(0).projection().getInfo()["crs"]
-                except:
-                    crs = "EPSG:4283"
-            # Clip the image using input polygon
-            # if in_poly :
-            #    arcpy.AddMessage('Clip image by the input polygon ...')
-            #    image = image.map(lambda image: clip_image(image, roi))
-
-            # Use Xarray + RasterIO
-            # Convert image to xarray dataset
-            ds = xarray.open_dataset(
-                image, engine="ee", crs=crs, scale=scale_ds, geometry=roi
-            )
-            transform = from_origin(
-                ds["X"].values[0], ds["Y"].values[0], scale_ds, -scale_ds
-            )
-            meta = {
-                "driver": "GTiff",
-                "height": ds[bands_only[0]].shape[2],
-                "width": ds[bands_only[0]].shape[1],
-                "count": len(bands_only),  # Number of bands
-                "dtype": ds[bands_only[0]].dtype,  # Data type of the array
-                "crs": crs,  # Coordinate Reference System, change if needed
-                "transform": transform,
-            }
-
-            # Store band names
-            band_names = {}
-            i = 1
-            for iband in bands_only:
-                band_names["band_" + str(i)] = iband
-                i += 1
-
-            # Create output file name based on image tags
-            out_tiff = os.path.join(out_folder, img_tag.replace("/", "_") + ".tif")
-            out_tiff_list.append(out_tiff)
-
-            # Write the array to a multiband GeoTIFF file
-            arcpy.AddMessage("Save image to " + out_tiff + " ...")
-            i = 1
-            with rasterio.open(out_tiff, "w", **meta) as dst:
-                for iband in bands_only:
-                    dst.write(np.transpose(ds[iband].values[0]), i)  # Write the band
-                    i += 1
-                # write band names into output tiff
-                dst.update_tags(**band_names)
-
-            icount += 1
-
-        # Add out tiff to map layer
-        if load_tiff == "true":
+            arcpy.AddMessage("Load image to map ...")
             aprx = arcpy.mp.ArcGISProject("CURRENT")
             aprxMap = aprx.activeMap
             for out_tiff in out_tiff_list:
@@ -3809,7 +3710,7 @@ class DownloadImgCol2Gif:
 # Save GEE Asset to Serialized JSON File
 class SaveAsset2JSON:
     def __init__(self):
-        self.label = "Save GEE Asset to Serialized JSON File"
+        self.label = "Save Earth Engine Asset to Serialized JSON File"
         self.description = ""
         self.category = "Data Management Tools"
         self.canRunInBackgroud = False
@@ -3818,7 +3719,7 @@ class SaveAsset2JSON:
         """Define the tool parameters."""
 
         param0 = arcpy.Parameter(
-            displayName="Specify the GEE asset tag",
+            displayName="Specify the asset tag",
             name="asset_tag",
             datatype="GPString",
             parameterType="Required",
@@ -3898,7 +3799,9 @@ class Upload2GCS:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Upload Files to Google Cloud Storage and Convert to GEE Asset"
+        self.label = (
+            "Upload File to Google Cloud Storage and Convert to Earth Engine Asset"
+        )
         self.description = ""
         self.category = "Data Management Tools"
         self.canRunInBackgroud = False
@@ -3935,8 +3838,10 @@ class Upload2GCS:
             datatype="DEFile",
             direction="Input",
             parameterType="Required",
-            multiValue=False,
+            multiValue=True,
         )
+
+        param3.filter.list = ["tif", "shp", "csv", "zip", "tfrecord"]
 
         param4 = arcpy.Parameter(
             name="upload_asset",
@@ -3963,6 +3868,7 @@ class Upload2GCS:
             direction="Input",
             parameterType="Optional",
         )
+        param6.value = "Not-in-Use"
 
         params = [param0, param1, param2, param3, param4, param5, param6]
 
@@ -3977,50 +3883,24 @@ class Upload2GCS:
         validation is performed.  This method is called whenever a parameter
         has been changed."""
 
-        # Define a function to list all folders in the selected bucket
-        def list_folders_recursive(storage_client, bucket_name, prefix=""):
-            """Recursively lists all folders in a Google Cloud Storage bucket."""
-            # List blobs with a delimiter to group them by "folders"
-            blobs = storage_client.list_blobs(bucket_name, prefix=prefix, delimiter="/")
-
-            # Need this code to active blob prefixes, otherwise, blob.prefixes are empty
-            for blob in blobs:
-                blob_name = blob.name
-
-            folder_list = []
-            # Folders are stored in the prefixes attribute
-            if blobs.prefixes:
-                for folder in blobs.prefixes:
-                    folder_list.append(folder)
-                    # Recursively call the function to go deeper into the folder
-                    folder_list.extend(
-                        list_folders_recursive(
-                            storage_client, bucket_name, prefix=folder
-                        )
-                    )
-
-            return sorted(folder_list)
-
         # Get the project ID first
-        if parameters[0].valueAsText and not parameters[2].valueAsText:
+        if parameters[0].valueAsText:
             project_id = parameters[0].valueAsText
             # Initialize a Cloud Storage client, for only once
             if not hasattr(self, "storage_client"):
                 self.storage_client = storage.Client(project=project_id)
 
-            # List the bucket names when the filter list is empty
-            if not parameters[1].filter.list:
-                # Get the list of all bucket names in this project
-                buckets = self.storage_client.list_buckets()
-                bucket_names = []
-                for bucket in buckets:
-                    bucket_names.append(bucket.name)
+            # Get the list of all bucket names in this project
+            buckets = self.storage_client.list_buckets()
+            bucket_names = []
+            for bucket in buckets:
+                bucket_names.append(bucket.name)
 
-                # Add bucket names to filter list
-                parameters[1].filter.list = bucket_names
+            # Add bucket names to filter list
+            parameters[1].filter.list = bucket_names
 
             # When bucket name is selected, list all available folders
-            if not parameters[2].filter.list and parameters[1].valueAsText:
+            if parameters[1].valueAsText:
                 bucket_name = parameters[1].valueAsText
                 parameters[2].filter.list = list_folders_recursive(
                     self.storage_client, bucket_name
@@ -4031,13 +3911,19 @@ class Upload2GCS:
             parameters[5].enabled = True
             parameters[6].enabled = True
             # give a default asset ID when project ID is provided
-            if parameters[0].valueAsText:
+            if parameters[0].valueAsText and not parameters[6].valueAsText:
                 parameters[6].value = (
                     "projects/" + parameters[0].valueAsText + "/assets/"
                 )
         else:
             parameters[5].enabled = False
             parameters[6].enabled = False
+
+        # reset input values
+        if not parameters[0].valueAsText:
+            parameters[1].value = None
+            parameters[2].value = None
+            parameters[6].value = None
 
         return
 
@@ -4049,50 +3935,12 @@ class Upload2GCS:
     def execute(self, parameters, messages):
         """The source code of the tool."""
 
-        # Upload local file to Google Cloud Storage bucket
-        def upload_to_bucket(
-            storage_client, bucket_name, source_file_name, destination_blob_name
-        ):
-            """Uploads a file to the bucket."""
-            # Get the bucket that the file will be uploaded to
-            bucket = storage_client.bucket(bucket_name)
-
-            # Create a new blob and upload the file's content
-            blob = bucket.blob(destination_blob_name)
-
-            # Upload the file
-            blob.upload_from_filename(source_file_name)
-
-            full_blob_name = bucket_name + "/" + destination_blob_name
-            arcpy.AddMessage(f"File {source_file_name} uploaded to {full_blob_name}.")
-
-        # Upload Google Cloud Storage file to Earth Engine
-        def upload_to_earth_engine(asset_type, asset_id, bucket_uri):
-            import subprocess
-
-            # Define the Earth Engine CLI command
-            command = [
-                "earthengine",
-                "upload",
-                asset_type,
-                "--asset_id=" + asset_id,
-                bucket_uri,
-            ]
-
-            # Run the command
-            process = subprocess.run(
-                command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-
-            # Output the result
-            arcpy.AddMessage(process.stdout.decode("utf-8"))
-
         # Read input parameters
         bucket_name = parameters[1].valueAsText
         bucket_folder = parameters[2].valueAsText
         files = parameters[3].valueAsText
 
-        self.storage_client = storage.Client(project=parameters[0].valueAsText)
+        storage_client = storage.Client(project=parameters[0].valueAsText)
 
         # If user creates a new folder, make sure it ends with /
         if not bucket_folder.endswith("/"):
@@ -4105,18 +3953,60 @@ class Upload2GCS:
         file_list = files.split(";")
 
         # Upload files to the selected bucket name
+        gcs_file_list = []
         for ifile in file_list:
             file_name = os.path.basename(ifile)
             out_file = bucket_folder + file_name
-            upload_to_bucket(self.storage_client, bucket_name, ifile, out_file)
+            upload_to_gcs_bucket(storage_client, bucket_name, ifile, out_file)
+            gcs_file_list.append(out_file)
+            # check file extension
+            file_extension = os.path.splitext(file_name)[1]
+            # For shape file, need to upload accessary files
+            if file_extension == ".shp":
+                for extension in [".shx", ".dbf", ".prj", ".cpg"]:
+                    upload_to_gcs_bucket(
+                        storage_client,
+                        bucket_name,
+                        ifile.replace(".shp", extension),
+                        out_file.replace(".shp", extension),
+                    )
 
         # Upload file to earth engine
         if parameters[4].value:
             asset_type = parameters[5].valueAsText
             asset_id = parameters[6].valueAsText
-            bucket_uri = "gs://" + bucket_name + "/" + out_file
-            arcpy.AddMessage("Uploading " + bucket_uri)
-            upload_to_earth_engine(asset_type, asset_id, bucket_uri)
+            is_col = False
+
+            # If more than one file is selected, treat as collection asset
+            if len(gcs_file_list) > 1:
+                is_col = True
+                # use input asset id as folder path
+                collection_asset_folder = asset_id
+                # for image asset type, create image collection
+                if asset_type == "image":
+                    if not asset_exists(collection_asset_folder):
+                        create_image_collection(collection_asset_folder)
+                    else:
+                        arcpy.AddMessage("The image collection already exists.")
+                # if table, create a folder, all files will be uploaded to this folder
+                else:
+                    if not asset_exists(collection_asset_folder):
+                        create_ee_folder(collection_asset_folder)
+                    else:
+                        arcpy.AddMessage("The folder already exists.")
+
+            for ifile in gcs_file_list:
+                # get file URI (file could be URI or relative path)
+                bucket_uri = "gs://" + bucket_name + "/" + ifile
+                # check if collection
+                if is_col:
+                    # upload to collection folder
+                    # use file name as item id
+                    file_name = os.path.splitext(os.path.basename(bucket_uri))[0]
+                    item_id = f"{collection_asset_folder}/{file_name}"
+                    gcs_file_to_ee_asset(asset_type, item_id, bucket_uri)
+                else:
+                    gcs_file_to_ee_asset(asset_type, asset_id, bucket_uri)
 
         return
 
@@ -4131,7 +4021,7 @@ class GCSFile2Asset:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Convert Google Cloud Storage File to GEE Asset"
+        self.label = "Convert Google Cloud Storage File to Earth Engine Asset"
         self.description = ""
         self.category = "Data Management Tools"
         self.canRunInBackgroud = False
@@ -4168,12 +4058,12 @@ class GCSFile2Asset:
             datatype="GPString",
             direction="Input",
             parameterType="Required",
-            multiValue=False,
+            multiValue=True,
         )
 
         param4 = arcpy.Parameter(
             name="asset_type",
-            displayName="Choose asset type",
+            displayName="Choose the asset type",
             datatype="GPString",
             direction="Input",
             parameterType="Required",
@@ -4182,11 +4072,11 @@ class GCSFile2Asset:
         param4.filter.list = ["image", "table"]
 
         param5 = arcpy.Parameter(
-            name="asset_id",
-            displayName="Specify asset id",
+            name="asset_tag",
+            displayName="Specify the asset tag",
             datatype="GPString",
             direction="Input",
-            parameterType="Optional",
+            parameterType="Required",
         )
 
         params = [param0, param1, param2, param3, param4, param5]
@@ -4202,129 +4092,84 @@ class GCSFile2Asset:
         validation is performed.  This method is called whenever a parameter
         has been changed."""
 
-        # Define a function to list all folders in the selected bucket
-        def list_folders_recursive(storage_client, bucket_name, prefix=""):
-            """Recursively lists all folders in a Google Cloud Storage bucket."""
-            # List blobs with a delimiter to group them by "folders"
-            blobs = storage_client.list_blobs(bucket_name, prefix=prefix, delimiter="/")
-
-            # Need this code to active blob prefixes, otherwise, blob.prefixes are empty
-            for blob in blobs:
-                blob_name = blob.name
-
-            folder_list = []
-            # Folders are stored in the prefixes attribute
-            if blobs.prefixes:
-                for folder in blobs.prefixes:
-                    folder_list.append(folder)
-                    # Recursively call the function to go deeper into the folder
-                    folder_list.extend(
-                        list_folders_recursive(
-                            storage_client, bucket_name, prefix=folder
-                        )
-                    )
-
-            return sorted(folder_list)
-
-        # List files within a folder in the selected bucket
-        def list_files_in_folder(storage_client, bucket_name, folder_name):
-            """
-            Lists only files within a specified folder in a Google Cloud Storage bucket.
-
-            :param bucket_name: Name of the GCS bucket.
-            :param folder_name: Path to the folder within the bucket (e.g., "folder/subfolder/").
-            :return: List of file paths within the specified folder.
-            """
-            blobs = storage_client.list_blobs(bucket_name, prefix=folder_name)
-            # for blob in blobs:
-            #    blob_name = blob.name
-
-            # Filter out any "folders" (items ending with a trailing slash)
-            files = [blob.name for blob in blobs if not blob.name.endswith("/")]
-
-            return files
-
-        # Get the project ID first
-        if parameters[0].valueAsText and not parameters[3].valueAsText:
-            project_id = parameters[0].valueAsText
+        project_id = parameters[0].valueAsText
+        # List buckets, folders and files
+        if project_id:
             # Initialize a Cloud Storage client, for only once
             if not hasattr(self, "storage_client"):
                 self.storage_client = storage.Client(project=project_id)
 
-            # List the bucket names when the filter list is empty
-            if not parameters[1].filter.list:
-                # Get the list of all bucket names in this project
-                buckets = self.storage_client.list_buckets()
-                bucket_names = []
-                for bucket in buckets:
-                    bucket_names.append(bucket.name)
-
-                # Add bucket names to filter list
-                parameters[1].filter.list = bucket_names
+            # Get the list of all bucket names in this project
+            buckets = self.storage_client.list_buckets()
+            bucket_names = []
+            for bucket in buckets:
+                bucket_names.append(bucket.name)
+            # Add bucket names to filter list
+            parameters[1].filter.list = bucket_names
 
             # When bucket name is selected, list all available folders
-            if not parameters[2].filter.list and parameters[1].valueAsText:
+            if parameters[1].valueAsText:
                 bucket_name = parameters[1].valueAsText
                 parameters[2].filter.list = list_folders_recursive(
                     self.storage_client, bucket_name
                 )
 
             # When both bucket name and folder are selected, list all files
-            if (
-                not parameters[3].filter.list
-                and parameters[1].valueAsText
-                and parameters[2].valueAsText
-            ):
+            if parameters[1].valueAsText and parameters[2].valueAsText:
                 bucket_name = parameters[1].valueAsText
                 folder_name = parameters[2].valueAsText
-                parameters[3].filter.list = list_files_in_folder(
+                # only certain formats are accepted as earth engine asset
+                extensions = ("tif", "shp", "csv", "zip", "tfrecord")
+                file_list = list_files_in_folder(
                     self.storage_client, bucket_name, folder_name
                 )
+                parameters[3].filter.list = [
+                    file for file in file_list if file.endswith(extensions)
+                ]
 
-        # give a default asset path when project ID is provided
-        if parameters[0].valueAsText and not parameters[5].valueAsText:
-            parameters[5].value = "projects/" + parameters[0].valueAsText + "/assets/"
+            # give a default asset path when project ID is provided
+            if not parameters[5].valueAsText:
+                parameters[5].value = "projects/" + project_id + "/assets/"
+
+        # reset bucket, folder and file lists and values
+        if not project_id:
+            parameters[1].filter.list = []
+            parameters[2].filter.list = []
+            parameters[3].filter.list = []
+            parameters[1].value = None
+            parameters[2].value = None
+            parameters[3].value = None
+            parameters[5].value = None
 
         return
 
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+
+        if parameters[0].valueAsText:
+            if parameters[1].valueAsText:
+                if not parameters[2].filter.list:
+                    parameters[3].setWarningMessage("No folders found in this bucket.")
+            # When both bucket name and folder are selected
+            if parameters[1].valueAsText and parameters[2].valueAsText:
+                if not parameters[3].filter.list:
+                    parameters[3].setWarningMessage("No files found in this folder.")
+
         return
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
 
-        # Upload Google Cloud Storage file to Earth Engine
-        def upload_to_earth_engine(asset_type, asset_id, bucket_uri):
-            import subprocess
-
-            # Define the Earth Engine CLI command
-            command = [
-                "earthengine",
-                "upload",
-                asset_type,
-                "--asset_id=" + asset_id,
-                bucket_uri,
-            ]
-
-            # Run the command
-            process = subprocess.run(
-                command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-
-            # Output the result
-            arcpy.AddMessage(process.stdout.decode("utf-8"))
-
         # Read input parameters
+        project_id = parameters[0].valueAsText
         bucket_name = parameters[1].valueAsText
-        folder_name = parameters[2].valueAsText
         files = parameters[3].valueAsText
         asset_type = parameters[4].valueAsText
         asset_id = parameters[5].valueAsText
 
         # create storage client since self.storage_client can not transfer from updateParameters here
-        self.storage_client = storage.Client(project=parameters[0].valueAsText)
+        self.storage_client = storage.Client(project=project_id)
 
         # Get the list of selected files
         # Remove ' in files in case users add it
@@ -4332,14 +4177,40 @@ class GCSFile2Asset:
             files = files.replace("'", "")
         file_list = files.split(";")
 
-        # file could be URI instead of relative path
-        if "gs://" not in file_list[0]:
-            bucket_uri = "gs://" + bucket_name + "/" + file_list[0]
-        else:
-            bucket_uri = file_list[0]
+        # If more than one file is selected, treat as collection asset
+        is_col = False
+        if len(file_list) > 1:
+            is_col = True
+            # use input asset id as folder path
+            collection_asset_folder = asset_id
+            # for image asset type, create image collection
+            if asset_type == "image":
+                if not asset_exists(collection_asset_folder):
+                    create_image_collection(collection_asset_folder)
+                else:
+                    arcpy.AddMessage("The image collection already exists.")
+            # if table, create a folder, all files will be uploaded to this folder
+            else:
+                if not asset_exists(collection_asset_folder):
+                    create_ee_folder(collection_asset_folder)
+                else:
+                    arcpy.AddMessage("The folder already exists.")
 
-        arcpy.AddMessage("Uploading " + bucket_uri)
-        upload_to_earth_engine(asset_type, asset_id, bucket_uri)
+        for ifile in file_list:
+            # get file URI (file could be URI or relative path)
+            if "gs://" not in ifile:
+                bucket_uri = "gs://" + bucket_name + "/" + ifile
+            else:
+                bucket_uri = ifile
+            # check if collection
+            if is_col:
+                # upload to collection folder
+                # use file name as item id
+                file_name = os.path.splitext(os.path.basename(bucket_uri))[0]
+                item_id = f"{collection_asset_folder}/{file_name}"
+                gcs_file_to_ee_asset(asset_type, item_id, bucket_uri)
+            else:
+                gcs_file_to_ee_asset(asset_type, asset_id, bucket_uri)
 
         return
 

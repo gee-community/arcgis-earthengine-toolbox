@@ -18,6 +18,7 @@ import arcpy
 import xee
 import google.auth
 
+
 def auth(project=None):
     credentials, _ = google.auth.default(
         scopes=[
@@ -29,7 +30,7 @@ def auth(project=None):
         credentials.with_quota_project(None),
         project=project,
     )
-    
+
     return
 
 
@@ -37,34 +38,56 @@ def save_ee_result(ee_object, path):
 
     serialized_obj = ee_object.serialize()
 
-    with open(path, 'w') as f:
+    with open(path, "w") as f:
         ujson.dump(serialized_obj, f)
 
     return
 
+
 def load_ee_result(path):
+    """
+    Loads a serialized Earth Engine object from a JSON file and deserializes it.
 
-    with open(path, 'r') as f:
-        ee_object = ujson.load(f)
+    Args:
+        path (str): The file path to the JSON file.
 
-    return ee.deserializer.fromJSON(ee_object)
+    Returns:
+        ee.ComputedObject: The deserialized Earth Engine object.
 
-def ee_to_tif(ee_img, scale=1000, projection='EPSG:3857', region=None):
+    Raises:
+        RuntimeError: If deserialization fails.
+    """
+    try:
+        with open(path, "r") as f:
+            ee_object = ujson.load(f)
+
+        # Attempt to deserialize the Earth Engine object
+        return ee.deserializer.fromJSON(ee_object)
+
+    except Exception as e:
+        # Log an error message and raise a RuntimeError
+        error_message = (
+            f"Failed to deserialize the Earth Engine object from {path}: {str(e)}"
+        )
+        raise RuntimeError(error_message) from e
+
+
+def ee_to_tif(ee_img, scale=1000, projection="EPSG:3857", region=None):
 
     # if region is not defined then request the total image bounds
     if region is None:
         region = ee_img.geometry().bounds()
 
     ix = xr.open_dataset(
-        ee.ImageCollection(ee_img), 
-        engine='ee',
+        ee.ImageCollection(ee_img),
+        engine="ee",
         scale=scale,
         projection=projection,
-        geometry=region
+        geometry=region,
     )
 
     return
 
+
 def _xds_to_rioda(ds):
     return
-

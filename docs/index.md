@@ -7,21 +7,25 @@ ArcGEE is a Python toolbox for ArcGIS that seamlessly connects the Google Earth 
 
 ## Key Features
  - Authentication Tools
-    - GEE Authentication
-    - Change Project ID
+    - Authenticate Earth Engine
+    - Check or Change Project ID
+    - Initialize Earth Engine
  - Data Exploration Tools
-    - Add GEE Feature Collection to Map by Asset Tag
-    - Add GEE Feature Collection to Map by Serialized Object 
-    - Add GEE Image to Map by Asset Tag
-    - Add GEE Image to Map by Serialized Object
-    - Add GEE Image Collection to Map by Asset Tag
-    - Add GEE Image Collection to Map by Serialized Object
+    - Add Feature Collection to Map by Asset Tag
+    - Add Feature Collection to Map by Serialized Object 
+    - Add Image Collection to Map by Asset Tag
+    - Add Image Collection to Map by Serialized Object
+    - Add Image to Map by Asset Tag
+    - Add Image to Map by Serialized Object
  - Data Management Tools
-    - Convert Google Cloud Storage File to GEE Asset
-    - Download GEE Image Collection to GIF
-    - Download GEE Image in Large Size
-    - Save GEE Asset to Serialized JSON File
-    - Upload Files to Goolge Cloud Storage and Convert to GEE Asset
+    - Convert Google Cloud Storage File(s) to Earth Engine Asset
+    - Download Image Collection to GIF
+    - Download Image by Asset Tag
+    - Download Image by Serialized Object 
+    - Download Image Collection by Asset Tag
+    - Download Image Collection by Serialized Object
+    - Save Earth Engine Asset to Serialized JSON File
+    - Upload File(s) to Goolge Cloud Storage and Convert to Earth Engine Asset
  - Data Processing Tools
     - Apply Filters to GEE Datasets
     - Apply Map Functions to GEE Datasets
