@@ -720,7 +720,7 @@ class AddImg2MapbyTag:
         """Define the tool parameters."""
         param0 = arcpy.Parameter(
             name="asset_tag",
-            displayName="Specify GEE Image Asset Tag",
+            displayName="Specify the image asset tag",
             datatype="GPString",
             direction="Input",
             parameterType="Required",
@@ -1114,12 +1114,11 @@ class AddImgCol2MapbyTag:
 
         param0 = arcpy.Parameter(
             name="asset_tag",
-            displayName="Specify GEE Image Collection Asset Tag",
+            displayName="Specify the image collection asset tag",
             datatype="GPString",
             direction="Input",
             parameterType="Required",
         )
-        param0.dialogref = "Browse all available datasets from GEE website, copy and paste the asset tag here."
 
         param1 = arcpy.Parameter(
             name="filter_dates",
@@ -1150,8 +1149,8 @@ class AddImgCol2MapbyTag:
         )
 
         param4 = arcpy.Parameter(
-            name="images",
-            displayName="Select images by image ID",
+            name="image",
+            displayName="Select image by image ID",
             datatype="GPString",
             direction="Input",
             parameterType="Required",
@@ -1700,7 +1699,7 @@ class AddFeatCol2MapbyTag:
 
         param0 = arcpy.Parameter(
             name="asset_tag",
-            displayName="Specify GEE Asset Tag",
+            displayName="Specify the feature collection asset tag",
             datatype="GPString",
             direction="Input",
             parameterType="Required",
@@ -3035,7 +3034,7 @@ class DownloadImgColbyObj:
 
         param0 = arcpy.Parameter(
             name="ee_obj",
-            displayName="Select the JSON file of the serialized image object",
+            displayName="Select the JSON file of the serialized image collection object",
             datatype="DEFile",
             direction="Input",
             parameterType="Required",
@@ -3303,7 +3302,7 @@ class DownloadImgCol2Gif:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Download GEE Image Collection to GIF"
+        self.label = "Download Image Collection to GIF"
         self.description = ""
         self.category = "Data Management Tools"
         self.canRunInBackgroud = False
@@ -3314,12 +3313,11 @@ class DownloadImgCol2Gif:
         # Image collection inputs are optional
         param0 = arcpy.Parameter(
             name="ic_asset_tag",
-            displayName="Specify GEE image collection asset tag",
+            displayName="Specify the image collection asset tag",
             datatype="GPString",
             direction="Input",
             parameterType="Required",
         )
-        param0.dialogref = "Browse all available datasets from GEE website, copy and paste the asset tag here."
 
         param1 = arcpy.Parameter(
             name="filter_dates",
@@ -3727,7 +3725,7 @@ class SaveAsset2JSON:
         )
 
         param1 = arcpy.Parameter(
-            displayName="Select the type of the GEE asset",
+            displayName="Select the type of the Earth Engine asset",
             name="asset_type",
             datatype="GPString",
             parameterType="Required",
@@ -3799,9 +3797,7 @@ class Upload2GCS:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = (
-            "Upload File to Google Cloud Storage and Convert to Earth Engine Asset"
-        )
+        self.label = "Upload File to Cloud Storage and Convert to Earth Engine Asset"
         self.description = ""
         self.category = "Data Management Tools"
         self.canRunInBackgroud = False
@@ -3845,7 +3841,7 @@ class Upload2GCS:
 
         param4 = arcpy.Parameter(
             name="upload_asset",
-            displayName="Upload the file to Google Earth Engine",
+            displayName="Upload the file to Earth Engine",
             datatype="GPBoolean",
             direction="Input",
             parameterType="Optional",
@@ -4021,7 +4017,7 @@ class GCSFile2Asset:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Convert Google Cloud Storage File to Earth Engine Asset"
+        self.label = "Convert Cloud Storage File to Earth Engine Asset"
         self.description = ""
         self.category = "Data Management Tools"
         self.canRunInBackgroud = False
