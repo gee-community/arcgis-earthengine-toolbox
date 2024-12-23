@@ -2,62 +2,61 @@
 
 ## Conda Environement Setup For Earth Engine API  
 
-### Step 1 - Open ArcGIS Python Command Prompt 
+Before starting the installation, ensure that you have the necessary account permissions to create a conda environment and install the required packages. **If your ArcPro was installed by an administrator, you will need administrator-level permissions to complete the installation.**  
 
-Go to **Start Menu** -> **All Apps** -> **ArcGIS folder** -> **Python Command Prompt**, click to run 
+For ArcPro version `3.x`, follow the steps below to set up the conda environment. If you have ArcPro version lower than `3.0`, it is suggested that you upgrade it to `3.x`. You can login to your ESRI account, and download the specific ArcPro version from the **Downloads** -> **All Products and Versions** -> **All Versions**.  
+
+### Step 1 - Run ArcGIS Python Command Prompt 
+
+To do this in your Windows computer, go to **Start Menu** -> **All Apps** -> **ArcGIS folder** -> **Python Command Prompt**, click to run. 
 
 
 ### Step 2 - Set up the Conda Environment
 
-Before starting the installation, ensure that you have the necessary account permissions to create a conda environment and install the required packages. If ArcPro was installed by an administrator, you will need administrator-level permissions to complete the installation.  
-
-By default, conda will always install the newest version of the selected package. However, it is not always the case for ArcGIS users. For example, `ArcPro 3.4` has `python=3.11.10` installed, while `ArcPro 3.3` has `python=3.11.8` installed. Therefore, it is necessary to check the pacakge version first before installation.  
+Once you run the Python Command Prompt,
 
 1. List all available conda environements using the following command. The default ArcPro package should be `arcgispro-py3`. 
 
-    `conda env list`
+        conda env list
 
-2. List the versions of `python` and `arcpy` installed in `arcgispro-py3` package. The user needs to install the same versions in the new conda environement. For example, `ArcPro 3.3` should have the `python=3.11.8` and `arcpy=3.3`.
+2. You cannot modify the default package `arcgispro-py3`. Instead, clone it to create a new conda environment `gee`. 
 
-    `conda list python`
+        conda create --name gee --clone arcgispro-py3
 
-    `conda list arcpy`
+3. (**Optional**) Initialize conda for the proper shell. It is required to run this command for the first time of using `conda activate`.    
 
-3. Create a new conda environment named `gee` using the listed python version from esri channel. For example, if the listed version is `python=3.11.8`, replace the `LISTED_PYTHON_VERSION` with `3.11.8`. 
+        conda init cmd.exe 
 
-    `conda create esri::python=LISTED_PYTHON_VERSION -n gee`
+    **After runing the command, please make sure to restart the Python Command Prompt.** To do this, close the current Python Command Prompt window and open a new one.  
 
+4. Activate the new conda environement `gee`. 
 
-4. (**Optional**) Initialize conda for the proper shell. It is suggested to run this command for the first time of using `conda activate`. After runing the following command, please make sure to restart the Python Command Prompt. 
+        conda activate gee 
 
-    `conda init cmd.exe` 
+5. (**Optional**) Disable the SSL verification. It is suggested to run this command for the first time of using `conda install`.
 
-5. Activate the new conda environement `gee`. 
+        conda config --set ssl_verify false
 
-    `conda activate gee` 
+6. Install `earthengine-api` and `xee` from `conda-forge` channel. Please note that these two packages are unavailable in `esri` channel. It is recommended to use `conda install` instead of `mamba install`, because `mamba install` may not work properly with `earthengine-api` and `xee`. 
 
-6. (**Optional**) Disable the SSL verification. It is suggested to run this command for the first time of using `conda install`.
+        conda install earthengine-api xee -c conda-forge
 
-    `conda config --set ssl_verify false`
+7. Install specific version of `rasterio` from `esri` channel. The default installation version of `rasterio=1.3.10` may be incompatible with ArcPro pre-installed `gdal`.
 
-7. Install `arcpy` with the listed version from esri channel. There are multiple builds for the same version of `arcpy`. Check this [link](https://anaconda.org/Esri/arcpy/files?sort=basename&sort_order=desc) for all available `arcpy` versions. For example, if the listed version is `arcpy=3.3` and the build is `py311_arcgispro_52636`, replace the `LISTED_ARCPY_VERSION` with `3.3==py311_arcgispro_52636`.   
-
-    `conda install arcpy=LISTED_ARCPY_VERSION -c esri`
-
-8. Install `earthengine-api`, `xarray`, and `xee` from conda forge channel. It is recommended to use `conda install` instead of `mamba install`, because `mamba install` may not work properly with `earthengine-api` and `xee`. 
-
-    `conda install earthengine-api xarray xee -c conda-forge`
-
-9. Install specific versions of `gdal` and `rasterio`. The current default version of `gdal=3.9.2` and `rasterio=1.3.10` are incompatible.
-
-    `conda install gdal=3.8.1 rasterio=1.3.9 -c conda-forge`
+        conda install rasterio=1.3.9 -c esri
     
-10. Activate package `gee` within ArcPro
+8. Activate package `gee` within ArcPro
 
-    `proswap gee` 
+        proswap gee 
     
 
-After running the above commands, close Python Command Prompt, and start ArcPro. The default environment is now `gee`. The `earthengine-api` is ready for authentication. 
+After running the above commands, close Python Command Prompt, and start ArcPro. The default conda environment becomes `gee`. To check if the packages have been successufully installed, click **Analysis** -> **Python** -> **Python Window**. Run the following commands. 
+
+    import ee
+    import xee
+    import rasterio
+
+The `earthengine-api` is then ready for authentication and initialization. 
 
 ## Download ArcGEE Connector Toolbox
 
