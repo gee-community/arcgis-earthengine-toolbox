@@ -1,6 +1,6 @@
 # Installation
 
-## Conda Environement Setup For Earth Engine API  
+## Conda Environment Setup For Earth Engine API  
 
 Before starting the installation, ensure that you have the necessary account permissions to create a conda environment and install the required packages. **If your ArcPro was installed by an administrator, you will need administrator-level permissions to complete the installation.**  
 
@@ -8,18 +8,18 @@ For ArcPro version `3.x`, follow the steps below to set up the conda environment
 
 ### Step 1 - Run ArcGIS Python Command Prompt 
 
-To do this in your Windows computer, go to **Start Menu** -> **All Apps** -> **ArcGIS folder** -> **Python Command Prompt**, click to run. 
+To do this in your Windows computer, go to **Start Menu** -> **All Apps** -> **ArcGIS folder** -> **Python Command Prompt**, click to run. To run the Python Command Prompt as administrator, right-click on the Python Command Prompt, and select **Run as administrator**.
 
 
 ### Step 2 - Set up the Conda Environment
 
 Once you run the Python Command Prompt,
 
-1. List all available conda environements using the following command. The default ArcPro package should be `arcgispro-py3`. 
+1. List all available conda environments using the following command. The default ArcPro package should be `arcgispro-py3`. 
 
         conda env list
 
-2. You cannot modify the default package `arcgispro-py3`. Instead, clone it to create a new conda environment `gee`. 
+2. You cannot modify the default package `arcgispro-py3`. Instead, clone it to create a new conda environment `gee`. Please make sure to use a new name for the conda environment. Creating conda environment with the existing name `gee` will overwrite the existing conda environment. 
 
         conda create --name gee --clone arcgispro-py3
 
@@ -27,9 +27,9 @@ Once you run the Python Command Prompt,
 
         conda init cmd.exe 
 
-    **After runing the command, please make sure to restart the Python Command Prompt.** To do this, close the current Python Command Prompt window and open a new one.  
+    **After running the command, please make sure to restart the Python Command Prompt.** To do this, close the current Python Command Prompt window and open a new one.  
 
-4. Activate the new conda environement `gee`. 
+4. Activate the new conda environment `gee`. 
 
         conda activate gee 
 
@@ -50,7 +50,7 @@ Once you run the Python Command Prompt,
         proswap gee 
     
 
-After running the above commands, close Python Command Prompt, and start ArcPro. The default conda environment becomes `gee`. To check if the packages have been successufully installed, click **Analysis** -> **Python** -> **Python Window**. Run the following commands. 
+After running the above commands, close Python Command Prompt, and start ArcPro. The default conda environment becomes `gee`. To check if the packages have been successfully installed, click **Analysis** -> **Python** -> **Python Window**. Run the following commands. 
 
     import ee
     import xee
@@ -60,16 +60,81 @@ The `earthengine-api` is then ready for authentication and initialization.
 
 ## Download ArcGEE Connector Toolbox
 
-The user can download the ArcGEE Connector Toolbox at this [link](https://github.com/di-private/redlands-desktop-engine/tree/woolpert_dev/toolbox). Download the entire toolbox folder and move it to the ArcPro connected direcotry, the toolbox will automatially appear in the Catalog. 
+The ArcGEE Connector Toolbox can be obtained through the following steps:
+
+1. Download the repository from this [link](https://github.com/di-private/redlands-desktop-engine/tree/woolpert_dev/toolbox) using either method:
+   - Clone the repository using git: `git clone https://github.com/di-private/redlands-desktop-engine.git`
+   - Or download as ZIP file and extract it to your desired location
+
+   You can download the repository folder to your ArcPro project folder such as `C:\Users\<username>\Documents\ArcGIS\Projects\<project_name>\ArcGEE Connector Toolbox`. Meanwhile, you can also download the repository folder to any other location and connect it to ArcPro. 
+
+2. Connect the repository folder to ArcPro if needed:
+   - Open ArcPro
+   - In the Catalog pane, right-click on "Folders"
+   - Select "Add Folder Connection"
+   - Navigate to and select the repository folder
+
+3. Refresh the Folders in the Catalog pane, and the toolbox will appear automatically.
 
 
 ## Google Cloud SDK
 
-If Google Cloud SDK is installed, the Google Cloud default credentials may affect Google Earth Engine authentication through ArcPro Python script. Therefore, it is recommended to modify Google Cloud default credentials to be consistent with the target Google project for Earth Engine. To achieve this, follow the steps below.
+To install the Google Cloud SDK, admin permissions are often required, especially on systems where the SDK needs to modify system files or be installed for all users. It’s also possible to install the SDK without admin rights if you install it in a user-specific directory. 
 
-1. In Windows OS, search for "Google Cloud SDK Shell", click to open.
-2. Check the active Google account using `gcloud auth list`. Make sure the account aligns with the target Google project for Earth Engine.
-3. If the user wants to choose another account, type `gcloud auth login`. The browser will pop up asking user to choose the target Google account for Earth Engine. 
-4. Check the active Google project using `gcloud config list`. Make sure the project ID algins with the target Google project for Earth Engine. 
-5. If the user wants to choose another project, type `gcloud config set project YOUR_PROJECT_ID`. 
-6. Re-authenticate to update the `application_default_credentials.json` file by using `gcloud auth application-default login` or `gcloud auth application-default set-quota-project QUOTA_PROJECT_ID`. Next when user runs "ee.Initialize()", it will automatically refer to the default project in this "application_default_credentials.json" file. 
+Admin rights are typically only required during installation. Most gcloud commands and operations can be performed without admin rights, provided the user has the correct permissions within Google Cloud.
+
+If Google Cloud SDK is installed, the Google Cloud default credentials may affect Google Earth Engine authentication through ArcGEE Connector Toolbox. Therefore, it is recommended to modify Google Cloud default credentials to be consistent with the target Google project for Earth Engine. To achieve this, follow the steps below.
+
+### Finding Your Google Cloud Project ID
+Before proceeding, you'll need your Google Cloud Project ID. To find it:
+1. Go to the [Google Cloud Console](https://console.cloud.google.com)
+2. Click on the project dropdown at the top of the page
+3. Your Project ID is listed in the projects table
+   - Note: The Project ID is different from the Project Name
+   - It typically looks like: `my-project-123456` or `project-id-123456`
+
+### Configuring Google Cloud SDK
+
+The Google Cloud SDK shell (commonly referred to as the gcloud command-line interface) operates in a terminal or command prompt environment and has a standard text-based interface. It doesn't have a graphical user interface but relies on commands and text outputs.
+
+![Alt Text](images/gcloud_shell.png)
+
+1. In Windows OS, search for "Google Cloud SDK Shell", click to open. To run the Google Cloud SDK Shell as administrator, right-click on the Google Cloud SDK Shell, and select **Run as administrator**. 
+
+   **For the first time setup, skip Step 2 and Step 3, go to Step 4.**
+
+2. Check the active Google account using:
+   ```
+   gcloud auth list
+   ```
+   Make sure the account aligns with the target Google project for Earth Engine. If you need to switch to another account, run:
+   ```
+   gcloud auth login
+   ```
+   A browser window will open asking you to choose the target Google account for Earth Engine.
+
+3. Check the active Google project using:
+   ```
+   gcloud config list
+   ```
+   Verify that the project ID matches your target Google project for Earth Engine. To switch to a different project, run:
+   ```
+   gcloud config set project YOUR_PROJECT_ID
+   ```
+   Replace `YOUR_PROJECT_ID` with the Project ID you found in the Google Cloud Console.
+
+4. For the first time setup, authenticate to create the `application_default_credentials.json` file using:
+   ```
+   gcloud auth application-default login
+   ```
+   A browser window will pop up asking you to choose the target Google account and project.
+   
+   For the existing setup, update the `application_default_credentials.json` file using:
+   ```
+   gcloud auth application-default set-quota-project QUOTA_PROJECT_ID
+   ```
+   Replace `QUOTA_PROJECT_ID` with the Project ID you found in the Google Cloud Console.
+
+   **Note:** The `application_default_credentials.json` file is usually located in the `C:\Users\<username>\AppData\Roaming\gcloud` directory.
+
+   After this, when you run `ee.Initialize()`, it will automatically use the default project specified in the `application_default_credentials.json` file.

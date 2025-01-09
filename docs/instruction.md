@@ -1,4 +1,4 @@
-# User Instruction
+# ArcGEE Connector User Guide
 
 ## Authentication Tools
 

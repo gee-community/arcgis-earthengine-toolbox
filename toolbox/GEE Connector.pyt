@@ -27,6 +27,12 @@ import arcgee
 
 
 def init_and_set_tags(project=None, workload_tag=None):
+    """Initialize Earth Engine and set user agent and workload tags.
+
+    Args:
+        project (str, optional): Google Cloud project ID. Defaults to None.
+        workload_tag (str, optional): Custom workload tag. Defaults to None.
+    """
     ee.Initialize(project=project)
 
     user_agent = f"ArcGIS_EE/{__version__}/ArcPy/{arcpy.__version__}"
@@ -50,6 +56,16 @@ def init_and_set_tags(project=None, workload_tag=None):
 
 # Project a point to WGS 84 (EPSG 4326)
 def project_to_wgs84(x, y, in_spatial_ref):
+    """Project a point from input spatial reference to WGS 84 (EPSG:4326).
+
+    Args:
+        x (float): X coordinate in input spatial reference
+        y (float): Y coordinate in input spatial reference
+        in_spatial_ref (SpatialReference): Input spatial reference object
+
+    Returns:
+        tuple: (longitude, latitude) coordinates in WGS 84
+    """
     point = arcpy.Point(x, y)
     point_geom = arcpy.PointGeometry(point, in_spatial_ref)
     wgs84 = arcpy.SpatialReference(4326)
@@ -59,6 +75,17 @@ def project_to_wgs84(x, y, in_spatial_ref):
 
 # Get centroid and extent coordinates of input image or feature collection
 def get_object_centroid(obj, error_margin):
+    """Get the centroid and extent coordinates of an Earth Engine object.
+
+    Args:
+        obj (ee.Image or ee.FeatureCollection): Earth Engine object
+        error_margin (float): Error margin for geometry calculations
+
+    Returns:
+        tuple: (centroid_coords, extent_coords) where:
+            - centroid_coords is [lon, lat] of centroid
+            - extent_coords is list of corner coordinates defining the bounds
+    """
     # get centroid geometry from input image
     centroid = obj.geometry().centroid(error_margin)
     # coordinates in list
@@ -72,6 +99,13 @@ def get_object_centroid(obj, error_margin):
 
 # Zoom project map view to point
 def zoom_to_point(aprx, point_coords, extent_coords):
+    """Zoom the map view to a point with buffer based on extent.
+
+    Args:
+        aprx (ArcGISProject): ArcGIS Pro project object
+        point_coords (list): [lon, lat] coordinates of center point
+        extent_coords (list): List of corner coordinates defining the bounds
+    """
     # get current project map view
     view = aprx.activeView
     # Create an extent around the centroid
@@ -92,6 +126,8 @@ def zoom_to_point(aprx, point_coords, extent_coords):
         centroid_x + zoom_buffer,  # xmax
         centroid_y + zoom_buffer,  # ymax
     )
+    # assuming the ee object centroid and extent are always in lat/lon
+    extent.spatialReference = arcpy.SpatialReference(4326)
 
     # Set the map view to the new extent
     view.camera.setExtent(extent)
@@ -101,6 +137,11 @@ def zoom_to_point(aprx, point_coords, extent_coords):
 
 # Get map view extent
 def get_map_view_extent():
+    """Get the current map view extent coordinates in WGS 84.
+
+    Returns:
+        tuple: (xmin, ymin, xmax, ymax) coordinates in WGS 84
+    """
     aprx = arcpy.mp.ArcGISProject("CURRENT")
     # Get the active map view
     view = aprx.activeView
@@ -130,6 +171,14 @@ def get_map_view_extent():
 
 # Get the coordinates from polygon feature layer
 def get_polygon_coords(in_poly):
+    """Extract coordinates from a polygon feature layer and convert to WGS 84.
+
+    Args:
+        in_poly (str): Input polygon feature layer path/name
+
+    Returns:
+        list: List of polygon coordinates in WGS 84
+    """
     spatial_ref = arcpy.Describe(in_poly).spatialReference
     poly_prj = spatial_ref.PCSCode
     if poly_prj == 0:
@@ -171,6 +220,14 @@ def get_polygon_coords(in_poly):
 
 # Check whether use projection or crs code for image to xarray dataset
 def whether_use_projection(ic):
+    """Check whether to use projection or CRS code for image to xarray dataset.
+
+    Args:
+        ic (ee.ImageCollection): Input image collection
+
+    Returns:
+        bool: True if projection should be used, False if CRS code should be used
+    """
     # Start with original projection
     prj = ic.first().select(0).projection()
     # Check crs code
@@ -198,6 +255,17 @@ def image_to_geotiff(
     use_projection,
     out_tiff,
 ):
+    """Download a GEE Image to GeoTiff format.
+
+    Args:
+        ic (ee.ImageCollection): Input image collection
+        bands (list): List of band names to include
+        crs (str): Coordinate reference system
+        scale_ds (float): Scale/resolution for downloading
+        roi (ee.Geometry): Region of interest geometry
+        use_projection (bool): Whether to use projection or CRS code
+        out_tiff (str): Output GeoTiff file path
+    """
     import rasterio
     from rasterio.transform import from_origin
 
@@ -213,7 +281,7 @@ def image_to_geotiff(
             scale=scale_ds,
             geometry=roi,
         )
-        # Use either X/Y or lat/lon depending on the avaialability
+        # Use either X/Y or lat/lon depending on the availability
         if "X" in list(ds.variables.keys()):
             arcpy.AddMessage("Use X/Y to define tranform")
             transform = from_origin(
@@ -284,8 +352,15 @@ def image_to_geotiff(
 def upload_to_gcs_bucket(
     storage_client, bucket_name, source_file_name, destination_blob_name
 ):
+    """Upload a local file to Google Cloud Storage bucket.
+
+    Args:
+        storage_client (google.cloud.storage.Client): Storage client instance
+        bucket_name (str): Name of the GCS bucket
+        source_file_name (str): Local file path to upload
+        destination_blob_name (str): Destination path in GCS bucket
+    """
     arcpy.AddMessage("Upload to Google Cloud Storage ...")
-    """Uploads a file to the bucket."""
     # Get the bucket that the file will be uploaded to
     bucket = storage_client.bucket(bucket_name)
 
@@ -301,6 +376,13 @@ def upload_to_gcs_bucket(
 
 # Convert Google Cloud Storage file to Earth Engine asset
 def gcs_file_to_ee_asset(asset_type, asset_id, bucket_uri):
+    """Convert a Google Cloud Storage file to an Earth Engine asset.
+
+    Args:
+        asset_type (str): Type of Earth Engine asset to create
+        asset_id (str): ID for the new Earth Engine asset
+        bucket_uri (str): URI of the file in Google Cloud Storage
+    """
     import subprocess
 
     arcpy.AddMessage("Convert Google Cloud Storage file to Earth Engine asset ...")
@@ -325,6 +407,11 @@ def gcs_file_to_ee_asset(asset_type, asset_id, bucket_uri):
 
 # Create an Earth Engine image collection
 def create_image_collection(asset_folder):
+    """Create an Earth Engine image collection.
+
+    Args:
+        asset_folder (str): Path where the image collection will be created
+    """
     import subprocess
 
     arcpy.AddMessage("Create an Earth Engine image collection ...")
@@ -347,6 +434,11 @@ def create_image_collection(asset_folder):
 
 # Create a folder on Earth Engine
 def create_ee_folder(asset_folder):
+    """Create a folder on Earth Engine.
+
+    Args:
+        asset_folder (str): Path where the folder will be created
+    """
     import subprocess
 
     arcpy.AddMessage("Create an Earth Engine folder ...")
@@ -369,6 +461,14 @@ def create_ee_folder(asset_folder):
 
 # Check if an Earth Engine asset already exists
 def asset_exists(asset_id):
+    """Check if an Earth Engine asset already exists.
+
+    Args:
+        asset_id (str): ID of the Earth Engine asset to check
+
+    Returns:
+        bool: True if asset exists, False otherwise
+    """
     try:
         # Try to retrieve asset information
         ee.data.getAsset(asset_id)
@@ -380,7 +480,16 @@ def asset_exists(asset_id):
 
 # List all folders in the bucket
 def list_folders_recursive(storage_client, bucket_name, prefix=""):
-    """Recursively lists all folders in a Google Cloud Storage bucket."""
+    """Recursively list all folders in a Google Cloud Storage bucket.
+
+    Args:
+        storage_client (google.cloud.storage.Client): Storage client instance
+        bucket_name (str): Name of the GCS bucket
+        prefix (str, optional): Prefix to filter folders. Defaults to "".
+
+    Returns:
+        list: Sorted list of folder paths in the bucket
+    """
     # List blobs with a delimiter to group them by "folders"
     blobs = storage_client.list_blobs(bucket_name, prefix=prefix, delimiter="/")
 
@@ -403,16 +512,17 @@ def list_folders_recursive(storage_client, bucket_name, prefix=""):
 
 # List files within a folder in the bucket
 def list_files_in_folder(storage_client, bucket_name, folder_name):
-    """
-    Lists only files within a specified folder in a Google Cloud Storage bucket.
+    """List files within a specified folder in a Google Cloud Storage bucket.
 
-    :param bucket_name: Name of the GCS bucket.
-    :param folder_name: Path to the folder within the bucket (e.g., "folder/subfolder/").
-    :return: List of file paths within the specified folder.
+    Args:
+        storage_client (google.cloud.storage.Client): Storage client instance
+        bucket_name (str): Name of the GCS bucket
+        folder_name (str): Path to the folder within the bucket
+
+    Returns:
+        list: List of file paths within the specified folder
     """
     blobs = storage_client.list_blobs(bucket_name, prefix=folder_name)
-    # for blob in blobs:
-    #    blob_name = blob.name
 
     # Filter out any "folders" (items ending with a trailing slash)
     files = [blob.name for blob in blobs if not blob.name.endswith("/")]
@@ -439,17 +549,17 @@ class Toolbox:
         tools.append(GEEAuth)
 
         # data exploration tools
-        tools.append(AddImg2MapbyTag)
+        tools.append(AddImg2MapbyID)
         tools.append(AddImg2MapbyObj)
-        tools.append(AddImgCol2MapbyTag)
+        tools.append(AddImgCol2MapbyID)
         tools.append(AddImgCol2MapbyObj)
-        tools.append(AddFeatCol2MapbyTag)
+        tools.append(AddFeatCol2MapbyID)
         tools.append(AddFeatCol2MapbyObj)
 
         # data management tools
-        tools.append(DownloadImgbyTag)
+        tools.append(DownloadImgbyID)
         tools.append(DownloadImgbyObj)
-        tools.append(DownloadImgColbyTag)
+        tools.append(DownloadImgColbyID)
         tools.append(DownloadImgColbyObj)
         tools.append(DownloadImgCol2Gif)
         tools.append(Upload2GCS)
@@ -706,12 +816,12 @@ class GEEAuth:
 """ Data Exploration Tools """
 
 
-# Add GEE Image to Map by Asset Tag
-class AddImg2MapbyTag:
+# Add GEE Image to Map by Asset ID
+class AddImg2MapbyID:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Add Image to Map by Asset Tag"
+        self.label = "Add Image to Map by Asset ID"
         self.description = ""
         self.category = "Data Exploration Tools"
         self.canRunInBackgroud = False
@@ -719,8 +829,8 @@ class AddImg2MapbyTag:
     def getParameterInfo(self):
         """Define the tool parameters."""
         param0 = arcpy.Parameter(
-            name="asset_tag",
-            displayName="Specify the image asset tag",
+            name="asset_id",
+            displayName="Specify the image asset ID",
             datatype="GPString",
             direction="Input",
             parameterType="Required",
@@ -790,10 +900,10 @@ class AddImg2MapbyTag:
         has been changed."""
 
         # Check band list of the selected image
-        img_tag = parameters[0].valueAsText
+        img_id = parameters[0].valueAsText
         # Update only when filter list is empty
-        if img_tag and not parameters[1].filter.list:
-            image = ee.Image(img_tag)
+        if img_id and not parameters[1].filter.list:
+            image = ee.Image(img_id)
             band_names = image.bandNames()
             band_list = band_names.getInfo()
             # Add band resolution information to display
@@ -805,8 +915,8 @@ class AddImg2MapbyTag:
                 band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
             parameters[1].filter.list = band_res_list
 
-        # Reset band filter list when asset tag changes
-        if not img_tag:
+        # Reset band filter list when asset ID changes
+        if not img_id:
             parameters[1].filter.list = []
 
         return
@@ -818,7 +928,7 @@ class AddImg2MapbyTag:
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        img_tag = parameters[0].valueAsText
+        img_id = parameters[0].valueAsText
         band_str = parameters[1].valueAsText
         min_val = parameters[2].valueAsText
         max_val = parameters[3].valueAsText
@@ -864,7 +974,7 @@ class AddImg2MapbyTag:
             vis_params["palette"] = palette
 
         # Get image by label
-        img = ee.Image(img_tag)
+        img = ee.Image(img_id)
         # Get the map ID and token
         map_id_dict = img.getMapId(vis_params)
 
@@ -877,9 +987,9 @@ class AddImg2MapbyTag:
         tsl = aprxMap.addDataFromPath(map_url)
         # Add band information to map name
         if band_str:
-            tsl.name = img_tag + "--" + "--".join(bands_only)
+            tsl.name = img_id + "--" + "--".join(bands_only)
         else:
-            tsl.name = img_tag
+            tsl.name = img_id
 
         # Zoom to image centroid if provided by dataset
         try:
@@ -927,15 +1037,6 @@ class AddImg2MapbyObj:
         param0.filter.list = ["json"]
 
         param1 = arcpy.Parameter(
-            name="current_tag",
-            displayName="The asset tag of the selected object is shown below",
-            datatype="GPString",
-            direction="Input",
-            multiValue=False,
-            parameterType="Optional",
-        )
-
-        param2 = arcpy.Parameter(
             name="bands",
             displayName="Specify three bands for RGB visualization",
             datatype="GPString",
@@ -944,7 +1045,7 @@ class AddImg2MapbyObj:
             parameterType="Optional",
         )
 
-        param3 = arcpy.Parameter(
+        param2 = arcpy.Parameter(
             name="min_val",
             displayName="Specify the minimum value for visualization",
             datatype="GPDouble",
@@ -952,7 +1053,7 @@ class AddImg2MapbyObj:
             parameterType="Optional",
         )
 
-        param4 = arcpy.Parameter(
+        param3 = arcpy.Parameter(
             name="max_val",
             displayName="Specify the maximum value for visualization",
             datatype="GPDouble",
@@ -960,7 +1061,7 @@ class AddImg2MapbyObj:
             parameterType="Optional",
         )
 
-        param5 = arcpy.Parameter(
+        param4 = arcpy.Parameter(
             name="gamma",
             displayName="Specify gamma correction factors",
             datatype="GPString",
@@ -968,7 +1069,7 @@ class AddImg2MapbyObj:
             parameterType="Optional",
         )
 
-        param6 = arcpy.Parameter(
+        param5 = arcpy.Parameter(
             name="palette",
             displayName="Specify color palette in CSS-style color strings for visualization",
             datatype="GPString",
@@ -976,7 +1077,7 @@ class AddImg2MapbyObj:
             parameterType="Optional",
         )
 
-        params = [param0, param1, param2, param3, param4, param5, param6]
+        params = [param0, param1, param2, param3, param4, param5]
         return params
 
     def isLicensed(self):
@@ -990,12 +1091,9 @@ class AddImg2MapbyObj:
 
         json_path = parameters[0].valueAsText
         if json_path:
-            # Display the asset tag of the selected object
             image = arcgee.data.load_ee_result(json_path)
-            parameters[1].value = image.get("system:id").getInfo()
-
             # Update when band filter list is empty
-            if not parameters[2].filter.list:
+            if not parameters[1].filter.list:
                 band_names = image.bandNames()
                 band_list = band_names.getInfo()
                 # Add band resolution information to display
@@ -1005,12 +1103,11 @@ class AddImg2MapbyObj:
                     proj = band_tmp.projection()
                     res = proj.nominalScale().getInfo()
                     band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
-                parameters[2].filter.list = band_res_list
+                parameters[1].filter.list = band_res_list
 
         # Reset band filter list when asset tag changes
         if not json_path:
-            parameters[1].value = None
-            parameters[2].filter.list = []
+            parameters[1].filter.list = []
 
         return
 
@@ -1022,11 +1119,11 @@ class AddImg2MapbyObj:
     def execute(self, parameters, messages):
         """The source code of the tool."""
         json_path = parameters[0].valueAsText
-        band_str = parameters[2].valueAsText
-        min_val = parameters[3].valueAsText
-        max_val = parameters[4].valueAsText
-        gamma_str = parameters[5].valueAsText
-        palette_str = parameters[6].valueAsText
+        band_str = parameters[1].valueAsText
+        min_val = parameters[2].valueAsText
+        max_val = parameters[3].valueAsText
+        gamma_str = parameters[4].valueAsText
+        palette_str = parameters[5].valueAsText
 
         # Define visualization parameters
         vis_params = {}
@@ -1068,7 +1165,7 @@ class AddImg2MapbyObj:
 
         # Get image by label
         img = arcgee.data.load_ee_result(json_path)
-        img_tag = img.get("system:id").getInfo()
+        img_id = img.get("system:id").getInfo()
         # Get the map ID and token
         map_id_dict = img.getMapId(vis_params)
 
@@ -1081,9 +1178,9 @@ class AddImg2MapbyObj:
         tsl = aprxMap.addDataFromPath(map_url)
         # Add band information to map name
         if band_str:
-            tsl.name = img_tag + "--" + "--".join(bands_only)
+            tsl.name = img_id + "--" + "--".join(bands_only)
         else:
-            tsl.name = img_tag
+            tsl.name = img_id
 
         # Zoom to image centroid if provided by dataset
         try:
@@ -1099,12 +1196,12 @@ class AddImg2MapbyObj:
         return
 
 
-# Add GEE Image Collection to Map by Asset Tag
-class AddImgCol2MapbyTag:
+# Add GEE Image Collection to Map by Asset ID
+class AddImgCol2MapbyID:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Add Image Collection to Map by Asset Tag"
+        self.label = "Add Image Collection to Map by Asset ID"
         self.description = ""
         self.category = "Data Exploration Tools"
         self.canRunInBackgroud = False
@@ -1113,8 +1210,8 @@ class AddImgCol2MapbyTag:
         """Define the tool parameters."""
 
         param0 = arcpy.Parameter(
-            name="asset_tag",
-            displayName="Specify the image collection asset tag",
+            name="asset_id",
+            displayName="Specify the image collection asset ID",
             datatype="GPString",
             direction="Input",
             parameterType="Required",
@@ -1150,7 +1247,7 @@ class AddImgCol2MapbyTag:
 
         param4 = arcpy.Parameter(
             name="image",
-            displayName="Select image by image ID",
+            displayName="Select an image",
             datatype="GPString",
             direction="Input",
             parameterType="Required",
@@ -1259,12 +1356,12 @@ class AddImgCol2MapbyTag:
                 lat = None
 
         # Check image list of a given collection asset
-        asset_tag = parameters[0].valueAsText
+        asset_id = parameters[0].valueAsText
 
         # Image collection size could be huge, may take long to load without filters
         # Only retrieve the list of images, when either filter dates or filter bounds are selected
-        if asset_tag and ((start_date and end_date) or (lon and lat)):
-            collection = ee.ImageCollection(asset_tag)
+        if asset_id and ((start_date and end_date) or (lon and lat)):
+            collection = ee.ImageCollection(asset_id)
             # Filter image collection as specified
             if lon is not None and lat is not None:
                 collection = collection.filterBounds(
@@ -1272,19 +1369,16 @@ class AddImgCol2MapbyTag:
                 )
             if start_date is not None and end_date is not None:
                 collection = collection.filterDate(start_date, end_date)
-            # Get image IDs from collection
-            image_ids = collection.aggregate_array("system:index").getInfo()
+            # Get image IDs from collection, limit to 50 images to avoid slow response
+            image_ids = collection.limit(50).aggregate_array("system:index").getInfo()
             parameters[4].filter.list = image_ids
 
         # Check band list of the selected image
-        img_id = parameters[4].valueAsText
+        img_name = parameters[4].valueAsText
         # Update only when filter list is empty
-        if img_id and not parameters[5].filter.list:
-            if asset_tag:
-                img_tag = asset_tag + "/" + img_id
-            else:
-                img_tag = img_id
-            image = ee.Image(img_tag)
+        if img_name and not parameters[5].filter.list:
+            img_id = asset_id + "/" + img_name
+            image = ee.Image(img_id)
             band_names = image.bandNames()
             band_list = band_names.getInfo()
             # Add band resolution information to display
@@ -1296,9 +1390,11 @@ class AddImgCol2MapbyTag:
                 band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
             parameters[5].filter.list = band_res_list
 
-        # Reset band filter list when asset tag changes
-        if (not img_id) and (not parameters[0].valueAsText):
-            parameters[5].filter.list = []
+        # Reset image and band filter list when asset tag changes
+        if not parameters[0].valueAsText:
+            parameters[4].filter.list = []
+            if not img_name:
+                parameters[5].filter.list = []
 
         return
 
@@ -1309,23 +1405,20 @@ class AddImgCol2MapbyTag:
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        asset_tag = parameters[0].valueAsText
+        asset_id = parameters[0].valueAsText
         # These three input parameters are only used in updateParameters above
         # filter_dates = parameters[1].valueAsText
         # filter_bounds = parameters[2].valueAsText
         # use_extent = parameters[3].valueAsText
-        img_id = parameters[4].valueAsText
+        img_name = parameters[4].valueAsText
         band_str = parameters[5].valueAsText
         min_val = parameters[6].valueAsText
         max_val = parameters[7].valueAsText
         gamma_str = parameters[8].valueAsText
         palette_str = parameters[9].valueAsText
 
-        # Construct asset tag for selected image
-        if asset_tag:
-            img_tag = asset_tag + "/" + img_id
-        else:
-            img_tag = img_id
+        # Construct asset id for selected image
+        img_id = asset_id + "/" + img_name
 
         # Define visualization parameters
         vis_params = {}
@@ -1366,7 +1459,7 @@ class AddImgCol2MapbyTag:
             vis_params["palette"] = palette
 
         # Get image by label
-        img = ee.Image(img_tag)
+        img = ee.Image(img_id)
         # Get the map ID and token
         map_id_dict = img.getMapId(vis_params)
 
@@ -1379,9 +1472,9 @@ class AddImgCol2MapbyTag:
         tsl = aprxMap.addDataFromPath(map_url)
         # Add band information to map name
         if band_str:
-            tsl.name = img_tag + "--" + "--".join(bands_only)
+            tsl.name = img_id + "--" + "--".join(bands_only)
         else:
-            tsl.name = img_tag
+            tsl.name = img_id
 
         # Zoom to image centroid if provided by dataset
         try:
@@ -1423,7 +1516,7 @@ class AddImgCol2MapbyTag:
                     lon = None
                     lat = None
 
-            collection = ee.ImageCollection(asset_tag)
+            collection = ee.ImageCollection(asset_id)
             # Filter image collection as specified
             if lon is not None and lat is not None:
                 collection = collection.filterBounds(
@@ -1466,15 +1559,6 @@ class AddImgCol2MapbyObj:
         param0.filter.list = ["json"]
 
         param1 = arcpy.Parameter(
-            name="current_tag",
-            displayName="The asset tag of the selected object is shown below",
-            datatype="GPString",
-            direction="Input",
-            multiValue=False,
-            parameterType="Optional",
-        )
-
-        param2 = arcpy.Parameter(
             name="image",
             displayName="Select image by image ID",
             datatype="GPString",
@@ -1482,7 +1566,7 @@ class AddImgCol2MapbyObj:
             parameterType="Required",
         )
 
-        param3 = arcpy.Parameter(
+        param2 = arcpy.Parameter(
             name="bands",
             displayName="Specify three bands for RGB visualization",
             datatype="GPString",
@@ -1491,7 +1575,7 @@ class AddImgCol2MapbyObj:
             parameterType="Optional",
         )
 
-        param4 = arcpy.Parameter(
+        param3 = arcpy.Parameter(
             name="min_val",
             displayName="Specify the minimum value for visualization",
             datatype="GPDouble",
@@ -1499,7 +1583,7 @@ class AddImgCol2MapbyObj:
             parameterType="Optional",
         )
 
-        param5 = arcpy.Parameter(
+        param4 = arcpy.Parameter(
             name="max_val",
             displayName="Specify the maximum value for visualization",
             datatype="GPDouble",
@@ -1507,7 +1591,7 @@ class AddImgCol2MapbyObj:
             parameterType="Optional",
         )
 
-        param6 = arcpy.Parameter(
+        param5 = arcpy.Parameter(
             name="gamma",
             displayName="Specify gamma correction factors",
             datatype="GPString",
@@ -1515,7 +1599,7 @@ class AddImgCol2MapbyObj:
             parameterType="Optional",
         )
 
-        param7 = arcpy.Parameter(
+        param6 = arcpy.Parameter(
             name="palette",
             displayName="Specify color palette in CSS-style color strings for visualization",
             datatype="GPString",
@@ -1523,7 +1607,7 @@ class AddImgCol2MapbyObj:
             parameterType="Optional",
         )
 
-        params = [param0, param1, param2, param3, param4, param5, param6, param7]
+        params = [param0, param1, param2, param3, param4, param5, param6]
         return params
 
     def isLicensed(self):
@@ -1538,23 +1622,20 @@ class AddImgCol2MapbyObj:
         json_path = parameters[0].valueAsText
         if json_path:
             collection = arcgee.data.load_ee_result(json_path)
-            # Display the asset tag of selected object
-            parameters[1].value = collection.get("system:id").getInfo()
-
             # Only fill the image id filter list when it is empty
-            if not parameters[2].filter.list:
+            if not parameters[1].filter.list:
                 # Get image IDs from collection
-                image_ids = collection.aggregate_array("system:index").getInfo()
-                parameters[2].filter.list = image_ids
+                image_names = collection.aggregate_array("system:index").getInfo()
+                parameters[1].filter.list = image_names
 
             # Check band list of the selected image
-            img_id = parameters[2].valueAsText
+            img_name = parameters[1].valueAsText
             # Update only when filter list is empty
-            if img_id and not parameters[3].filter.list:
+            if img_name and not parameters[2].filter.list:
                 # retrieve image tag from collection
                 asset_tag = collection.get("system:id").getInfo()
-                img_tag = asset_tag + "/" + img_id
-                image = ee.Image(img_tag)
+                img_id = asset_tag + "/" + img_name
+                image = ee.Image(img_id)
                 band_names = image.bandNames()
                 band_list = band_names.getInfo()
                 # Add band resolution information to display
@@ -1564,16 +1645,14 @@ class AddImgCol2MapbyObj:
                     proj = band_tmp.projection()
                     res = proj.nominalScale().getInfo()
                     band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
-                parameters[3].filter.list = band_res_list
+                parameters[2].filter.list = band_res_list
 
-        # Reset image filter list
+        # Reset asset tag display and image filter list when json file is not selected
         if not json_path:
-            parameters[1].value = None
-            parameters[2].filter.list = []
-
-        # Reset band filter list when asset tag changes
-        if (not parameters[2].valueAsText) and (not json_path):
-            parameters[3].filter.list = []
+            parameters[1].filter.list = []
+            # Reset band filter list
+            if not parameters[1].valueAsText:
+                parameters[2].filter.list = []
 
         return
 
@@ -1585,20 +1664,20 @@ class AddImgCol2MapbyObj:
     def execute(self, parameters, messages):
         """The source code of the tool."""
         json_path = parameters[0].valueAsText
-        img_id = parameters[2].valueAsText
-        band_str = parameters[3].valueAsText
-        min_val = parameters[4].valueAsText
-        max_val = parameters[5].valueAsText
-        gamma_str = parameters[6].valueAsText
-        palette_str = parameters[7].valueAsText
+        img_name = parameters[1].valueAsText
+        band_str = parameters[2].valueAsText
+        min_val = parameters[3].valueAsText
+        max_val = parameters[4].valueAsText
+        gamma_str = parameters[5].valueAsText
+        palette_str = parameters[6].valueAsText
 
         # load collection object
         collection = arcgee.data.load_ee_result(json_path)
         # Get image tag for layer name
-        asset_tag = collection.get("system:id").getInfo()
-        img_tag = asset_tag + "/" + img_id
+        asset_id = collection.get("system:id").getInfo()
+        img_id = asset_id + "/" + img_name
         # Get image by label
-        img = ee.Image(img_tag)
+        img = ee.Image(img_id)
 
         # Define visualization parameters
         vis_params = {}
@@ -1650,9 +1729,9 @@ class AddImgCol2MapbyObj:
         tsl = aprxMap.addDataFromPath(map_url)
         # Add band information to map name
         if band_str:
-            tsl.name = img_tag + "--" + "--".join(bands_only)
+            tsl.name = img_id + "--" + "--".join(bands_only)
         else:
-            tsl.name = img_tag
+            tsl.name = img_id
 
         # Zoom to image centroid if provided by dataset
         try:
@@ -1669,12 +1748,12 @@ class AddImgCol2MapbyObj:
         return
 
 
-# Add GEE Feature Collection to Map by Asset Tag
-class AddFeatCol2MapbyTag:
+# Add GEE Feature Collection to Map by Asset ID
+class AddFeatCol2MapbyID:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Add Feature Collection to Map by Asset Tag"
+        self.label = "Add Feature Collection to Map by Asset ID"
         self.description = ""
         self.category = "Data Exploration Tools"
         self.canRunInBackgroud = False
@@ -1698,8 +1777,8 @@ class AddFeatCol2MapbyTag:
         """
 
         param0 = arcpy.Parameter(
-            name="asset_tag",
-            displayName="Specify the feature collection asset tag",
+            name="asset_id",
+            displayName="Specify the feature collection asset ID",
             datatype="GPString",
             direction="Input",
             parameterType="Required",
@@ -1844,9 +1923,9 @@ class AddFeatCol2MapbyTag:
         #     # Check if the geometry type is 'Polygon'.
         #     return ee.List(geo_types).contains(geom.type())
 
-        if parameters[0].valueAsText and not parameters[1].filters[0].list:
-            asset_tag = parameters[0].valueAsText
-            fc = ee.FeatureCollection(asset_tag)
+        asset_id = parameters[0].valueAsText
+        if asset_id and not parameters[1].filters[0].list:
+            fc = ee.FeatureCollection(asset_id)
             prop_names = fc.first().propertyNames().getInfo()
             parameters[1].filters[0].list = sorted(prop_names)
 
@@ -1894,7 +1973,7 @@ class AddFeatCol2MapbyTag:
         """
         The source code of the tool.
         """
-        asset_tag = parameters[0].valueAsText
+        asset_id = parameters[0].valueAsText
         feat_color = parameters[6].valueAsText
 
         # point_shape= parameters[2].valueAsText
@@ -1927,7 +2006,7 @@ class AddFeatCol2MapbyTag:
         #     vis_params['fillColorOpacity'] = float(opacity)
 
         # Get image by label
-        fc = ee.FeatureCollection(asset_tag)
+        fc = ee.FeatureCollection(asset_id)
 
         # Filter by properties
         if parameters[1].valueAsText:
@@ -2000,7 +2079,7 @@ class AddFeatCol2MapbyTag:
             aprx = arcpy.mp.ArcGISProject("CURRENT")
             aprxMap = aprx.listMaps("Map")[0]
             tsl = aprxMap.addDataFromPath(map_url)
-            tsl.name = asset_tag
+            tsl.name = asset_id
 
             # Zoom to feature collection centroid if provided by dataset
             try:
@@ -2068,15 +2147,6 @@ class AddFeatCol2MapbyObj:
         param0.filter.list = ["json"]
 
         param1 = arcpy.Parameter(
-            name="current_tag",
-            displayName="The asset tag of the selected object is shown below",
-            datatype="GPString",
-            direction="Input",
-            multiValue=False,
-            parameterType="Optional",
-        )
-
-        param2 = arcpy.Parameter(
             name="color",
             displayName="Specify the color for visualization",
             datatype="GPString",
@@ -2133,7 +2203,7 @@ class AddFeatCol2MapbyObj:
         # param7.filter.type = "Range"
         # param7.filter.list = [0, 1]
 
-        params = [param0, param1, param2]
+        params = [param0, param1]
         # ,param2,param3,param4,param5,param6,param7]
         return params
 
@@ -2145,12 +2215,6 @@ class AddFeatCol2MapbyObj:
         """Modify the values and properties of parameters before internal
         validation is performed.  This method is called whenever a parameter
         has been changed."""
-        json_path = parameters[0].valueAsText
-        if json_path:
-            fc = arcgee.data.load_ee_result(json_path)
-            parameters[1].value = fc.get("system:id").getInfo()
-        else:
-            parameters[1].value = None
 
         return
 
@@ -2164,11 +2228,11 @@ class AddFeatCol2MapbyObj:
         The source code of the tool.
         """
         json_path = parameters[0].valueAsText
-        feat_color = parameters[2].valueAsText
+        feat_color = parameters[1].valueAsText
 
         # load collection object
         fc = arcgee.data.load_ee_result(json_path)
-        asset_tag = fc.get("system:id").getInfo()
+        asset_id = fc.get("system:id").getInfo()
 
         # point_shape= parameters[2].valueAsText
         # point_size = parameters[3].valueAsText
@@ -2212,7 +2276,7 @@ class AddFeatCol2MapbyObj:
             aprx = arcpy.mp.ArcGISProject("CURRENT")
             aprxMap = aprx.listMaps("Map")[0]
             tsl = aprxMap.addDataFromPath(map_url)
-            tsl.name = asset_tag
+            tsl.name = asset_id
 
             # Zoom to feature collection centroid if provided by dataset
             try:
@@ -2237,12 +2301,12 @@ class AddFeatCol2MapbyObj:
 """ Data Management Tools """
 
 
-# Download GEE Image by Asset Tag (through XEE + RasterIO)
-class DownloadImgbyTag:
+# Download GEE Image by Asset ID (through XEE + RasterIO)
+class DownloadImgbyID:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Download Image by Asset Tag"
+        self.label = "Download Image by Asset ID"
         self.description = ""
         self.category = "Data Management Tools"
         self.canRunInBackgroud = False
@@ -2252,8 +2316,8 @@ class DownloadImgbyTag:
 
         # Image collection inputs are optional
         param0 = arcpy.Parameter(
-            name="asset_tag",
-            displayName="Specify the image asset tag",
+            name="asset_id",
+            displayName="Specify the image asset ID",
             datatype="GPString",
             direction="Input",
             parameterType="Required",
@@ -2331,10 +2395,10 @@ class DownloadImgbyTag:
         validation is performed.  This method is called whenever a parameter
         has been changed."""
 
-        img_tag = parameters[0].valueAsText
+        img_id = parameters[0].valueAsText
         # Update only when filter list is empty
-        if img_tag and not parameters[1].filter.list:
-            image = ee.Image(img_tag)
+        if img_id and not parameters[1].filter.list:
+            image = ee.Image(img_id)
             band_names = image.bandNames()
             band_list = band_names.getInfo()
             # Add band resolution information to display
@@ -2380,7 +2444,7 @@ class DownloadImgbyTag:
 
         """The source code of the tool."""
         # Multiple images could be selected
-        asset_tag = parameters[0].valueAsText
+        asset_id = parameters[0].valueAsText
         band_str = parameters[1].valueAsText
         scale = parameters[2].valueAsText
         in_poly = parameters[3].valueAsText
@@ -2401,7 +2465,7 @@ class DownloadImgbyTag:
             out_tiff = out_tiff + ".tif"
 
         # Check image projection
-        image = ee.Image(asset_tag)
+        image = ee.Image(asset_id)
 
         # Get the region of interests
         # Use map view extent if checked
@@ -2430,10 +2494,10 @@ class DownloadImgbyTag:
             crs = rasterio.crs.CRS.from_wkt(wkt)
 
         # Download image by tag
-        img_tag = asset_tag
-        arcpy.AddMessage("Download image: " + img_tag + " ...")
+        img_id = asset_id
+        arcpy.AddMessage("Download image: " + img_id + " ...")
         # Must be image collection to convert to xarray
-        image = ee.ImageCollection(ee.Image(img_tag))
+        image = ee.ImageCollection(ee.Image(img_id))
         # Filter image by selected bands
         image = image.select(bands_only)
 
@@ -2483,15 +2547,6 @@ class DownloadImgbyObj:
         param0.filter.list = ["json"]
 
         param1 = arcpy.Parameter(
-            name="current_tag",
-            displayName="The asset tag of the selected object is shown below",
-            datatype="GPString",
-            direction="Input",
-            multiValue=False,
-            parameterType="Optional",
-        )
-
-        param2 = arcpy.Parameter(
             name="bands",
             displayName="Select the bands",
             datatype="GPString",
@@ -2500,7 +2555,7 @@ class DownloadImgbyObj:
             parameterType="Required",
         )
 
-        param3 = arcpy.Parameter(
+        param2 = arcpy.Parameter(
             name="scale",
             displayName="Specify the scale",
             datatype="GPDouble",
@@ -2509,7 +2564,7 @@ class DownloadImgbyObj:
             parameterType="Required",
         )
 
-        param4 = arcpy.Parameter(
+        param3 = arcpy.Parameter(
             name="in_poly",
             displayName="Choose a polygon as region of interest",
             datatype="GPFeatureLayer",
@@ -2517,7 +2572,7 @@ class DownloadImgbyObj:
             parameterType="Optional",
         )
 
-        param5 = arcpy.Parameter(
+        param4 = arcpy.Parameter(
             name="use_extent",
             displayName="Use the current map view extent as region of interest",
             datatype="GPBoolean",
@@ -2525,7 +2580,7 @@ class DownloadImgbyObj:
             parameterType="Optional",
         )
 
-        param6 = arcpy.Parameter(
+        param5 = arcpy.Parameter(
             name="out_tiff",
             displayName="Specify the output file name",
             datatype="DEFile",
@@ -2533,9 +2588,9 @@ class DownloadImgbyObj:
             parameterType="Required",
         )
 
-        param6.filter.list = ["tif"]
+        param5.filter.list = ["tif"]
 
-        param7 = arcpy.Parameter(
+        param6 = arcpy.Parameter(
             name="load_tiff",
             displayName="Load images to map after download",
             datatype="GPBoolean",
@@ -2551,7 +2606,6 @@ class DownloadImgbyObj:
             param4,
             param5,
             param6,
-            param7,
         ]
         return params
 
@@ -2566,12 +2620,9 @@ class DownloadImgbyObj:
 
         json_path = parameters[0].valueAsText
         if json_path:
-            # Display the asset tag of the selected object
             image = arcgee.data.load_ee_result(json_path)
-            parameters[1].value = image.get("system:id").getInfo()
-
             # Update only when band filter list is empty
-            if not parameters[2].filter.list:
+            if not parameters[1].filter.list:
                 band_names = image.bandNames()
                 band_list = band_names.getInfo()
                 # Add band resolution information to display
@@ -2581,29 +2632,28 @@ class DownloadImgbyObj:
                     proj = band_tmp.projection()
                     res = proj.nominalScale().getInfo()
                     band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
-                parameters[2].filter.list = band_res_list
+                parameters[1].filter.list = band_res_list
 
         # Reset band filter list when asset tag changes
         if not json_path:
-            parameters[1].value = None
-            parameters[2].filter.list = []
+            parameters[1].filter.list = []
 
         # Capture the suggested scale value based on selected bands
-        band_str = parameters[2].valueAsText
-        if band_str and not parameters[3].value:
+        band_str = parameters[1].valueAsText
+        if band_str and not parameters[2].value:
             # Remove ' in band string in case users add it
             if "'" in band_str:
                 band_str = band_str.replace("'", "")
             bands = band_str.split(";")
             scale_only = [float(iband.split("--")[1]) for iband in bands]
             # use the maximum scale of the selected band by default
-            parameters[3].value = max(scale_only)
+            parameters[2].value = max(scale_only)
 
         # Disable input feature if map extent is used
-        if parameters[5].value:  # map extent selected
-            parameters[4].enabled = False
+        if parameters[4].value:  # map extent selected
+            parameters[3].enabled = False
         else:
-            parameters[4].enabled = True
+            parameters[3].enabled = True
 
         return
 
@@ -2614,17 +2664,16 @@ class DownloadImgbyObj:
 
     def execute(self, parameters, messages):
         import rasterio
-        from rasterio.transform import from_origin
 
         """The source code of the tool."""
         # Multiple images could be selected
         json_path = parameters[0].valueAsText
-        band_str = parameters[2].valueAsText
-        scale = parameters[3].valueAsText
-        in_poly = parameters[4].valueAsText
-        use_extent = parameters[5].valueAsText
-        out_tiff = parameters[6].valueAsText
-        load_tiff = parameters[7].valueAsText
+        band_str = parameters[1].valueAsText
+        scale = parameters[2].valueAsText
+        in_poly = parameters[3].valueAsText
+        use_extent = parameters[4].valueAsText
+        out_tiff = parameters[5].valueAsText
+        load_tiff = parameters[6].valueAsText
 
         # Filter image by bands if specified
         # Remove ' in band string in case user adds it
@@ -2668,10 +2717,10 @@ class DownloadImgbyObj:
             crs = rasterio.crs.CRS.from_wkt(wkt)
 
         # Download image by tag
-        img_tag = image.get("system:id").getInfo()
-        arcpy.AddMessage("Download image: " + img_tag + " ...")
+        img_id = image.get("system:id").getInfo()
+        arcpy.AddMessage("Download image: " + img_id + " ...")
         # Must be image collection to convert to xarray
-        image = ee.ImageCollection(ee.Image(img_tag))
+        image = ee.ImageCollection(ee.Image(img_id))
         # Filter image by selected bands
         image = image.select(bands_only)
 
@@ -2697,12 +2746,12 @@ class DownloadImgbyObj:
         return
 
 
-# Download GEE Image Collection by Asset Tag (XEE + RasterIO)
-class DownloadImgColbyTag:
+# Download GEE Image Collection by Asset ID (XEE + RasterIO)
+class DownloadImgColbyID:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Download Image Collection by Asset Tag"
+        self.label = "Download Image Collection by Asset ID"
         self.description = ""
         self.category = "Data Management Tools"
         self.canRunInBackgroud = False
@@ -2712,8 +2761,8 @@ class DownloadImgColbyTag:
 
         # Image collection inputs are optional
         param0 = arcpy.Parameter(
-            name="ic_asset_tag",
-            displayName="Specify the image collection asset tag",
+            name="ic_id",
+            displayName="Specify the image collection asset ID",
             datatype="GPString",
             direction="Input",
             parameterType="Required",
@@ -2857,12 +2906,12 @@ class DownloadImgColbyTag:
                 lat = None
 
         # Check image list of a given collection asset
-        asset_tag = parameters[0].valueAsText
+        asset_id = parameters[0].valueAsText
 
         # Image collection size could be huge, may take long time to load image IDs without filters
         # Only retrieve the list of images, when either filter dates or filter bounds are selected
-        if asset_tag and ((start_date and end_date) or (lon and lat)):
-            collection = ee.ImageCollection(asset_tag)
+        if asset_id and ((start_date and end_date) or (lon and lat)):
+            collection = ee.ImageCollection(asset_id)
             # Filter image collection as specified
             if lon is not None and lat is not None:
                 collection = collection.filterBounds(
@@ -2871,21 +2920,17 @@ class DownloadImgColbyTag:
             if start_date is not None and end_date is not None:
                 collection = collection.filterDate(start_date, end_date)
             # Get image IDs from collection
-            image_ids = collection.aggregate_array("system:index").getInfo()
-            parameters[4].filter.list = image_ids
+            image_list = collection.aggregate_array("system:index").getInfo()
+            parameters[4].filter.list = image_list
 
         # Check the band list of the first selected image, assuming all selected images have the same bands
-        img_ids = parameters[4].valueAsText
+        img_names = parameters[4].valueAsText
         # Update only when filter list is empty
-        if img_ids and not parameters[5].filter.list:
+        if img_names and not parameters[5].filter.list:
             # Get the first select image
-            img_id = img_ids.split(";")[0]
-            # Only initialize ee when image asset tag is given
-            if asset_tag:
-                img_tag = asset_tag + "/" + img_id
-            else:
-                img_tag = img_id
-            image = ee.Image(img_tag)
+            img_name = img_names.split(";")[0]
+            img_id = asset_id + "/" + img_name
+            image = ee.Image(img_id)
             band_names = image.bandNames()
             band_list = band_names.getInfo()
             # Add band resolution information to display
@@ -2898,7 +2943,7 @@ class DownloadImgColbyTag:
             parameters[5].filter.list = band_res_list
 
         # Reset band filter list when asset tag changes
-        if (not parameters[4].valueAsText) and (not parameters[0].valueAsText):
+        if (not parameters[4].valueAsText) and (not asset_id):
             parameters[5].filter.list = []
 
         # Capture the suggested scale value based on selected bands
@@ -2930,8 +2975,8 @@ class DownloadImgColbyTag:
 
         """The source code of the tool."""
         # Multiple images could be selected
-        asset_tag = parameters[0].valueAsText
-        img_ids = parameters[4].valueAsText
+        asset_id = parameters[0].valueAsText
+        img_names = parameters[4].valueAsText
         band_str = parameters[5].valueAsText
         scale = parameters[6].valueAsText
         in_poly = parameters[7].valueAsText
@@ -2939,7 +2984,7 @@ class DownloadImgColbyTag:
         out_folder = parameters[9].valueAsText
         load_tiff = parameters[10].valueAsText
 
-        img_id_list = img_ids.split(";")
+        img_name_list = img_names.split(";")
 
         # Filter image by bands if specified
         # Remove ' in band string in case user adds it
@@ -2965,7 +3010,7 @@ class DownloadImgColbyTag:
         scale_ds = float(scale)
 
         # Check first image projection
-        image = ee.Image(asset_tag + "/" + img_id_list[0])
+        image = ee.Image(asset_id + "/" + img_name_list[0])
 
         # Get crs code for xarray metadata
         # crs information could be missing, then use wkt from projection
@@ -2984,17 +3029,17 @@ class DownloadImgColbyTag:
 
         out_tiff_list = []
         # Iterate each selected image
-        for img_id in img_id_list:
+        for img_name in img_name_list:
             # For image collection, concatenate to get the image asset tag
-            img_tag = asset_tag + "/" + img_id
+            img_id = asset_id + "/" + img_name
 
             # Create output file name based on image tags
-            out_tiff = os.path.join(out_folder, img_tag.replace("/", "_") + ".tif")
+            out_tiff = os.path.join(out_folder, img_id.replace("/", "_") + ".tif")
             out_tiff_list.append(out_tiff)
 
-            arcpy.AddMessage("Download image: " + img_tag + " ...")
+            arcpy.AddMessage("Download image: " + img_id + " ...")
             # Must be image collection to convert to xarray
-            image = ee.ImageCollection(ee.Image(img_tag))
+            image = ee.ImageCollection(ee.Image(img_id))
             # Filter image by selected bands
             image = image.select(bands_only)
 
@@ -3043,15 +3088,6 @@ class DownloadImgColbyObj:
         param0.filter.list = ["json"]
 
         param1 = arcpy.Parameter(
-            name="current_tag",
-            displayName="The asset tag of the selected object is shown below",
-            datatype="GPString",
-            direction="Input",
-            multiValue=False,
-            parameterType="Optional",
-        )
-
-        param2 = arcpy.Parameter(
             name="img_list",
             displayName="Select images to download",
             datatype="GPString",
@@ -3060,7 +3096,7 @@ class DownloadImgColbyObj:
             parameterType="Required",
         )
 
-        param3 = arcpy.Parameter(
+        param2 = arcpy.Parameter(
             name="bands",
             displayName="Select the bands",
             datatype="GPString",
@@ -3069,7 +3105,7 @@ class DownloadImgColbyObj:
             parameterType="Required",
         )
 
-        param4 = arcpy.Parameter(
+        param3 = arcpy.Parameter(
             name="scale",
             displayName="Specify the scale",
             datatype="GPDouble",
@@ -3078,7 +3114,7 @@ class DownloadImgColbyObj:
             parameterType="Required",
         )
 
-        param5 = arcpy.Parameter(
+        param4 = arcpy.Parameter(
             name="in_poly",
             displayName="Choose a polygon as region of interest",
             datatype="GPFeatureLayer",
@@ -3086,7 +3122,7 @@ class DownloadImgColbyObj:
             parameterType="Optional",
         )
 
-        param6 = arcpy.Parameter(
+        param5 = arcpy.Parameter(
             name="use_extent",
             displayName="Use the current map view extent as region of interest",
             datatype="GPBoolean",
@@ -3094,7 +3130,7 @@ class DownloadImgColbyObj:
             parameterType="Optional",
         )
 
-        param7 = arcpy.Parameter(
+        param6 = arcpy.Parameter(
             name="out_folder",
             displayName="Specify the output folder",
             datatype="DEFolder",
@@ -3102,7 +3138,7 @@ class DownloadImgColbyObj:
             parameterType="Required",
         )
 
-        param8 = arcpy.Parameter(
+        param7 = arcpy.Parameter(
             name="load_tiff",
             displayName="Load images to map after download",
             datatype="GPBoolean",
@@ -3119,7 +3155,6 @@ class DownloadImgColbyObj:
             param5,
             param6,
             param7,
-            param8,
         ]
         return params
 
@@ -3135,25 +3170,22 @@ class DownloadImgColbyObj:
         json_path = parameters[0].valueAsText
         if json_path:
             collection = arcgee.data.load_ee_result(json_path)
-            # Display the asset tag of selected object
-            parameters[1].value = collection.get("system:id").getInfo()
-
             # Only fill the image id filter list when it is empty
-            if not parameters[2].filter.list:
+            if not parameters[1].filter.list:
                 # Get image IDs from collection
-                image_ids = collection.aggregate_array("system:index").getInfo()
-                parameters[2].filter.list = image_ids
+                image_list = collection.aggregate_array("system:index").getInfo()
+                parameters[1].filter.list = image_list
 
             # Check band list of the selected image
-            img_ids = parameters[2].valueAsText
+            img_names = parameters[1].valueAsText
             # Update only when filter list is empty
-            if img_ids and not parameters[3].filter.list:
+            if img_names and not parameters[2].filter.list:
                 # Get the first select image
-                img_id = img_ids.split(";")[0]
+                img_name = img_names.split(";")[0]
                 # retrieve image tag from collection
-                asset_tag = collection.get("system:id").getInfo()
-                img_tag = asset_tag + "/" + img_id
-                image = ee.Image(img_tag)
+                asset_id = collection.get("system:id").getInfo()
+                img_id = asset_id + "/" + img_name
+                image = ee.Image(img_id)
                 band_names = image.bandNames()
                 band_list = band_names.getInfo()
                 # Add band resolution information to display
@@ -3163,32 +3195,31 @@ class DownloadImgColbyObj:
                     proj = band_tmp.projection()
                     res = proj.nominalScale().getInfo()
                     band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
-                parameters[3].filter.list = band_res_list
+                parameters[2].filter.list = band_res_list
 
         # Reset image filter list
         if not json_path:
-            parameters[1].value = None
+            parameters[1].filter.list = []
+
+        # Reset band filter list when asset tag or image changes
+        if (not parameters[1].valueAsText) and (not json_path):
             parameters[2].filter.list = []
 
-        # Reset band filter list when asset tag changes
-        if (not parameters[2].valueAsText) and (not json_path):
-            parameters[3].filter.list = []
-
         # Capture the suggested scale value based on selected bands
-        band_str = parameters[3].valueAsText
-        if band_str and not parameters[4].value:
+        band_str = parameters[2].valueAsText
+        if band_str and not parameters[3].value:
             # Remove ' in band string in case users add it
             if "'" in band_str:
                 band_str = band_str.replace("'", "")
             bands = band_str.split(";")
             scale_only = [float(iband.split("--")[1]) for iband in bands]
-            parameters[4].value = max(scale_only)
+            parameters[3].value = max(scale_only)
 
         # Disable input feature if map extent is used
-        if parameters[6].value:  # map extent selected
-            parameters[5].enabled = False
+        if parameters[5].value:  # map extent selected
+            parameters[4].enabled = False
         else:
-            parameters[5].enabled = True
+            parameters[4].enabled = True
 
         return
 
@@ -3204,7 +3235,7 @@ class DownloadImgColbyObj:
         """The source code of the tool."""
         # Multiple images could be selected
         json_path = parameters[0].valueAsText
-        img_ids = parameters[2].valueAsText
+        img_names = parameters[2].valueAsText
         band_str = parameters[3].valueAsText
         scale = parameters[4].valueAsText
         in_poly = parameters[5].valueAsText
@@ -3214,10 +3245,10 @@ class DownloadImgColbyObj:
 
         # load collection object
         collection = arcgee.data.load_ee_result(json_path)
-        # Get image tag for layer name
-        asset_tag = collection.get("system:id").getInfo()
+        # Get image collection asset id
+        asset_id = collection.get("system:id").getInfo()
 
-        img_id_list = img_ids.split(";")
+        img_name_list = img_names.split(";")
 
         # Filter image by bands if specified
         # Remove ' in band string in case user adds it
@@ -3243,7 +3274,7 @@ class DownloadImgColbyObj:
         scale_ds = float(scale)
 
         # Check first image projection
-        image = ee.Image(asset_tag + "/" + img_id_list[0])
+        image = ee.Image(asset_id + "/" + img_name_list[0])
 
         # Get crs code for xarray metadata
         # crs information could be missing, then use wkt from projection
@@ -3262,17 +3293,17 @@ class DownloadImgColbyObj:
 
         out_tiff_list = []
         # Iterate each selected image
-        for img_id in img_id_list:
+        for img_name in img_name_list:
             # For image collection, concatenate to get the image asset tag
-            img_tag = asset_tag + "/" + img_id
+            img_id = asset_id + "/" + img_name
 
             # Create output file name based on image tags
-            out_tiff = os.path.join(out_folder, img_tag.replace("/", "_") + ".tif")
+            out_tiff = os.path.join(out_folder, img_id.replace("/", "_") + ".tif")
             out_tiff_list.append(out_tiff)
 
-            arcpy.AddMessage("Download image: " + img_tag + " ...")
+            arcpy.AddMessage("Download image: " + img_id + " ...")
             # Must be image collection to convert to xarray
-            image = ee.ImageCollection(ee.Image(img_tag))
+            image = ee.ImageCollection(ee.Image(img_id))
             # Filter image by selected bands
             image = image.select(bands_only)
 
