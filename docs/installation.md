@@ -68,22 +68,26 @@ The ArcGEE Connector Toolbox can be obtained through the following steps:
 
    You can download the repository folder to your ArcPro project folder such as `C:\Users\<username>\Documents\ArcGIS\Projects\<project_name>\ArcGEE Connector Toolbox`. Meanwhile, you can also download the repository folder to any other location and connect it to ArcPro. 
 
-2. Connect the repository folder to ArcPro if needed:
+2. Add the toolbox to ArcPro:
    - Open ArcPro
-   - In the Catalog pane, right-click on "Folders"
-   - Select "Add Folder Connection"
-   - Navigate to and select the repository folder
+   - In the Catalog pane, right-click on "Toolboxes"    
+   - Select "Add Toolbox"
+   - Navigate to and select the toolbox in the downloaded repository folder
 
-3. Refresh the Folders in the Catalog pane, and the toolbox will appear automatically.
+3. The toolbox will appear in the Toolbox dropdown menu.
+
+![Alt Text](images/GEE_toolbox.png)
 
 
 ## Google Cloud SDK
+
+Google Cloud SDK is required to fully utilize the ArcGEE Connector Toolbox. Specifically, it is used to upload local data to Google Cloud Storage and convert the data to Earth Engine Image objects. 
 
 To install the Google Cloud SDK, admin permissions are often required, especially on systems where the SDK needs to modify system files or be installed for all users. It’s also possible to install the SDK without admin rights if you install it in a user-specific directory. 
 
 Admin rights are typically only required during installation. Most gcloud commands and operations can be performed without admin rights, provided the user has the correct permissions within Google Cloud.
 
-If Google Cloud SDK is installed, the Google Cloud default credentials may affect Google Earth Engine authentication through ArcGEE Connector Toolbox. Therefore, it is recommended to modify Google Cloud default credentials to be consistent with the target Google project for Earth Engine. To achieve this, follow the steps below.
+When Google Cloud SDK is installed, the Google Cloud default credentials may affect Google Earth Engine authentication through ArcGEE Connector Toolbox. Therefore, it is recommended to modify Google Cloud default credentials to be consistent with the target Google project for Earth Engine. To achieve this, follow the steps below.
 
 ### Finding Your Google Cloud Project ID
 Before proceeding, you'll need your Google Cloud Project ID. To find it:
