@@ -186,12 +186,11 @@ The user can save the serialized Earth Engine object (Image, Image Collection, F
 #### Parameters 
 
  1. Serialized JSON file 
- 2. Asset tag of the selected object (automatically displays)
- 3. Select bands for visualization (up to 3)
- 4. Minimum value for visualization (value to map to 0, up to 3 comma-seperated numbers)
- 5. Maximum value for visualization (value to map to 255, up to 3 comma-seperated numbers)
- 6. Gamma correction factors (value to multiply each pixel value, up to 3 comma-seperated numbers)
- 7. Color palette in CSS-style (single-band images only, comma-separated list of hex strings)
+ 2. Select bands for visualization (up to 3)
+ 3. Minimum value for visualization (value to map to 0, up to 3 comma-seperated numbers)
+ 4. Maximum value for visualization (value to map to 255, up to 3 comma-seperated numbers)
+ 5. Gamma correction factors (value to multiply each pixel value, up to 3 comma-seperated numbers)
+ 6. Color palette in CSS-style (single-band images only, comma-separated list of hex strings)
 
 ### Add Image Collection to Map by Asset ID
 
@@ -287,7 +286,6 @@ This script downloads the Earth Engine image dataset to GeoTIFF by its serialize
 #### Parameters
 
 1. Serialized JSON file
-2. Asset tag of the selected object (automatically displays)
 2. Select bands to download
 3. Specify the scale in meters (image resolution)
 4. Use a polygon feature as region of interest

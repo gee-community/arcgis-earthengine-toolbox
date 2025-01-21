@@ -62,7 +62,9 @@ The `earthengine-api` is then ready for authentication and initialization.
 
 The ArcGEE Connector Toolbox can be obtained through the following steps:
 
-1. Download the repository from this [link](https://github.com/di-private/redlands-desktop-engine/tree/woolpert_dev/toolbox) using either method:
+![Alt Text](images/DownloadToolbox.png)
+
+1. Download the repository from this [link](https://github.com/di-private/redlands-desktop-engine/tree/woolpert_dev) using either method:
    - Clone the repository using git: `git clone https://github.com/di-private/redlands-desktop-engine.git`
    - Or download as ZIP file and extract it to your desired location
 
