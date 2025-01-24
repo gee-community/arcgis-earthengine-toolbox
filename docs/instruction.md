@@ -260,6 +260,42 @@ You can convert the file(s) to the following types of Earth Engine assets:
 5. Choose asset type (`image` or `table`)
 6. Specify the asset tag/ID
 
+
+### Download Feature Collection by Asset ID
+
+![Alt Text](images/DownloadFCbyID.png)
+
+This script downloads the Earth Engine feature collection dataset to ArcPro feature class by its asset ID. The geometry types of the feature collection can be converted to the ArcPro geometry types: point, multipoint, polyline, polygon. Since ArcPro feature class does not allow multiple geometry types in the same file, the different geometry types will be saved into separate feature class files. 
+ 
+
+#### Parameters
+
+1. Asset ID
+2. Filter by dataset properties
+3. Filter by dates
+4. Select the type of bounds to filter by
+5. Specify point gemoetry in lat/lon coordinates if selected above
+6. Specify the polygon feature as region of interest if selected above
+7. Select the geometry type to download
+8. Specify the output file name
+9. Check the box to load feature class to map after download
+
+
+### Download Feature Collection by Serialized Object
+
+This script downloads the Earth Engine feature collection dataset to ArcPro feature class by its serialized JSON object. The user can save the serialized Google Earth Engine object (Image, Image Collection, Feature, Feature Collection, List, Geometry, etc. ) to JSON file. This is very helpful when the user filters the dataset and saves the modified dataset for future use. 
+
+The geometry types of the feature collection can be converted to the ArcPro geometry types: point, multipoint, polyline, polygon. Since ArcPro feature class does not allow multiple geometry types in the same file, the different geometry types will be saved into separate feature class files. 
+
+![Alt Text](images/DownloadFCbyJSON.png)
+
+#### Parameters
+
+1. Serialized JSON file
+2. Select the geometry type to download
+3. Specify the output file name
+4. Check the box to load feature class to map after download
+
 ### Download Image by Asset ID
 
 ![Alt Text](images/DownloadImgbyID.png)
@@ -380,8 +416,114 @@ You can convert the file(s) to the following types of Earth Engine assets:
 
 ## Data Processing Tools
 
-### Apply Filters to GEE Datasets
-### Apply Map Functions to GEE Datasets
-### Apply Reducers to GEE Datasets
-### EE Operation
+### Apply Filters to Collection Dataset by Asset ID
+
+This script applies filters to feature collection or image collection by asset ID, and saves the filtered dataset to serialized JSON object for future use. 
+
+To browser all available earth engine filters, please visit [this link](https://developers.google.com/earth-engine/apidocs/ee-filter). 
+
+For a quick guide on filtering feature collection, please visit [this link](https://developers.google.com/earth-engine/guides/feature_collection_filtering).
+
+For a quick guide on filtering image collection, please visit [this link](https://developers.google.com/earth-engine/guides/ic_filtering).  
+
+![Alt Text](images/ApplyFilter2ColbyID.png)
+
+#### Parameters
+
+1. Choose the type of dataset to filter
+2. Asset ID
+3. Specify the filters and the corresponding arguments
+4. Specify the output JSON file name
+
+
+### Apply Filters to Collection Dataset by Serialized Object
+
+This script applies filters to feature collection or image collection by serialized JSON object, and saves the filtered dataset to a new serialized JSON object for future use. It is useful when you want to apply filters to the existing JSON object. 
+
+To browser all available earth engine filters, please visit [this link](https://developers.google.com/earth-engine/apidocs/ee-filter). 
+
+For a quick guide on filtering feature collection, please visit [this link](https://developers.google.com/earth-engine/guides/feature_collection_filtering).
+
+For a quick guide on filtering image collection, please visit [this link](https://developers.google.com/earth-engine/guides/ic_filtering). 
+
+![Alt Text](images/ApplyFilter2ColbyJSON.png)
+
+#### Parameters
+
+1. Serialized JSON file
+2. Specify the filters and the corresponding arguments
+3. Specify the output JSON file name
+
+
+### Apply Map Functions to Collection Dataset by Asset ID
+
+This script applies user-defined map functions to the feature collection or image collection dataset by asset ID and saves the processed dataset to a serialized JSON object for future use.
+
+For a quick guide on mapping over image collection dataset, please visit [this link](https://developers.google.com/earth-engine/guides/ic_mapping).
+
+For a quick guide on mapping over feature collection dataset, please visit [this link](https://developers.google.com/earth-engine/guides/feature_collection_mapping).
+
+![Alt Text](images/ApplyMap2ColbyID.png)
+
+
+#### Parameters
+
+1. Choose the type of dataset to process
+2. Asset ID
+3. Specify the python script that contains the map functions
+4. Select the map functions to apply
+5. Specify the output JSON file name
+
+
+### Apply Map Functions to Collection Dataset by Serialized Object
+
+This script applies user-define map functions to the feature collection or image collection dataset by the serialized JSON object and saves the processed dataset to a new serialized JSON object for future use. It is useful when you want to apply map functions to the existing JSON object. 
+
+For a quick guide on mapping over image collection dataset, please visit [this link](https://developers.google.com/earth-engine/guides/ic_mapping).
+
+For a quick guide on mapping over feature collection dataset, please visit [this link](https://developers.google.com/earth-engine/guides/feature_collection_mapping).
+
+![Alt Text](images/ApplyMap2ColbyJSON.png)
+
+#### Parameters
+
+1. Choose the type of dataset to process
+2. Serialized JSON file
+3. Specify the python script that contains the map functions
+4. Select the map functions to apply
+5. Specify the output JSON file name
+
+
+### Apply Reducers to GEE Dataset by Asset ID
+
+
+
+### Apply Reducers to GEE Dataset by Serialized Object
+
+
 ### Run User-Provided Python Script
+
+This script enables users to execute customized Python scripts within ArcPro. To ensure your script runs successfully, follow these tips:
+
+1.	Include the following line at the beginning of your script to import the Earth Engine API 
+```
+import ee
+```
+2.	Unlike the ArcPro environment, the Earth Engine API must be initialized separately. Add the following line to your script, replacing QUOTA_PROJECT_ID with your project ID
+```
+ee.Initialize(project='QUOTA_PROJECT_ID')
+```
+3.	Set workload tag if needed, add the following line to your script, replacing WORKLOAD_TAG with your workload tag such as "arcgis-ee-connector"  
+```
+ee.data.setWorkloadTag(WORKLOAD_TAG)
+``` 
+4.	To prevent the script window from closing immediately after execution, include this line at the end of your code:
+```
+input("Press Enter to exit...")
+```
+
+![Alt Text](images/RunPyScript.png)
+
+#### Parameters
+
+1. Specify the python script

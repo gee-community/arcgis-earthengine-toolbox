@@ -23,6 +23,25 @@ import arcgee
 """ Define functions"""
 
 
+# List all functions in the imported module
+def list_functions_from_script(module):
+    """List all functions in the imported module.
+
+    Args:
+        module (module): The module from which to list functions.
+
+    Returns:
+        list: A list of function names available in the module.
+    """
+    import inspect
+
+    function_list = []
+    for name, obj in inspect.getmembers(module):
+        if inspect.isfunction(obj):
+            function_list.append(name)
+    return function_list
+
+
 def clean_asset_id(asset_id):
     """Clean the asset ID string by removing any whitespace, trailing slash, and quotes.
 
@@ -617,17 +636,20 @@ class Toolbox:
         tools.append(DownloadImgbyObj)
         tools.append(DownloadImgColbyID)
         tools.append(DownloadImgColbyObj)
+        tools.append(DownloadFeatColbyID)
+        tools.append(DownloadFeatColbyObj)
         tools.append(DownloadImgCol2Gif)
         tools.append(Upload2GCS)
         tools.append(GCSFile2Asset)
         tools.append(SaveAsset2JSON)
 
         # data processing tools
-        tools.append(ApplyFilter)
-        tools.append(ApplyMapFunction)
+        tools.append(ApplyFilterbyID)
+        tools.append(ApplyFilterbyObj)
+        tools.append(ApplyMapFunctionbyID)
+        tools.append(ApplyMapFunctionbyObj)
+        tools.append(ApplyReducerbyID)
         tools.append(RunPythonScript)
-        tools.append(ApplyReducer)
-        tools.append(EEOpTool)
 
         self.tools = tools
 
@@ -647,6 +669,9 @@ class GEEInit:
 
     def getParameterInfo(self):
         """Define the tool parameters."""
+
+        from google.auth import default
+
         param0 = arcpy.Parameter(
             name="project_id",
             displayName="Specify the Google Cloud project ID for Earth Engine",
@@ -655,6 +680,17 @@ class GEEInit:
             parameterType="Required",
         )
 
+        # Fetch the project ID from the default credentials
+        try:
+            # get project ID from earthengine credentials
+            # ee.Initialize()
+            # project_id = ee.data.getProjectConfig()["name"].split("/")[1]
+            # get project ID from Google cloud default credentials
+            credentials, env_project_id = default()
+            param0.value = credentials.quota_project_id
+        except:
+            param0.value = "None"
+
         param1 = arcpy.Parameter(
             name="workload_tag",
             displayName="Specify the workload tag",
@@ -662,6 +698,8 @@ class GEEInit:
             direction="Input",
             parameterType="Optional",
         )
+
+        param1.value = "arcgis-ee-connector"
 
         params = [param0, param1]
         return params
@@ -674,14 +712,6 @@ class GEEInit:
         """Modify the values and properties of parameters before internal
         validation is performed.  This method is called whenever a parameter
         has been changed."""
-
-        # Fetch the project ID from the default credentials
-        try:
-            ee.Initialize()
-            project_id = ee.data.getProjectConfig()["name"].split("/")[1]
-            parameters[0].value = project_id
-        except:
-            parameters[0].value = "None"
 
         return
 
@@ -1441,7 +1471,7 @@ class AddImgCol2MapbyID:
             if start_date is not None and end_date is not None:
                 collection = collection.filterDate(start_date, end_date)
             # Get image IDs from collection, limit to 50 images to avoid slow response
-            image_ids = collection.limit(50).aggregate_array("system:index").getInfo()
+            image_ids = collection.limit(100).aggregate_array("system:index").getInfo()
             parameters[4].filter.list = image_ids
 
         # Check band list of the selected image
@@ -1693,7 +1723,7 @@ class AddImgCol2MapbyObj:
 
         json_path = parameters[0].valueAsText
         if json_path:
-            collection = arcgee.data.load_ee_result(json_path)
+            collection = ee.ImageCollection(arcgee.data.load_ee_result(json_path))
             # Only fill the image id filter list when it is empty
             if not parameters[1].filter.list:
                 # Get image IDs from collection, limit to 100 to avoid slow response
@@ -1706,10 +1736,10 @@ class AddImgCol2MapbyObj:
             img_name = parameters[1].valueAsText
             # Update only when filter list is empty
             if img_name and not parameters[2].filter.list:
-                # retrieve image id from collection
-                asset_id = collection.get("system:id").getInfo()
-                img_id = asset_id + "/" + img_name
-                image = ee.Image(img_id)
+                # JSON object could have additional map functions, use collection
+                image = collection.filter(
+                    ee.Filter.eq("system:index", img_name)
+                ).first()
                 band_names = image.bandNames()
                 band_list = band_names.getInfo()
                 # Add band resolution information to display
@@ -2179,7 +2209,7 @@ class AddFeatCol2MapbyID:
         return
 
 
-# Add GEE Feature Collection to Map by Serialized Object in JSON
+# Add GEE Feature Collection to Map by Serialized JSON Object
 class AddFeatCol2MapbyObj:
 
     def __init__(self):
@@ -3253,11 +3283,13 @@ class DownloadImgColbyObj:
 
         json_path = parameters[0].valueAsText
         if json_path:
-            collection = arcgee.data.load_ee_result(json_path)
+            collection = ee.ImageCollection(arcgee.data.load_ee_result(json_path))
             # Only fill the image id filter list when it is empty
             if not parameters[1].filter.list:
                 # Get image IDs from collection
-                image_list = collection.aggregate_array("system:index").getInfo()
+                image_list = (
+                    collection.limit(100).aggregate_array("system:index").getInfo()
+                )
                 parameters[1].filter.list = image_list
 
             # Check band list of the selected image
@@ -3266,10 +3298,10 @@ class DownloadImgColbyObj:
             if img_names and not parameters[2].filter.list:
                 # Get the first select image
                 img_name = img_names.split(";")[0]
-                # retrieve image ID from collection
-                asset_id = collection.get("system:id").getInfo()
-                img_id = asset_id + "/" + img_name
-                image = ee.Image(img_id)
+                # JSON object could have additional map functions, use collection
+                image = collection.filter(
+                    ee.Filter.eq("system:index", img_name)
+                ).first()
                 band_names = image.bandNames()
                 band_list = band_names.getInfo()
                 # Add band resolution information to display
@@ -3405,6 +3437,443 @@ class DownloadImgColbyObj:
             aprxMap = aprx.activeMap
             for out_tiff in out_tiff_list:
                 aprxMap.addDataFromPath(out_tiff)
+
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and
+        added to the display."""
+        return
+
+
+# Download Feature Collection by Asset ID
+class DownloadFeatColbyID:
+
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Download Feature Collection by Asset ID"
+        self.description = ""
+        self.category = "Data Management Tools"
+        self.canRunInBackgroud = False
+
+    def getParameterInfo(self):
+        """
+        Define the tool parameters.
+
+        """
+
+        param0 = arcpy.Parameter(
+            name="asset_id",
+            displayName="Specify the feature collection asset ID",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+
+        param1 = arcpy.Parameter(
+            name="filter_props",
+            displayName="Filter by Properties",
+            datatype="GPValueTable",
+            direction="Input",
+            parameterType="Optional",
+        )
+        param1.columns = [
+            ["GPString", "Property Name"],
+            ["GPString", "Operator"],
+            ["GPString", "Filter Value"],
+        ]
+        param1.filters[1].list = ["==", "!=", ">", ">=", "<", "<="]
+
+        param2 = arcpy.Parameter(
+            name="filter_dates",
+            displayName="Filter by dates in YYYY-MM-DD",
+            datatype="GPValueTable",
+            direction="Input",
+            parameterType="Optional",
+        )
+        param2.columns = [["GPString", "Starting Date"], ["GPString", "Ending Date"]]
+        # param2.value = [['2014-03-01','2014-05-01']]
+
+        param3 = arcpy.Parameter(
+            name="filter_bounds",
+            displayName="Select the type of filter-by-location",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+
+        param3.filter.list = [
+            "Coordinates (Point)",
+            "Map Centroid (Point)",
+            "Polygon (Area)",
+            "Map Extent (Area)",
+        ]
+
+        param4 = arcpy.Parameter(
+            name="use_coords",
+            displayName="Filter by location in coordinates",
+            datatype="GPValueTable",
+            direction="Input",
+            parameterType="Optional",
+        )
+        param4.columns = [["GPString", "Longitude"], ["GPString", "Latitude"]]
+
+        param5 = arcpy.Parameter(
+            name="use_poly",
+            displayName="Choose a polygon as region of interest",
+            datatype="GPFeatureLayer",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param6 = arcpy.Parameter(
+            name="select_geometry",
+            displayName="Select the geometry type to download",
+            datatype="GPString",
+            direction="Input",
+            multiValue=True,
+            parameterType="Required",
+        )
+
+        param6.filter.list = ["Point", "Multipoint", "Polyline", "Polygon"]
+
+        param7 = arcpy.Parameter(
+            name="out_feature",
+            displayName="Specify the output file name",
+            datatype="DEFeatureClass",
+            direction="Output",
+            parameterType="Required",
+        )
+
+        param8 = arcpy.Parameter(
+            name="load_feat",
+            displayName="Load feature class to map after download",
+            datatype="GPBoolean",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        params = [
+            param0,
+            param1,
+            param2,
+            param3,
+            param4,
+            param5,
+            param6,
+            param7,
+            param8,
+        ]
+
+        return params
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+
+        asset_id = parameters[0].valueAsText
+
+        if asset_id:
+            asset_id = clean_asset_id(asset_id)
+            fc = ee.FeatureCollection(asset_id)
+            prop_names = fc.first().propertyNames().getInfo()
+            # Update only when filter list is empty
+            if not parameters[1].filters[0].list:
+                parameters[1].filters[0].list = sorted(prop_names)
+            if not parameters[6].filter.list:
+                parameters[6].filter.list = sorted(prop_names)
+
+        # Reset filter list when asset id is empty
+        if not asset_id:
+            parameters[1].filters[0].list = []
+
+        # Disable input coordinates if map extent is used
+        parameters[4].enabled = False
+        parameters[5].enabled = False
+
+        if parameters[3].valueAsText == "Coordinates (Point)":
+            parameters[4].enabled = True
+        elif parameters[3].valueAsText == "Polygon (Area)":
+            parameters[5].enabled = True
+
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter. This method is called after internal validation."""
+        # Make sure the input datatype is feature collection
+        if parameters[0].valueAsText:
+            check_ee_datatype(parameters[0], "TABLE")
+
+        # Make sure property name is only used once
+        prop_list = []
+        if parameters[1].valueAsText:
+            val_list = parameters[1].values
+            for row in val_list:
+                prop_name = row[0]
+                if prop_name not in prop_list:
+                    prop_list.append(prop_name)
+                else:
+                    parameters[1].setErrorMessage(
+                        f"The property name '{prop_name}' is used more than once. Please use unique property names."
+                    )
+                    return
+
+    def execute(self, parameters, messages):
+        """
+        The source code of the tool.
+        """
+        asset_id = parameters[0].valueAsText
+        filter_bounds = parameters[3].valueAsText
+        geometry_types = parameters[6].valueAsText.split(";")
+        out_filename = parameters[7].valueAsText
+        load_feat = parameters[8].value
+
+        asset_id = clean_asset_id(asset_id)
+
+        # Get image by label
+        fc = ee.FeatureCollection(asset_id)
+
+        # Filter by properties
+        if parameters[1].valueAsText:
+            arcpy.AddMessage("Filter by properties ...")
+            val_list = parameters[1].values
+            # Could be multiple filter properties
+            for row in val_list:
+                prop_name = row[0]
+                # property value could be integer, float or string
+                try:
+                    prop_val = int(row[2])
+                except ValueError:
+                    try:
+                        prop_val = float(row[2])
+                    except ValueError:
+                        prop_val = row[2]
+                operator = row[1]
+
+                # Check if prop_val is a string and format accordingly
+                if isinstance(prop_val, str):
+                    # If prop_val is a string, wrap it in single quotes
+                    filter_condition = "{} {} '{}'".format(
+                        prop_name, operator, prop_val
+                    )
+                else:
+                    # If prop_val is an integer or float, no quotes needed
+                    filter_condition = "{} {} {}".format(prop_name, operator, prop_val)
+
+                arcpy.AddMessage("Filter by property: " + filter_condition)
+                fc = fc.filter(filter_condition)
+
+        # Filter by dates
+        if parameters[2].valueAsText:
+            arcpy.AddMessage("Filter by dates ...")
+            val_list = parameters[2].values
+            start_date = val_list[0][0]
+            end_date = val_list[0][1]
+            fc = fc.filterDate(start_date, end_date)
+
+        # Filter by bounds
+        if filter_bounds:
+            arcpy.AddMessage("Filter by bounds ...")
+
+        if filter_bounds == "Coordinates (Point)":
+            if parameters[4].valueAsText:
+                val_list = parameters[4].values
+                lon = val_list[0][0]
+                lat = val_list[0][1]
+                fc = fc.filterBounds(ee.Geometry.Point((float(lon), float(lat))))
+        elif filter_bounds == "Map Centroid (Point)":
+            xmin, ymin, xmax, ymax = get_map_view_extent()
+            # Get the centroid of map extent
+            lon = (xmin + xmax) / 2
+            lat = (ymin + ymax) / 2
+            fc = fc.filterBounds(ee.Geometry.Point((float(lon), float(lat))))
+        elif filter_bounds == "Map Extent (Area)":
+            xmin, ymin, xmax, ymax = get_map_view_extent()
+            roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
+            fc = fc.filterBounds(roi)
+        elif filter_bounds == "Polygon (Area)":
+            if parameters[5].valueAsText:
+                # Get input feature coordinates to list
+                coords = get_polygon_coords(parameters[5].valueAsText)
+                # Create an Earth Engine MultiPolygon from the GeoJSON
+                roi = ee.Geometry.MultiPolygon(coords)
+                fc = fc.filterBounds(roi)
+
+        # Download feature collection to a temporary GeoJSON
+        upper_path = os.path.dirname(arcpy.env.workspace)
+        out_json = os.path.join(upper_path, "temp.geojson")
+
+        # Prepare the download URL
+        params_dict = {}
+        params_dict["filetype"] = "GeoJSON"
+        # params_dict["selectors"] = ["geometry"] + parameters[6].valueAsText.split(";")
+        params_dict["filename"] = "temp_json"
+        download_url = fc.getDownloadURL(**params_dict)
+
+        arcpy.AddMessage("Download URL is: " + download_url)
+        arcpy.AddMessage("Downloading to " + out_json + " ...")
+
+        # Download the file to your local machine
+        response = requests.get(download_url)
+        with open(out_json, "wb") as file:
+            file.write(response.content)
+
+        # Convert GeoJSON to feature class
+        out_feat_list = []
+
+        for geo in geometry_types:
+            out_feat = out_filename + "_" + geo
+            out_feat_list.append(out_feat)
+            arcpy.AddMessage(f"Converting to {geo} feature class: {out_feat} ...")
+            arcpy.conversion.JSONToFeatures(out_json, out_feat, geo.upper())
+
+        # Clean up the temp file
+        os.remove(out_json)
+
+        # Add output feature class to map layer
+        if load_feat:
+            arcpy.AddMessage("Load feature class to map ...")
+            aprx = arcpy.mp.ArcGISProject("CURRENT")
+            aprxMap = aprx.activeMap
+            for out_feat in out_feat_list:
+                aprxMap.addDataFromPath(out_feat)
+
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and
+        added to the display."""
+        return
+
+
+# Download Feature Collection by Serialized Object in JSON
+class DownloadFeatColbyObj:
+
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Download Feature Collection by Serialized Object"
+        self.description = ""
+        self.category = "Data Management Tools"
+        self.canRunInBackgroud = False
+
+    def getParameterInfo(self):
+        """
+        Define the tool parameters.
+
+        """
+
+        param0 = arcpy.Parameter(
+            name="ee_obj",
+            displayName="Select the JSON file of the serialized object",
+            datatype="DEFile",
+            direction="Input",
+            parameterType="Required",
+        )
+        # only displays JSON files
+        param0.filter.list = ["json"]
+
+        param1 = arcpy.Parameter(
+            name="select_geometry",
+            displayName="Select the geometry type to download",
+            datatype="GPString",
+            direction="Input",
+            multiValue=True,
+            parameterType="Required",
+        )
+
+        param1.filter.list = ["Point", "Multipoint", "Polyline", "Polygon"]
+
+        param2 = arcpy.Parameter(
+            name="out_feature",
+            displayName="Specify the output file name",
+            datatype="DEFeatureClass",
+            direction="Output",
+            parameterType="Required",
+        )
+
+        param3 = arcpy.Parameter(
+            name="load_feat",
+            displayName="Load feature class to map after download",
+            datatype="GPBoolean",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        params = [param0, param1, param2, param3]
+        return params
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter. This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        """
+        The source code of the tool.
+        """
+        json_path = parameters[0].valueAsText
+        geometry_types = parameters[1].valueAsText.split(";")
+        out_filename = parameters[2].valueAsText
+        load_feat = parameters[3].value
+
+        # load collection object
+        fc = arcgee.data.load_ee_result(json_path)
+
+        # Download feature collection to a temporary GeoJSON
+        upper_path = os.path.dirname(arcpy.env.workspace)
+        out_json = os.path.join(upper_path, "temp.geojson")
+
+        # Prepare the download URL
+        params_dict = {}
+        params_dict["filetype"] = "GeoJSON"
+        # params_dict["selectors"] = ["geometry"] + parameters[6].valueAsText.split(";")
+        params_dict["filename"] = "temp_json"
+        download_url = fc.getDownloadURL(**params_dict)
+
+        arcpy.AddMessage("Download URL is: " + download_url)
+        arcpy.AddMessage("Downloading to " + out_json + " ...")
+
+        # Download the file to your local machine
+        response = requests.get(download_url)
+        with open(out_json, "wb") as file:
+            file.write(response.content)
+
+        # Convert GeoJSON to feature class
+        out_feat_list = []
+
+        for geo in geometry_types:
+            out_feat = out_filename + "_" + geo
+            out_feat_list.append(out_feat)
+            arcpy.AddMessage(f"Converting to {geo} feature class: {out_feat} ...")
+            arcpy.conversion.JSONToFeatures(out_json, out_feat, geo.upper())
+
+        # Clean up the temp file
+        os.remove(out_json)
+
+        # Add output feature class to map layer
+        if load_feat:
+            arcpy.AddMessage("Load feature class to map ...")
+            aprx = arcpy.mp.ArcGISProject("CURRENT")
+            aprxMap = aprx.activeMap
+            for out_feat in out_feat_list:
+                aprxMap.addDataFromPath(out_feat)
 
         return
 
@@ -4020,7 +4489,7 @@ class Upload2GCS:
 
         param6 = arcpy.Parameter(
             name="asset_id",
-            displayName="Specify asset id",
+            displayName="Specify asset ID",
             datatype="GPString",
             direction="Input",
             parameterType="Optional",
@@ -4380,12 +4849,12 @@ class GCSFile2Asset:
 """ Data Processing Tools """
 
 
-# Apply Filters to GEE Object
-class ApplyFilter:
+# Apply Filters to Collection Dataset by Asset ID
+class ApplyFilterbyID:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Apply Filters to GEE Datasets"
+        self.label = "Apply Filters to Collection Dataset by Asset ID"
         self.description = ""
         self.category = "Data Processing Tools"
         self.canRunInBackgroud = False
@@ -4468,11 +4937,13 @@ class ApplyFilter:
 
         param3 = arcpy.Parameter(
             name="out_json",
-            displayName="Specify the output JSON file to save the string format of the filtered dataset",
+            displayName="Specify the output JSON file to save the serialized object",
             datatype="DEFile",
             direction="Output",
             parameterType="Required",
         )
+
+        param3.filter.list = ["json"]
 
         params = [param0, param1, param2, param3]
         return params
@@ -4518,21 +4989,16 @@ class ApplyFilter:
 
             # Construct a command string based on the filter type
             command_string = f"{filter_type}({filter_arg})"
+            arcpy.AddMessage(f"Applying filter: {command_string}")
             constructed_filter = eval(command_string)
             ee_object = ee_object.filter(constructed_filter)
-
-        # Serialize the filtered Earth Engine object to a string
-        # serialized_object = ee_object.serialize()
 
         # Save the serialized string as JSON to the specified output path
         if not out_json.endswith(".json"):
             out_json = out_json + ".json"
 
-        # use Kel's code
+        # save to json file
         arcgee.data.save_ee_result(ee_object, out_json)
-
-        # with open(out_json, "w") as f:
-        #    json.dump({"ee_object": serialized_object}, f)
 
         return
 
@@ -4542,12 +5008,157 @@ class ApplyFilter:
         return
 
 
-# Apply Reducers to GEE Object
-class ApplyReducer:
+# Apply Filters to Collection Dataset by Serialized JSON Object
+class ApplyFilterbyObj:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Apply Reducers to GEE Datasets"
+        self.label = "Apply Filters to Collection Dataset by Serialized Object"
+        self.description = ""
+        self.category = "Data Processing Tools"
+        self.canRunInBackgroud = False
+
+    def getParameterInfo(self):
+        """Define the tool parameters."""
+
+        param0 = arcpy.Parameter(
+            name="ee_obj",
+            displayName="Select the JSON file of the serialized object",
+            datatype="DEFile",
+            direction="Input",
+            parameterType="Required",
+        )
+        # only displays JSON files
+        param0.filter.list = ["json"]
+
+        param1 = arcpy.Parameter(
+            name="filter_list",
+            displayName="Specify the filters",
+            datatype="GPString",
+            direction="Input",
+            multiValue=True,
+            parameterType="Required",
+        )
+        param1.columns = [
+            ["GPString", "Filters"],
+            ["GPString", "Arguments"],
+        ]
+        # all filters in the ee.Filter
+        filters = [
+            "ee.Filter.and",  # Combines two or more filters with logical AND
+            "ee.Filter.area",
+            "ee.Filter.aside",
+            "ee.Filter.bounds",  # Filter by geographic bounds (within a geometry)
+            "ee.Filter.calendarRange",  # Filter by calendar range (e.g., specific years, months, days)
+            "ee.Filter.contains",  # Checks if a collection contains a specific value
+            "ee.Filter.date",  # Filter by date range
+            "ee.Filter.daterangeContains",
+            "ee.Filter.dayofYear",
+            "ee.Filter.disjoint",
+            "ee.Filter.eq",  # Equality filter (equals)
+            "ee.Filter.equals",
+            "ee.Filter.evaluate",
+            "ee.Filter.expression",
+            "ee.Filter.getInfo",
+            "ee.Filter.greaterThan",
+            "ee.Filter.greaterThanOrEuqals",
+            "ee.Filter.gt",  # Greater than filter
+            "ee.Filter.gte",  # Greater than or equal to filter
+            "ee.Filter.hasType",
+            "ee.Filter.inList",  # Filter by values within a list (like SQL's IN clause)
+            "ee.Filter.intersects",  # Filter features that intersect a geometry
+            "ee.Filter.isContained",  # Checks if a geometry is contained by another geometry
+            "ee.Filter.lessThan",
+            "ee.Filter.lessThanOrEquals",
+            "ee.Filter.listContains",  # Filter if a list contains a specific value
+            "ee.Filter.lt",  # Less than filter
+            "ee.Filter.lte",  # Less than or equal to filter
+            "ee.Filter.maxDifference",
+            "ee.Filter.neq",  # Not equal filter
+            "ee.Filter.not",  # Negates a filter
+            "ee.Filter.notEuqals",
+            "ee.Filter.notNull",  # Filters features where a property is not null
+            "ee.Filter.or",  # Combines two or more filters with logical OR
+            "ee.Filter.rangeContains",
+            "ee.Filter.serialize",
+            "ee.Filter.stringContains",  # Checks if a string contains a substring
+            "ee.Filter.stringEndsWith",  # Checks if a string ends with a specific substring
+            "ee.Filter.stringStartsWith",  # Checks if a string starts with a specific substring
+            "ee.Filter.withinDistance",
+        ]
+        param1.filters[0].list = filters
+
+        param2 = arcpy.Parameter(
+            name="out_json",
+            displayName="Specify the output JSON file to save the serialized object",
+            datatype="DEFile",
+            direction="Output",
+            parameterType="Required",
+        )
+
+        param2.filter.list = ["json"]
+
+        params = [param0, param1, param2]
+        return params
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter. This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+
+        # Read input parameters
+        json_path = parameters[0].valueAsText
+        filters = parameters[1].values
+        out_json = parameters[2].valueAsText
+
+        # load collection object
+        ee_object = arcgee.data.load_ee_result(json_path)
+
+        # Apply the filters from the filter list to the Earth Engine object
+        for filter_item in filters:
+            filter_type = filter_item[0]
+            filter_arg = filter_item[1]
+
+            # Construct a command string based on the filter type
+            command_string = f"{filter_type}({filter_arg})"
+            arcpy.AddMessage(f"Applying filter: {command_string}")
+            constructed_filter = eval(command_string)
+            ee_object = ee_object.filter(constructed_filter)
+
+        # Save the serialized string as JSON to the specified output path
+        if not out_json.endswith(".json"):
+            out_json = out_json + ".json"
+
+        # save to json
+        arcgee.data.save_ee_result(ee_object, out_json)
+
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and
+        added to the display."""
+        return
+
+
+# Apply Reducers to GEE dataset by Asset ID
+class ApplyReducerbyID:
+
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Apply Reducers to GEE Dataset by Asset ID"
         self.description = ""
         self.category = "Data Processing Tools"
         self.canRunInBackgroud = False
@@ -4573,7 +5184,7 @@ class ApplyReducer:
 
         param2 = arcpy.Parameter(
             name="asset_id",
-            displayName="Specify the asset id of the dataset",
+            displayName="Specify the asset ID of the dataset",
             datatype="GPString",
             direction="Input",
             parameterType="Required",
@@ -4658,11 +5269,13 @@ class ApplyReducer:
 
         param4 = arcpy.Parameter(
             name="out_json",
-            displayName="Specify the output JSON file to save the string format of the filtered dataset",
+            displayName="Specify the output JSON file to save the serialized object",
             datatype="DEFile",
             direction="Output",
             parameterType="Required",
         )
+
+        param4.filter.list = ["json"]
 
         params = [param0, param1, param2, param3, param4]
         return params
@@ -4705,9 +5318,12 @@ class ApplyReducer:
 
         # Read input parameters
         data_type = parameters[0].valueAsText
-        asset_id = parameters[1].valueAsText
-        filters = parameters[2].values
-        out_json = parameters[3].valueAsText
+        reducer_type = parameters[1].valueAsText
+        asset_id = parameters[2].valueAsText
+        reducers = parameters[3].values
+        out_json = parameters[4].valueAsText
+
+        asset_id = clean_asset_id(asset_id)
 
         # Retrieve the Earth Engine object based on the asset id and data type
         if data_type == "FeatureCollection":
@@ -4720,24 +5336,26 @@ class ApplyReducer:
             raise ValueError(f"Unsupported data type: {data_type}")
 
         # Apply the filters from the filter list to the Earth Engine object
-        for filter_item in filters:
-            filter_type = filter_item[0]
-            filter_arg = filter_item[1]
+        for reducer_item in reducers:
+            reducer_name = reducer_item[0]
+            reducer_arg = reducer_item[1]
 
-            # Construct a command string based on the filter type
-            command_string = f"{filter_type}({filter_arg})"
-            constructed_filter = eval(command_string)
-            ee_object = ee_object.filter(constructed_filter)
+            # Construct a command string based on the reducer
+            command_string = f"{reducer_name}({reducer_arg})"
+            arcpy.AddMessage(
+                f"Applying reducer: {command_string} with type: {reducer_type}"
+            )
+            constructed_reducer = eval(command_string)
 
-        # Serialize the filtered Earth Engine object to a string
-        serialized_object = ee_object.serialize()
+            ee_method = getattr(ee_object, reducer_type)
+            ee_object = ee_method(constructed_reducer)
 
         # Save the serialized string as JSON to the specified output path
         if not out_json.endswith(".json"):
             out_json = out_json + ".json"
 
-        with open(out_json, "w") as f:
-            json.dump({"ee_object": serialized_object}, f)
+        # save to json
+        arcgee.data.save_ee_result(ee_object, out_json)
 
         return
 
@@ -4747,12 +5365,12 @@ class ApplyReducer:
         return
 
 
-# Apply Map Functions to Image Collection or Feature Collection
-class ApplyMapFunction:
+# Apply Map Functions to Collection Dataset by ID
+class ApplyMapFunctionbyID:
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Apply Map Functions to GEE Datasets"
+        self.label = "Apply Map Functions to Collection Dataset by Asset ID"
         self.description = ""
         self.category = "Data Processing Tools"
         self.canRunInBackgroud = False
@@ -4797,11 +5415,13 @@ class ApplyMapFunction:
 
         param4 = arcpy.Parameter(
             name="out_json",
-            displayName="Specify the output JSON file to save the string format of the filtered dataset",
+            displayName="Specify the output JSON file to save the serialized object",
             datatype="DEFile",
             direction="Output",
             parameterType="Required",
         )
+
+        param4.filter.list = ["json"]
 
         params = [param0, param1, param2, param3, param4]
         return params
@@ -4815,15 +5435,6 @@ class ApplyMapFunction:
         validation is performed.  This method is called whenever a parameter
         has been changed."""
 
-        # List all functions in the imported module
-        def list_functions_from_script(module):
-            function_list = []
-            for name, obj in inspect.getmembers(module):
-                if inspect.isfunction(obj):
-                    function_list.append(name)
-            return function_list
-
-        import inspect
         import importlib
 
         # When the map function file is selected
@@ -4873,18 +5484,163 @@ class ApplyMapFunction:
 
         # Apply the filters from the filter list to the Earth Engine object
         for func_str in function_list:
+            arcpy.AddMessage(f"Applying map function: {func_str}")
             function_to_call = getattr(module, func_str)
             ee_object = ee_object.map(function_to_call)
-
-        # Serialize the filtered Earth Engine object to a string
-        serialized_object = ee_object.serialize()
 
         # Save the serialized string as JSON to the specified output path
         if not out_json.endswith(".json"):
             out_json = out_json + ".json"
 
-        with open(out_json, "w") as f:
-            json.dump({"ee_object": serialized_object}, f)
+        # save to json
+        arcgee.data.save_ee_result(ee_object, out_json)
+
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and
+        added to the display."""
+        return
+
+
+# Apply Map Functions to Collection Dataset by Serialized JSON Object
+class ApplyMapFunctionbyObj:
+
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Apply Map Functions to Collection Dataset by Serialized Object"
+        self.description = ""
+        self.category = "Data Processing Tools"
+        self.canRunInBackgroud = False
+
+    def getParameterInfo(self):
+        """Define the tool parameters."""
+
+        param0 = arcpy.Parameter(
+            name="data_type",
+            displayName="Choose the type of the dataset to be loaded",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+        param0.filter.list = ["FeatureCollection", "ImageCollection"]
+
+        param1 = arcpy.Parameter(
+            name="ee_obj",
+            displayName="Select the JSON file of the serialized object",
+            datatype="DEFile",
+            direction="Input",
+            parameterType="Required",
+        )
+        # only displays JSON files
+        param1.filter.list = ["json"]
+
+        param2 = arcpy.Parameter(
+            name="map_file",
+            displayName="Select the Python script that contains map functions",
+            datatype="DEFile",
+            direction="Input",
+            multiValue=False,
+            parameterType="Required",
+        )
+        param2.filter.list = ["py"]
+
+        param3 = arcpy.Parameter(
+            name="map_functions",
+            displayName="Select the map functions to apply",
+            datatype="GPString",
+            direction="Input",
+            multiValue=True,
+            parameterType="Required",
+        )
+
+        param4 = arcpy.Parameter(
+            name="out_json",
+            displayName="Specify the output JSON file to save the serialized object",
+            datatype="DEFile",
+            direction="Output",
+            parameterType="Required",
+        )
+
+        param4.filter.list = ["json"]
+
+        params = [param0, param1, param2, param3, param4]
+        return params
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+
+        import importlib
+
+        # When the map function file is selected
+        if parameters[2].valueAsText:
+            # get the file name of input map function file
+            file_path = parameters[2].valueAsText
+            map_lib = os.path.splitext(os.path.basename(file_path))[0]
+            module = importlib.import_module(map_lib)
+
+            function_list = list_functions_from_script(module)
+            parameters[3].filter.list = function_list
+
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter. This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+        import importlib
+
+        # Read input parameters
+        data_type = parameters[0].valueAsText
+        json_path = parameters[1].valueAsText
+        map_file = parameters[2].valueAsText
+        map_functions = parameters[3].valueAsText
+        out_json = parameters[4].valueAsText
+
+        # get list of map functions
+        if "'" in map_functions:
+            map_functions = map_functions.replace("'", "")
+        function_list = map_functions.split(";")
+
+        # import module first
+        map_lib = os.path.splitext(os.path.basename(map_file))[0]
+        module = importlib.import_module(map_lib)
+
+        # load collection object
+        ee_object = arcgee.data.load_ee_result(json_path)
+
+        #  Cast the object to target data type
+        if data_type == "FeatureCollection":
+            ee_object = ee.FeatureCollection(ee_object)
+        elif data_type == "ImageCollection":
+            ee_object = ee.ImageCollection(ee_object)
+        else:
+            raise ValueError(f"Unsupported data type: {data_type}")
+
+        asset_id = ee_object.getInfo()["id"]
+        arcpy.AddMessage(f"Asset ID: {asset_id}")
+
+        # Apply the filters from the filter list to the Earth Engine object
+        for func_str in function_list:
+            arcpy.AddMessage(f"Applying map function: {func_str}")
+            function_to_call = getattr(module, func_str)
+            ee_object = ee_object.map(function_to_call)
+
+        # Save the serialized string as JSON to the specified output path
+        if not out_json.endswith(".json"):
+            out_json = out_json + ".json"
+
+        # save to json
+        arcgee.data.save_ee_result(ee_object, out_json)
 
         return
 
@@ -4942,897 +5698,6 @@ class RunPythonScript:
 
         # Run the script as an external process
         subprocess.run(["python", py_script])
-
-        return
-
-    def postExecute(self, parameters):
-        """This method takes place after outputs are processed and
-        added to the display."""
-        return
-
-
-# Run Earth Engine Operation
-class EEOpTool:
-    def __init__(self):
-        self.label = "EE Operation"
-        self.description = "Tool to run arbitrary Earth Engine operation"
-        self.category = "Data Processing Tools"
-        self.canRunInBackgroud = False
-
-    def getParameterInfo(self):
-        """Define the tool parameters."""
-        project_id = arcpy.Parameter(
-            displayName="Cloud Project ID",
-            name="project_id",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input",
-        )
-
-        ee_method = arcpy.Parameter(
-            displayName="EE Method call",
-            name="ee_method",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input",
-        )
-
-        in_value = arcpy.Parameter(
-            displayName="Input EE Value",
-            name="in_value",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input",
-        )
-
-        in_args = arcpy.Parameter(
-            displayName="Input Arguments",
-            name="in_args",
-            datatype="GPString",
-            parameterType="Optional",
-            direction="Input",
-            multiValue=True,
-        )
-
-        in_kwargs = arcpy.Parameter(
-            displayName="Input Keywords",
-            name="in_kwargs",
-            datatype="GPString",
-            parameterType="Optional",
-            direction="Input",
-            multiValue=True,
-        )
-        # Defines the structure of the input table
-        in_kwargs.columns = [
-            ["GPString", "Keyword Name"],
-            ["GPString", "Value"],
-            ["GPString", "Type"],
-        ]
-
-        out_value = arcpy.Parameter(
-            displayName="Output EE Value",
-            name="out_value",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Output",
-        )
-
-        params = [project_id, ee_method, in_value, in_args, in_kwargs, out_value]
-
-        return params
-
-    def isLicensed(self):
-        """Set whether the tool is licensed to execute."""
-        return True
-
-    def updateParameters(self, parameters):
-        """Modify the values and properties of parameters before internal
-        validation is performed.  This method is called whenever a parameter
-        has been changed."""
-        return
-
-    def updateMessages(self, parameters):
-        """Modify the messages created by internal validation for each tool
-        parameter. This method is called after internal validation."""
-        return
-
-    def execute(self, parameters, messages):
-        # TODO(kmarkert): check if EE is initialized and then
-        # not sure how auth may be handeled with model builder chain...
-        arcgee.data.auth(project=parameters[0].valueAsText)
-
-        in_ee_obj = arcgee.data.load_ee_result(parameters[2].valueAsText)
-
-        ee_method_str = parameters[1].valueAsText
-
-        if ee_method_str.startswith("ee."):
-            ee_method_str = ee_method_str.replace("ee.", "")
-
-        ee_cls, ee_call = ee_method_str.split(".")
-        ee_method = getattr(getattr(ee, ee_cls), ee_call)
-
-        # need to parse and verify input args to the correct type...
-        args_ = parameters[3].valueAsText
-        if args_ is not None:
-            args = [eval(element.strip()) for element in args_.split(";")]
-            for arg in args:
-                messages.addMessage(f"{arg}: {type(arg)}")
-        else:
-            args = []
-
-        # TODO(kmarkert) update the parsing of kwargs
-        in_kwargs_ = parameters[4].valueAsText
-        messages.addMessage(in_kwargs_)
-        kwargs = {}
-        # if in_kwargs_ is not None and ';' in in_kwargs_:
-        #     in_kwargs = in_kwargs_.split(';')
-
-        #     if len(kwargs) > 1:
-        #         for element in in_kwargs:
-        #             key, value, t = element.split(' ')
-        #             if 'ee' not in t:
-        #                 kwargs[key] = eval(f'{t}({value})')
-        #             elif 'ee' in t:
-        #                 v = arcgee.data.load_ee_result(value)
-        #                 kwargs[key] = v
-        if in_kwargs_ is not None:
-            key, value, t = in_kwargs_.split(" ")
-            if "ee" not in t:
-                kwargs[key] = eval(value)
-            elif "ee" in t:
-                v = arcgee.data.load_ee_result(value)
-                kwargs[key] = v
-
-        messages.addMessage(f"{kwargs}")
-
-        # set up requet to Earth Engine
-        ee_result = ee_method(in_ee_obj, *args, **kwargs)
-
-        out_path = parameters[5].valueAsText
-
-        arcgee.data.save_ee_result(ee_result, out_path)
-
-        return
-
-    def postExecute(self, parameters):
-        """This method takes place after outputs are processed and
-        added to the display."""
-        return
-
-
-########################################################
-################### Not in Use #########################
-########################################################
-# Add GEE Asset Object to ArcGIS map
-class EEMapTool:
-    def __init__(self):
-        self.label = "Add EE to Map"
-        self.description = "Add Serialized GEE Object to Map"
-
-    def getParameterInfo(self):
-        """Define the tool parameters."""
-
-        project_id = arcpy.Parameter(
-            displayName="Cloud Project ID",
-            name="project_id",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input",
-        )
-
-        in_value = arcpy.Parameter(
-            displayName="Input EE Value",
-            name="in_value",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input",
-        )
-
-        vis_params = arcpy.Parameter(
-            displayName="Visualization Parameters",
-            name="vis_param",
-            datatype="GPString",
-            parameterType="Optional",
-            direction="Input",
-            multiValue=True,
-        )
-        vis_params.columns = [["GPString", "Parameter"], ["GPString", "Value"]]
-
-        layer_name = arcpy.Parameter(
-            displayName="Layer Name",
-            name="layer_name",
-            datatype="GPString",
-            parameterType="Optional",
-            direction="Input",
-        )
-
-        params = [project_id, in_value, vis_params, layer_name]
-
-        return params
-
-    def isLicensed(self):
-        """Set whether the tool is licensed to execute."""
-        return True
-
-    def updateParameters(self, parameters):
-        """Modify the values and properties of parameters before internal
-        validation is performed.  This method is called whenever a parameter
-        has been changed."""
-        return
-
-    def updateMessages(self, parameters):
-        """Modify the messages created by internal validation for each tool
-        parameter. This method is called after internal validation."""
-        return
-
-    def execute(self, parameters, messages):
-        # TODO(kmarkert): check if EE is initialized and then
-        # not sure how auth may be handeled with model builder chain...
-        arcgee.data.auth(project=parameters[0].valueAsText)
-
-        in_ee_obj = arcgee.data.load_ee_result(parameters[1].valueAsText)
-
-        in_vis_ = parameters[2].valueAsText
-        if in_vis_ is not None:
-            in_vis = in_vis_.split(";")
-            vis_params = {}
-            for element in in_vis:
-                key, value = element.split(" ")
-                for t in [int, float]:
-                    try:
-                        value = t(value)
-                    except:
-                        pass
-
-                vis_params[key] = value
-        else:
-            vis_params = None
-
-        layer_name = parameters[3].valueAsText
-
-        arcgee.map.add_layer(in_ee_obj, vis_params, layer_name)
-
-        return
-
-    def postExecute(self, parameters):
-        """This method takes place after outputs are processed and
-        added to the display."""
-        return
-
-
-# Add GEE Image to Map
-class AddImage2Map:
-
-    def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
-        self.label = "Add GEE Image to Map"
-        self.description = ""
-        self.category = ""
-        self.canRunInBackgroud = False
-
-    def getParameterInfo(self):
-        """Define the tool parameters."""
-
-        param0 = arcpy.Parameter(
-            name="asset_id",
-            displayName="Specify GEE Asset Tag",
-            datatype="GPString",
-            direction="Input",
-            parameterType="Required",
-        )
-        param0.dialogref = "Browse all available datasets from GEE website, copy and paste the asset id here."
-
-        param1 = arcpy.Parameter(
-            name="bands",
-            displayName="Specify three bands for RGB visualization",
-            datatype="GPString",
-            direction="Input",
-            multiValue=True,
-            parameterType="Optional",
-        )
-
-        param2 = arcpy.Parameter(
-            name="min_val",
-            displayName="Specify the minimum value for visualization",
-            datatype="GPDouble",
-            direction="Input",
-            parameterType="Optional",
-        )
-
-        param3 = arcpy.Parameter(
-            name="max_val",
-            displayName="Specify the maximum value for visualization",
-            datatype="GPDouble",
-            direction="Input",
-            parameterType="Optional",
-        )
-
-        param4 = arcpy.Parameter(
-            name="gamma",
-            displayName="Specify gamma correction factors",
-            datatype="GPString",
-            direction="Input",
-            parameterType="Optional",
-        )
-
-        param5 = arcpy.Parameter(
-            name="palette",
-            displayName="Specify color palette in CSS-style color strings for visualization",
-            datatype="GPString",
-            direction="Input",
-            parameterType="Optional",
-        )
-
-        params = [param0, param1, param2, param3, param4, param5]
-        return params
-
-    def isLicensed(self):
-        """Set whether the tool is licensed to execute."""
-        return True
-
-    def updateParameters(self, parameters):
-        """Modify the values and properties of parameters before internal
-        validation is performed.  This method is called whenever a parameter
-        has been changed."""
-
-        # Check band list of a given asset
-        asset_id = parameters[0].valueAsText
-        if asset_id:
-            image = ee.Image(asset_id)
-            band_names = image.bandNames()
-            band_list = band_names.getInfo()
-            # Add band resolution information to display
-            band_res_list = []
-            for iband in band_list:
-                band_tmp = image.select(iband)
-                proj = band_tmp.projection()
-                res = proj.nominalScale().getInfo()
-                band_res_list.append(iband + "--" + str(round(res)) + "--m")
-
-            parameters[1].filter.list = band_res_list
-
-        return
-
-    def updateMessages(self, parameters):
-        """Modify the messages created by internal validation for each tool
-        parameter. This method is called after internal validation."""
-        return
-
-    def execute(self, parameters, messages):
-        """The source code of the tool."""
-        img_label = parameters[0].valueAsText
-        band_str = parameters[1].valueAsText
-        min_val = parameters[2].valueAsText
-        max_val = parameters[3].valueAsText
-        gamma_str = parameters[4].valueAsText
-        palette_str = parameters[5].valueAsText
-
-        # Define visualization parameters
-        vis_params = {}
-
-        # Add bands to vis_params if specfied
-        if band_str:
-            # Remove ' in band string in case users add it
-            if "'" in band_str:
-                band_str = band_str.replace("'", "")
-            bands = band_str.split(";")
-            bands_only = [iband.split("--")[0] for iband in bands]
-            vis_params["bands"] = bands_only
-
-        # Add min and max values if specified
-        if min_val:
-            vis_params["min"] = float(min_val)
-        if max_val:
-            vis_params["max"] = float(max_val)
-
-        # Add gamma correction factors if specified
-        if gamma_str:
-            # Remove ' in gamma string in case users add it
-            if "'" in gamma_str:
-                gamma_str = gamma_str.replace("'", "")
-            gamma = [float(item) for item in gamma_str.split(",")]
-            vis_params["gamma"] = gamma
-
-        # Add color palette if specified
-        if palette_str:
-            # arcpy.AddMessage(palette_str)
-            # Remove ' in palette string in case users add it
-            if "'" in palette_str:
-                palette_str = palette_str.replace("'", "")
-            # Convert palette string to list if specified
-            palette = palette_str.split(",")
-            # arcpy.AddMessage(palette)
-            vis_params["palette"] = palette
-
-        # Get image by label
-        dem = ee.Image(img_label)
-        # Get the map ID and token
-        map_id_dict = dem.getMapId(vis_params)
-
-        # Construct the URL
-        map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
-
-        # Add map URL to the current ArcMap
-        aprx = arcpy.mp.ArcGISProject("CURRENT")
-        aprxMap = aprx.listMaps("Map")[0]
-        tsl = aprxMap.addDataFromPath(map_url)
-        # Add band information to map name
-        if band_str:
-            tsl.name = img_label + "--" + "--".join(bands_only)
-        else:
-            tsl.name = img_label
-
-        return
-
-    def postExecute(self, parameters):
-        """This method takes place after outputs are processed and
-        added to the display."""
-        return
-
-
-# Download GEE Image by GetDownloadURL Max. 48MB
-class DownloadSmallImage:
-
-    def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
-        self.label = "Download GEE Image in Small Chunk (Maximum 48MB)"
-        self.description = ""
-        self.category = ""
-        self.canRunInBackgroud = False
-
-    def getParameterInfo(self):
-        """Define the tool parameters."""
-
-        param0 = arcpy.Parameter(
-            name="asset_id",
-            displayName="Specify GEE Image Asset Tag",
-            datatype="GPString",
-            direction="Input",
-            parameterType="Required",
-        )
-        param0.dialogref = ""
-
-        param1 = arcpy.Parameter(
-            name="bands",
-            displayName="Specify the Bands for Download",
-            datatype="GPString",
-            direction="Input",
-            multiValue=True,
-            parameterType="Optional",
-        )
-
-        param2 = arcpy.Parameter(
-            name="scale",
-            displayName="Specify the Scale for Download",
-            datatype="GPDouble",
-            direction="Input",
-            multiValue=False,
-            parameterType="Optional",
-        )
-
-        param3 = arcpy.Parameter(
-            name="in_poly",
-            displayName="Choose a Polygon or Polyline as Region of Interest",
-            datatype="GPFeatureLayer",
-            direction="Input",
-            parameterType="Optional",
-        )
-
-        param4 = arcpy.Parameter(
-            name="use_extent",
-            displayName="Use current map view extent",
-            datatype="GPBoolean",
-            direction="Input",
-            parameterType="Optional",
-        )
-
-        param5 = arcpy.Parameter(
-            name="out_tiff",
-            displayName="Specify the Output File Name",
-            datatype="DEFile",
-            direction="Output",
-            parameterType="Required",
-        )
-
-        params = [param0, param1, param2, param3, param4, param5]
-        return params
-
-    def isLicensed(self):
-        """Set whether the tool is licensed to execute."""
-        return True
-
-    def updateParameters(self, parameters):
-        """Modify the values and properties of parameters before internal
-        validation is performed.  This method is called whenever a parameter
-        has been changed."""
-
-        # Check band list of a given asset
-        # Only update filter list once to avoid extra computation
-        asset_id = parameters[0].valueAsText
-        if asset_id and not parameters[1].filter.list:
-            image = ee.Image(asset_id)
-            band_names = image.bandNames()
-            band_list = band_names.getInfo()
-            # Add band resolution information to display
-            band_res_list = []
-            for iband in band_list:
-                band_tmp = image.select(iband)
-                proj = band_tmp.projection()
-                res = proj.nominalScale().getInfo()
-                band_res_list.append(iband + "--" + str(round(res)) + "--m")
-
-            parameters[1].filter.list = band_res_list
-
-        # Capture the suggested scale value based on selected bands
-        band_str = parameters[1].valueAsText
-        if band_str:
-            # Remove ' in band string in case users add it
-            if "'" in band_str:
-                band_str = band_str.replace("'", "")
-            bands = band_str.split(";")
-            scale_only = [float(iband.split("--")[1]) for iband in bands]
-            parameters[2].value = max(scale_only)
-
-        # Disable input feature if map extent is used
-        if parameters[4].value:  # map extent selected
-            parameters[3].enabled = False
-        else:
-            parameters[3].enabled = True
-
-        # Reset band filter list when asset id is empty
-        if not asset_id:
-            parameters[1].filter.list = []
-
-        return
-
-    def updateMessages(self, parameters):
-        """Modify the messages created by internal validation for each tool
-        parameter. This method is called after internal validation."""
-        return
-
-    def execute(self, parameters, messages):
-        """The source code of the tool."""
-        asset_id = parameters[0].valueAsText
-        band_str = parameters[1].valueAsText
-        scale = parameters[2].valueAsText
-        in_poly = parameters[3].valueAsText
-        use_extent = parameters[4].valueAsText
-        out_tiff = parameters[5].valueAsText
-
-        # Define a function to project a point to WGS 84 (EPSG 4326)
-        def project_to_wgs84(x, y, in_spatial_ref):
-            point = arcpy.Point(x, y)
-            point_geom = arcpy.PointGeometry(point, in_spatial_ref)
-            wgs84 = arcpy.SpatialReference(4326)
-            point_geom_wgs84 = point_geom.projectAs(wgs84)
-            return point_geom_wgs84.centroid.X, point_geom_wgs84.centroid.Y
-
-        # Initialize parameters for getDownloadURL
-        params_dict = {}
-
-        # Add bands to vis_params if specfied
-        if band_str:
-            # Remove ' in band string in case users add it
-            if "'" in band_str:
-                band_str = band_str.replace("'", "")
-            bands = band_str.split(";")
-            bands_only = [iband.split("--")[0] for iband in bands]
-            params_dict["bands"] = bands_only
-
-        # Make sure output file name ends with .tif
-        if not out_tiff.endswith(".tif"):
-            out_tiff = out_tiff + ".tif"
-
-        # Check GEE image projection
-        image = ee.Image(asset_id)
-        # CRS could be other projections than 'EPSG:4326' for some GEE assets
-        # When multiple band, select one for projection
-        img_prj = image.select(0).projection().crs().getInfo()
-        arcpy.AddMessage("Image projection is " + img_prj)
-
-        # Get the region of interests
-        # Use map view extent if checked
-        if use_extent == "true":
-            xmin, ymin, xmax, ymax = get_map_view_extent()
-            roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
-
-        # Use input feature layer as ROI
-        else:
-            spatial_ref = arcpy.Describe(in_poly).spatialReference
-            poly_prj = spatial_ref.PCSCode
-            arcpy.AddMessage("Input feature layer projection is " + str(poly_prj))
-
-            # Project input feature to GEE image coordinate system if needed
-            target_poly = in_poly
-            if str(poly_prj) not in img_prj:
-                arcpy.AddMessage(
-                    "Projecting input feature layer to GEE image cooridnate system ..."
-                )
-                out_sr = arcpy.SpatialReference(int(img_prj.split(":")[1]))
-                arcpy.Project_management(in_poly, "poly_temp", out_sr)
-                target_poly = "poly_temp"
-
-            # convert input feature to geojson
-            arcpy.FeaturesToJSON_conversion(
-                target_poly, "temp.geojson", "FORMATTED", "", "", "GEOJSON"
-            )
-
-            # Read the GeoJSON file
-            upper_path = os.path.dirname(arcpy.env.workspace)
-            file_geojson = os.path.join(upper_path, "temp.geojson")
-            with open(file_geojson) as f:
-                geojson_data = json.load(f)
-
-            # Collect polygon object coordinates
-            coords = []
-            for feature in geojson_data["features"]:
-                coords.append(feature["geometry"]["coordinates"])
-            arcpy.AddMessage("Total number of polygon objects: " + str(len(coords)))
-
-            # Create an Earth Engine MultiPolygon from the GeoJSON
-            roi = ee.Geometry.MultiPolygon(coords)
-            # Delete temporary geojson
-            arcpy.management.Delete(file_geojson)
-
-        # Clip image to ROI only
-        image = image.clip(roi)
-
-        params_dict["region"] = roi  # The region to clip and download
-        if scale:
-            params_dict["scale"] = float(scale)  # Resolution in meters per pixel
-        params_dict["format"] = "GEO_TIFF"  # The file format of the downloaded image
-
-        # Specify the download parameters
-        download_url = image.getDownloadURL(params_dict)
-
-        arcpy.AddMessage("Download URL is: " + download_url)
-        arcpy.AddMessage("Downloading to " + out_tiff + " ...")
-
-        response = requests.get(download_url)
-        with open(out_tiff, "wb") as fd:
-            fd.write(response.content)
-
-        arcpy.AddMessage(out_tiff)
-
-        # Add out tiff to map layer
-        aprx = arcpy.mp.ArcGISProject("CURRENT")
-        aprxMap = aprx.activeMap
-        aprxMap.addDataFromPath(out_tiff)
-
-        return
-
-    def postExecute(self, parameters):
-        """This method takes place after outputs are processed and
-        added to the display."""
-        return
-
-
-# Download by Getting Pixels, Max. 3 Bands and 48MB
-class DownloadImagePixels:
-
-    def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
-        self.label = "Download GEE Image by Pixels (Maximum 3 Bands and 48MB)"
-        self.description = ""
-        self.category = ""
-        self.canRunInBackgroud = False
-
-    def getParameterInfo(self):
-        """Define the tool parameters."""
-
-        param0 = arcpy.Parameter(
-            name="asset_id",
-            displayName="Specify GEE Image Asset Tag",
-            datatype="GPString",
-            direction="Input",
-            parameterType="Required",
-        )
-        param0.dialogref = ""
-
-        param1 = arcpy.Parameter(
-            name="bands",
-            displayName="Specify the Bands for Download",
-            datatype="GPString",
-            direction="Input",
-            multiValue=True,
-            parameterType="Optional",
-        )
-
-        param2 = arcpy.Parameter(
-            name="in_poly",
-            displayName="Choose a Polygon or Polyline as Region of Interest",
-            datatype="GPFeatureLayer",
-            direction="Input",
-            parameterType="Optional",
-        )
-
-        param3 = arcpy.Parameter(
-            name="use_extent",
-            displayName="Use current map view extent",
-            datatype="GPBoolean",
-            direction="Input",
-            parameterType="Optional",
-        )
-
-        param4 = arcpy.Parameter(
-            name="out_tiff",
-            displayName="Specify the Output File Name",
-            datatype="DEFile",
-            direction="Output",
-            parameterType="Required",
-        )
-
-        params = [param0, param1, param2, param3, param4]
-
-        return params
-
-    def isLicensed(self):
-        """Set whether the tool is licensed to execute."""
-        return True
-
-    def updateParameters(self, parameters):
-        """Modify the values and properties of parameters before internal
-        validation is performed.  This method is called whenever a parameter
-        has been changed."""
-
-        # Check band list of a given asset
-        # Only update filter list once to avoid extra computation
-        asset_id = parameters[0].valueAsText
-        if asset_id and not parameters[1].filter.list:
-            image = ee.Image(asset_id)
-            band_names = image.bandNames()
-            band_list = band_names.getInfo()
-            # Add band resolution information to display
-            band_res_list = []
-            for iband in band_list:
-                band_tmp = image.select(iband)
-                proj = band_tmp.projection()
-                res = proj.nominalScale().getInfo()
-                band_res_list.append(iband + "--" + str(round(res)) + "--m")
-
-            parameters[1].filter.list = band_res_list
-
-        # Disable input feature if map extent is used
-        if parameters[3].value:
-            parameters[2].enabled = False
-        else:
-            parameters[2].enabled = True
-
-        # Reset band filter list when asset id is empty
-        if not asset_id:
-            parameters[1].filter.list = []
-
-        return
-
-    def updateMessages(self, parameters):
-        """Modify the messages created by internal validation for each tool
-        parameter. This method is called after internal validation."""
-
-        # Make sure maximum 3 bands selected
-        band_str = parameters[1].valueAsText
-        if band_str:
-            if "'" in band_str:
-                band_str = band_str.replace("'", "")
-            bands = band_str.split(";")
-            if len(bands) > 3:
-                parameters[1].setErrorMessage("You can only select up to 3 bands.")
-            else:
-                parameters[1].clearMessage()
-
-        return
-
-    def execute(self, parameters, messages):
-        """The source code of the tool."""
-        asset_id = parameters[0].valueAsText
-        band_str = parameters[1].valueAsText
-        in_poly = parameters[2].valueAsText
-        use_extent = parameters[3].valueAsText
-        out_tiff = parameters[4].valueAsText
-
-        # Define a function to project a point to WGS 84 (EPSG 4326)
-        def project_to_wgs84(x, y, in_spatial_ref):
-            point = arcpy.Point(x, y)
-            point_geom = arcpy.PointGeometry(point, in_spatial_ref)
-            wgs84 = arcpy.SpatialReference(4326)
-            point_geom_wgs84 = point_geom.projectAs(wgs84)
-            return point_geom_wgs84.centroid.X, point_geom_wgs84.centroid.Y
-
-        # Convert BBox to Polygon
-        def bbox_to_polygon(in_bbox):
-            # Get the coordinates from the BBox
-            coords = in_bbox.coordinates().getInfo()
-            # Create the ee.Geometry.Polygon
-            out_poly = ee.Geometry.Polygon(coords)
-            return out_poly
-
-        # Initialize parameters for getDownloadURL
-        params_dict = {}
-        params_dict["fileFormat"] = "GEO_TIFF"
-        params_dict["assetId"] = asset_id
-
-        # Add bands to vis_params if specfied
-        if band_str:
-            # Remove ' in band string in case users add it
-            if "'" in band_str:
-                band_str = band_str.replace("'", "")
-            bands = band_str.split(";")
-            bands_only = [iband.split("--")[0] for iband in bands]
-            params_dict["bandIds"] = bands_only
-
-        # Make sure output file name ends with .tif
-        if not out_tiff.endswith(".tif"):
-            out_tiff = out_tiff + ".tif"
-
-        # Check GEE image projection
-        image = ee.Image(asset_id)
-        # CRS could be other projections than 'EPSG:4326' for some GEE assets
-        # When multiple band, select one for projection
-        img_prj = image.select(0).projection().crs().getInfo()
-        arcpy.AddMessage("Image projection is " + img_prj)
-
-        # Get the region of interests
-        # Use map view extent if checked
-        if use_extent == "true":
-            xmin, ymin, xmax, ymax = get_map_view_extent()
-            bbox = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
-            roi = bbox_to_polygon(bbox)
-        # Use input feature layer as ROI
-        else:
-            spatial_ref = arcpy.Describe(in_poly).spatialReference
-            poly_prj = spatial_ref.PCSCode
-            arcpy.AddMessage("Input feature layer projection is " + str(poly_prj))
-
-            # Project input feature to GEE image coordinate system if needed
-            target_poly = in_poly
-            if str(poly_prj) not in img_prj:
-                arcpy.AddMessage(
-                    "Projecting input feature layer to GEE image cooridnate system ..."
-                )
-                out_sr = arcpy.SpatialReference(int(img_prj.split(":")[1]))
-                arcpy.Project_management(in_poly, "poly_temp", out_sr)
-                target_poly = "poly_temp"
-
-            # convert input feature to geojson
-            arcpy.FeaturesToJSON_conversion(
-                target_poly, "temp.geojson", "FORMATTED", "", "", "GEOJSON"
-            )
-
-            # Read the GeoJSON file
-            upper_path = os.path.dirname(arcpy.env.workspace)
-            file_geojson = os.path.join(upper_path, "temp.geojson")
-            with open(file_geojson) as f:
-                geojson_data = json.load(f)
-
-            # Collect polygon object coordinates
-            coords = []
-            for feature in geojson_data["features"]:
-                coords.append(feature["geometry"]["coordinates"])
-            arcpy.AddMessage("Total number of polygon objects: " + str(len(coords)))
-
-            # Create an Earth Engine MultiPolygon from the GeoJSON
-            roi = ee.Geometry.MultiPolygon(coords)
-            # Delete temporary geojson
-            arcpy.management.Delete(file_geojson)
-
-        params_dict["region"] = roi.toGeoJSON()
-
-        # arcpy.AddMessage(roi.toGeoJSON())
-
-        # Clip image to ROI only
-        # image = image.clip(multi_polygon)
-
-        # Use ee.data.getPixels to get the pixel data
-        pixels = ee.data.getPixels(params_dict)
-
-        # Save the pixel data to a file
-        with open(out_tiff, "wb") as f:
-            f.write(pixels)
-
-        arcpy.AddMessage("Saving file to path: " + out_tiff)
-        # Add out tiff to map layer
-        aprx = arcpy.mp.ArcGISProject("CURRENT")
-        aprxMap = aprx.activeMap
-        aprxMap.addDataFromPath(out_tiff)
 
         return
 
