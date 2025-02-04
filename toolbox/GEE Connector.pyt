@@ -7,6 +7,7 @@ import json
 import requests
 import numpy as np
 import xarray
+import datetime
 
 # ArcGEE version
 __version__ = "0.0.1"
@@ -21,6 +22,837 @@ import arcgee
 # logger = logging.getLogger(__name__)
 
 """ Define functions"""
+
+
+def get_reducer_list():
+    """
+    Get the complete list of available reducers from ee.Reducer.
+
+    Returns:
+        list: A list of all reducer names available in ee.Reducer.
+    """
+    reducers = [
+        "ee.Reducer.allNonZero",
+        "ee.Reducer.anyNonZero",
+        "ee.Reducer.autoHistogram",
+        "ee.Reducer.bitwiseAnd",
+        "ee.Reducer.bitwiseOr",
+        "ee.Reducer.centeredCovariance",
+        "ee.Reducer.circularMean",
+        "ee.Reducer.circularStddev",
+        "ee.Reducer.circularVariance",
+        "ee.Reducer.combine",
+        "ee.Reducer.count",
+        "ee.Reducer.countDistinct",
+        "ee.Reducer.countDistinctNonNull",
+        "ee.Reducer.countEvery",
+        "ee.Reducer.countRuns",
+        "ee.Reducer.covariance",
+        "ee.Reducer.disaggregate",
+        "ee.Reducer.first",
+        "ee.Reducer.firstNonNull",
+        "ee.Reducer.fixed2DHistogram",
+        "ee.Reducer.fixedHistogram",
+        "ee.Reducer.forEach",
+        "ee.Reducer.forEachBand",
+        "ee.Reducer.frequencyHistogram",
+        "ee.Reducer.geometricMedian",
+        "ee.Reducer.getOutputs",
+        "ee.Reducer.group",
+        "ee.Reducer.histogram",
+        "ee.Reducer.intervalMean",
+        "ee.Reducer.kendallsCorrelation",
+        "ee.Reducer.kurtosis",
+        "ee.Reducer.last",
+        "ee.Reducer.lastNonNull",
+        "ee.Reducer.linearFit",
+        "ee.Reducer.linearRegression",
+        "ee.Reducer.max",
+        "ee.Reducer.mean",
+        "ee.Reducer.median",
+        "ee.Reducer.min",
+        "ee.Reducer.minMax",
+        "ee.Reducer.mode",
+        "ee.Reducer.pearsonsCorrelation",
+        "ee.Reducer.percentile",
+        "ee.Reducer.product",
+        "ee.Reducer.repeat",
+        "ee.Reducer.ridgeRegression",
+        "ee.Reducer.robustLinearRegression",
+        "ee.Reducer.sampleStdDev",
+        "ee.Reducer.sampleVariance",
+        "ee.Reducer.sensSlope",
+        "ee.Reducer.setOutputs",
+        "ee.Reducer.skew",
+        "ee.Reducer.spearmansCorrelation",
+        "ee.Reducer.splitWeigths",
+        "ee.Reducer.stdDev",
+        "ee.Reducer.sum",
+        "ee.Reducer.toCollection",
+        "ee.Reducer.toList",
+        "ee.Reducer.unweighted",
+        "ee.Reducer.variance",
+    ]
+    return reducers
+
+
+def get_filter_list():
+    """
+    Get the complete list of available filters from ee.Filter.
+
+    Returns:
+        list: A list of all filter names available in ee.Filter, including filters for:
+            - Logical operations (and, or, not)
+            - Temporal filtering (date, calendarRange, dayOfYear)
+            - Spatial filtering (bounds, intersects, contains)
+            - Value comparisons (equals, greaterThan, lessThan, etc.)
+            - String operations (stringContains, stringStartsWith, etc.)
+            - And more
+
+    """
+    # all filters in the ee.Filter
+    filters = [
+        "ee.Filter.and",  # Combines two or more filters with logical AND
+        "ee.Filter.area",
+        "ee.Filter.aside",
+        "ee.Filter.bounds",  # Filter by geographic bounds (within a geometry)
+        "ee.Filter.calendarRange",  # Filter by calendar range (e.g., specific years, months, days)
+        "ee.Filter.contains",  # Checks if a collection contains a specific value
+        "ee.Filter.date",  # Filter by date range
+        "ee.Filter.daterangeContains",
+        "ee.Filter.dayofYear",
+        "ee.Filter.disjoint",
+        "ee.Filter.eq",  # Equality filter (equals)
+        "ee.Filter.equals",
+        "ee.Filter.evaluate",
+        "ee.Filter.expression",
+        "ee.Filter.getInfo",
+        "ee.Filter.greaterThan",
+        "ee.Filter.greaterThanOrEuqals",
+        "ee.Filter.gt",  # Greater than filter
+        "ee.Filter.gte",  # Greater than or equal to filter
+        "ee.Filter.hasType",
+        "ee.Filter.inList",  # Filter by values within a list (like SQL's IN clause)
+        "ee.Filter.intersects",  # Filter features that intersect a geometry
+        "ee.Filter.isContained",  # Checks if a geometry is contained by another geometry
+        "ee.Filter.lessThan",
+        "ee.Filter.lessThanOrEquals",
+        "ee.Filter.listContains",  # Filter if a list contains a specific value
+        "ee.Filter.lt",  # Less than filter
+        "ee.Filter.lte",  # Less than or equal to filter
+        "ee.Filter.maxDifference",
+        "ee.Filter.neq",  # Not equal filter
+        "ee.Filter.not",  # Negates a filter
+        "ee.Filter.notEuqals",
+        "ee.Filter.notNull",  # Filters features where a property is not null
+        "ee.Filter.or",  # Combines two or more filters with logical OR
+        "ee.Filter.rangeContains",
+        "ee.Filter.serialize",
+        "ee.Filter.stringContains",  # Checks if a string contains a substring
+        "ee.Filter.stringEndsWith",  # Checks if a string ends with a specific substring
+        "ee.Filter.stringStartsWith",  # Checks if a string starts with a specific substring
+        "ee.Filter.withinDistance",
+    ]
+
+    return filters
+
+
+def add_date_to_gif(
+    input_gif,
+    output_gif,
+    dates,
+    font_path=None,
+    font_size=40,
+    position=(10, 10),
+    color="white",
+):
+    """
+    Adds a date label to each frame of a GIF.
+
+    Args:
+        input_gif (str): Path to the input GIF file.
+        output_gif (str): Path to save the output GIF file.
+        dates (list): List of dates to add to each frame. Must match the number of frames in the GIF.
+        font_path (str): Path to a font file. Defaults to a system font.
+        font_size (int): Font size for the date text.
+        position (tuple): (x, y) position for the date label.
+        color (str): Color of the text. Defaults to white.
+    """
+    from PIL import Image, ImageDraw, ImageFont, ImageSequence
+
+    # Open the input GIF
+    gif = Image.open(input_gif)
+
+    # Load the font (use a default font if no font_path is provided)
+    font = ImageFont.truetype(font_path or "arial.ttf", font_size)
+
+    frames = []
+    for i, frame in enumerate(ImageSequence.Iterator(gif)):
+        # Ensure the number of dates matches the frames
+        if i >= len(dates):
+            break
+
+        # Copy the frame to edit
+        frame = frame.convert("RGBA")
+        draw = ImageDraw.Draw(frame)
+
+        # Add the date text
+        draw.text(position, dates[i], font=font, fill=color)
+
+        # Append the edited frame
+        frames.append(frame)
+
+    # Save the frames as a new GIF
+    frames[0].save(
+        output_gif,
+        save_all=True,
+        append_images=frames[1:],
+        loop=gif.info.get("loop", 0),
+        duration=gif.info.get("duration", 100),
+    )
+
+
+def validate_date(date_str, date_format="%Y-%m-%d"):
+    """Validates that a date string matches the expected format.
+
+    Args:
+        date_str (str): The date string to validate
+        date_format (str, optional): Expected date format. Defaults to "%Y-%m-%d".
+
+    Raises:
+        ValueError: If the date string does not match the expected format
+
+    Examples:
+        >>> validate_date("2023-01-01")  # Valid date
+        >>> validate_date("01/01/2023")  # Raises ValueError
+    """
+    try:
+        # Try to parse the date string with the expected format
+        datetime.datetime.strptime(date_str, date_format)
+        arcpy.AddMessage(f"Valid date: {date_str}")
+    except ValueError:
+        # Add error message if the format is incorrect
+        arcpy.AddError(
+            f"Invalid date format: '{date_str}'. Expected format: {date_format}."
+        )
+        raise  # Re-raise the error to stop execution
+
+
+def download_ee_video(collection, video_args, out_gif, timeout=300, proxies=None):
+    """Downloads a video thumbnail as a GIF image from Earth Engine.
+
+    Args:
+        collection (object): An ee.ImageCollection.
+        video_args (object): Parameters for expring the video thumbnail.
+        out_gif (str): File path to the output GIF.
+        timeout (int, optional): The number of seconds the request will be timed out. Defaults to 300.
+        proxies (dict, optional): A dictionary of proxy servers to use. Defaults to None.
+    """
+
+    out_gif = os.path.abspath(out_gif)
+    if not out_gif.endswith(".gif"):
+        print("The output file must have an extension of .gif.")
+        return
+
+    if not os.path.exists(os.path.dirname(out_gif)):
+        os.makedirs(os.path.dirname(out_gif))
+
+    if "region" in video_args.keys():
+        roi = video_args["region"]
+
+        if not isinstance(roi, ee.Geometry):
+            try:
+                roi = roi.geometry()
+            except Exception as e:
+                print("Could not convert the provided roi to ee.Geometry")
+                print(e)
+                return
+
+        video_args["region"] = roi
+    if "dimensions" not in video_args:
+        video_args["dimensions"] = 768
+
+    try:
+        print("Generating URL...")
+        url = collection.getVideoThumbURL(video_args)
+
+        print(f"Downloading GIF image from {url}\nPlease wait ...")
+        r = requests.get(url, stream=True, timeout=timeout, proxies=proxies)
+
+        if r.status_code != 200:
+            print("An error occurred while downloading.")
+            print(r.json()["error"]["message"])
+            return
+        else:
+            with open(out_gif, "wb") as fd:
+                for chunk in r.iter_content(chunk_size=1024):
+                    fd.write(chunk)
+            print(f"The GIF image has been saved to: {out_gif}")
+    except Exception as e:
+        print(e)
+
+
+def date_sequence(start, end, unit, date_format="YYYY-MM-dd", step=1):
+    """Creates a date sequence.
+
+    Args:
+        start (str): The start date, e.g., '2000-01-01'.
+        end (str): The end date, e.g., '2000-12-31'.
+        unit (str): One of 'year', 'quarter', 'month' 'week', 'day', 'hour', 'minute', or 'second'.
+        date_format (str, optional): A pattern, as described at http://joda-time.sourceforge.net/apidocs/org/joda/time/format/DateTimeFormat.html. Defaults to 'YYYY-MM-dd'.
+        step (int, optional): The step size. Defaults to 1.
+
+    Returns:
+        ee.List: A list of date sequence.
+    """
+
+    def get_quarter(d):
+        return str((int(d[5:7]) - 1) // 3 * 3 + 1).zfill(2)
+
+    def get_monday(d):
+        date_obj = datetime.datetime.strptime(d, "%Y-%m-%d")
+        start_of_week = date_obj - datetime.timedelta(days=date_obj.weekday())
+        return start_of_week.strftime("%Y-%m-%d")
+
+    if unit == "year":
+        start = start[:4] + "-01-01"
+    elif unit == "month":
+        start = start[:7] + "-01"
+    elif unit == "quarter":
+        start = start[:5] + get_quarter(start) + "-01"
+    elif unit == "week":
+        start = get_monday(start)
+
+    start_date = ee.Date(start)
+    end_date = ee.Date(end)
+
+    if unit != "quarter":
+        count = ee.Number(end_date.difference(start_date, unit)).toInt()
+        num_seq = ee.List.sequence(0, count)
+        if step > 1:
+            num_seq = num_seq.slice(0, num_seq.size(), step)
+        date_seq = num_seq.map(
+            lambda d: start_date.advance(d, unit).format(date_format)
+        )
+
+    else:
+        unit = "month"
+        count = ee.Number(end_date.difference(start_date, unit)).divide(3).toInt()
+        num_seq = ee.List.sequence(0, count.multiply(3), 3)
+        date_seq = num_seq.map(
+            lambda d: start_date.advance(d, unit).format(date_format)
+        )
+
+    return date_seq
+
+
+def get_current_year():
+    """Get the current year.
+
+    Returns:
+        int: The current year.
+    """
+    today = datetime.date.today()
+    return today.year
+
+
+# Generate landsat timeseries, from GEEMAP
+def landsat_timeseries(
+    roi=None,
+    start_year=1984,
+    end_year=None,
+    start_date="06-10",
+    end_date="09-20",
+    apply_fmask=True,
+    frequency="year",
+    date_format=None,
+    step=1,
+):
+    """Generates an annual Landsat ImageCollection. This algorithm is adapted from https://gist.github.com/jdbcode/76b9ac49faf51627ebd3ff988e10adbc. A huge thank you to Justin Braaten for sharing his fantastic work.
+
+    Args:
+        roi (object, optional): Region of interest to create the timelapse. Defaults to None.
+        start_year (int, optional): Starting year for the timelapse. Defaults to 1984.
+        end_year (int, optional): Ending year for the timelapse. Defaults to None, which means the current year.
+        start_date (str, optional): Starting date (month-day) each year for filtering ImageCollection. Defaults to '06-10'.
+        end_date (str, optional): Ending date (month-day) each year for filtering ImageCollection. Defaults to '09-20'.
+        apply_fmask (bool, optional): Whether to apply Fmask (Function of mask) for automated clouds, cloud shadows, snow, and water masking.
+        frequency (str, optional): Frequency of the timelapse: year, quarter, month. Defaults to 'year'.
+        date_format (str, optional): Format of the date. Defaults to None.
+        step (int, optional): The step size to use when creating the date sequence. Defaults to 1.
+    Returns:
+        object: Returns an ImageCollection containing annual Landsat images.
+    """
+
+    # Input and output parameters.
+    import re
+
+    if roi is None:
+        roi = ee.Geometry.Polygon(
+            [
+                [
+                    [-115.471773, 35.892718],
+                    [-115.471773, 36.409454],
+                    [-114.271283, 36.409454],
+                    [-114.271283, 35.892718],
+                    [-115.471773, 35.892718],
+                ]
+            ],
+            None,
+            False,
+        )
+
+    if end_year is None:
+        end_year = get_current_year()
+
+    if not isinstance(roi, ee.Geometry):
+        try:
+            roi = roi.geometry()
+        except Exception as e:
+            arcpy.AddMessage("Could not convert the provided roi to ee.Geometry")
+            arcpy.AddError(e)
+
+    feq_dict = {
+        "year": "YYYY",
+        "month": "YYYY-MM",
+        "quarter": "YYYY-MM",
+    }
+
+    if date_format is None:
+        date_format = feq_dict[frequency]
+
+    if frequency not in feq_dict:
+        arcpy.AddError("frequency must be year, quarter, or month.")
+
+    # Setup vars to get dates.
+    if (
+        isinstance(start_year, int)
+        and (start_year >= 1984)
+        and (start_year < get_current_year())
+    ):
+        pass
+    else:
+        arcpy.AddError("The start year must be an integer >= 1984.")
+
+    if (
+        isinstance(end_year, int)
+        and (end_year > 1984)
+        and (end_year <= get_current_year())
+    ):
+        pass
+    else:
+        arcpy.AddError(f"The end year must be an integer <= {get_current_year()}.")
+
+    if re.match(r"[0-9]{2}-[0-9]{2}", start_date) and re.match(
+        r"[0-9]{2}-[0-9]{2}", end_date
+    ):
+        pass
+    else:
+        arcpy.AddError(
+            "The start date and end date must be month-day, such as 06-10, 09-20"
+        )
+
+    try:
+        datetime.datetime(int(start_year), int(start_date[:2]), int(start_date[3:5]))
+        datetime.datetime(int(end_year), int(end_date[:2]), int(end_date[3:5]))
+    except Exception as e:
+        arcpy.AddMessage("The input dates are invalid.")
+        arcpy.AddError(e)
+
+    def days_between(d1, d2):
+        d1 = datetime.datetime.strptime(d1, "%Y-%m-%d")
+        d2 = datetime.datetime.strptime(d2, "%Y-%m-%d")
+        return abs((d2 - d1).days)
+
+    n_days = days_between(
+        str(start_year) + "-" + start_date, str(start_year) + "-" + end_date
+    )
+    start_month = int(start_date[:2])
+    start_day = int(start_date[3:5])
+
+    # Landsat collection preprocessingEnabled
+    # Get Landsat surface reflectance collections for OLI, ETM+ and TM sensors.
+    LC09col = ee.ImageCollection("LANDSAT/LC09/C02/T1_L2")
+    LC08col = ee.ImageCollection("LANDSAT/LC08/C02/T1_L2")
+    LE07col = ee.ImageCollection("LANDSAT/LE07/C02/T1_L2")
+    LT05col = ee.ImageCollection("LANDSAT/LT05/C02/T1_L2")
+    LT04col = ee.ImageCollection("LANDSAT/LT04/C02/T1_L2")
+
+    # Define a collection filter by date, bounds, and quality.
+    def colFilter(col, roi, start_date, end_date):
+        """Filter an image collection by region of interest and date range.
+
+        Args:
+            col (ee.ImageCollection): Input image collection
+            roi (ee.Geometry): Region of interest
+            start_date (str): Start date in 'YYYY-MM-DD' format
+            end_date (str): End date in 'YYYY-MM-DD' format
+
+        Returns:
+            ee.ImageCollection: Filtered image collection
+        """
+        return col.filterBounds(roi).filterDate(start_date, end_date)
+
+    # Function to get and rename bands of interest from OLI.
+    def renameOli(img):
+        """Rename bands of interest from OLI sensor.
+
+        Args:
+            img (ee.Image): Input image from OLI sensor
+
+        Returns:
+            ee.Image: Image with renamed bands
+        """
+        return img.select(
+            ["SR_B2", "SR_B3", "SR_B4", "SR_B5", "SR_B6", "SR_B7"],
+            ["Blue", "Green", "Red", "NIR", "SWIR1", "SWIR2"],
+        )
+
+    # Function to get and rename bands of interest from ETM+.
+    def renameEtm(img):
+        """Rename bands of interest from ETM+ sensor.
+
+        Args:
+            img (ee.Image): Input image from ETM+ sensor
+
+        Returns:
+            ee.Image: Image with renamed bands
+        """
+        return img.select(
+            ["SR_B1", "SR_B2", "SR_B3", "SR_B4", "SR_B5", "SR_B7"],
+            ["Blue", "Green", "Red", "NIR", "SWIR1", "SWIR2"],
+        )
+
+    def fmask(image):
+        """Apply Fmask (Function of mask) for cloud and shadow masking.
+
+        Args:
+            image (ee.Image): Input Landsat image
+
+        Returns:
+            ee.Image: Masked image with scaled surface reflectance values
+
+        Notes:
+            Bit values in QA_PIXEL band:
+            - Bit 0: Fill
+            - Bit 1: Dilated Cloud
+            - Bit 2: Cirrus
+            - Bit 3: Cloud
+            - Bit 4: Cloud Shadow
+        """
+        qaMask = image.select("QA_PIXEL").bitwiseAnd(int("11111", 2)).eq(0)
+        opticalBands = image.select("SR_B.").multiply(0.0000275).add(-0.2)
+        return image.addBands(opticalBands, None, True).updateMask(qaMask)
+
+    # Define function to prepare OLI images.
+    def prepOli(img):
+        """Prepare OLI sensor images by applying scaling and optional masking.
+
+        Args:
+            img (ee.Image): Input OLI sensor image
+
+        Returns:
+            ee.Image: Processed image with renamed bands and bicubic resampling
+        """
+        orig = img
+        if apply_fmask:
+            img = fmask(img)
+        else:
+            img = img.select("SR_B.").multiply(0.0000275).add(-0.2)
+        img = renameOli(img)
+        return ee.Image(img.copyProperties(orig, orig.propertyNames())).resample(
+            "bicubic"
+        )
+
+    # Define function to prepare ETM+ images.
+    def prepEtm(img):
+        """Prepare ETM+ sensor images by applying scaling and optional masking.
+
+        Args:
+            img (ee.Image): Input ETM+ sensor image
+
+        Returns:
+            ee.Image: Processed image with renamed bands and bicubic resampling
+        """
+        orig = img
+        if apply_fmask:
+            img = fmask(img)
+        else:
+            img = img.select("SR_B.").multiply(0.0000275).add(-0.2)
+        img = renameEtm(img)
+        return ee.Image(img.copyProperties(orig, orig.propertyNames())).resample(
+            "bicubic"
+        )
+
+    # Get annual median collection.
+    def getAnnualComp(y):
+        """Get annual median composite for a given year.
+
+        Args:
+            y (int): Year to process
+
+        Returns:
+            ee.Image: Annual median composite with metadata properties
+        """
+        startDate = ee.Date.fromYMD(
+            ee.Number(y), ee.Number(start_month), ee.Number(start_day)
+        )
+        endDate = startDate.advance(ee.Number(n_days), "day")
+
+        # Filter collections and prepare them for merging.
+        LC09coly = colFilter(LC09col, roi, startDate, endDate).map(prepOli)
+        LC08coly = colFilter(LC08col, roi, startDate, endDate).map(prepOli)
+        LE07coly = colFilter(LE07col, roi, startDate, endDate).map(prepEtm)
+        LT05coly = colFilter(LT05col, roi, startDate, endDate).map(prepEtm)
+        LT04coly = colFilter(LT04col, roi, startDate, endDate).map(prepEtm)
+
+        # Merge the collections.
+        col = LC09coly.merge(LC08coly).merge(LE07coly).merge(LT05coly).merge(LT04coly)
+
+        yearImg = col.median()
+        nBands = yearImg.bandNames().size()
+        yearImg = ee.Image(ee.Algorithms.If(nBands, yearImg, dummyImg))
+        return yearImg.set(
+            {
+                "year": y,
+                "system:time_start": startDate.millis(),
+                "nBands": nBands,
+                "system:date": ee.Date(startDate).format(date_format),
+            }
+        )
+
+    # Get monthly median collection.
+    def getMonthlyComp(startDate):
+        """Get monthly median composite starting from a given date.
+
+        Args:
+            startDate (ee.Date): Start date for the monthly composite
+
+        Returns:
+            ee.Image: Monthly median composite with metadata properties
+        """
+        startDate = ee.Date(startDate)
+        endDate = startDate.advance(1, "month")
+
+        # Filter collections and prepare them for merging.
+        LC09coly = colFilter(LC09col, roi, startDate, endDate).map(prepOli)
+        LC08coly = colFilter(LC08col, roi, startDate, endDate).map(prepOli)
+        LE07coly = colFilter(LE07col, roi, startDate, endDate).map(prepEtm)
+        LT05coly = colFilter(LT05col, roi, startDate, endDate).map(prepEtm)
+        LT04coly = colFilter(LT04col, roi, startDate, endDate).map(prepEtm)
+
+        # Merge the collections.
+        col = LC09coly.merge(LC08coly).merge(LE07coly).merge(LT05coly).merge(LT04coly)
+
+        monthImg = col.median()
+        nBands = monthImg.bandNames().size()
+        monthImg = ee.Image(ee.Algorithms.If(nBands, monthImg, dummyImg))
+        return monthImg.set(
+            {
+                "system:time_start": startDate.millis(),
+                "nBands": nBands,
+                "system:date": ee.Date(startDate).format(date_format),
+            }
+        )
+
+    # Get quarterly median collection.
+    def getQuarterlyComp(startDate):
+        """Get quarterly (3-month) median composite starting from a given date.
+
+        Args:
+            startDate (ee.Date): Start date for the quarterly composite
+
+        Returns:
+            ee.Image: Quarterly median composite with metadata properties
+        """
+        startDate = ee.Date(startDate)
+
+        endDate = startDate.advance(3, "month")
+
+        # Filter collections and prepare them for merging.
+        LC09coly = colFilter(LC09col, roi, startDate, endDate).map(prepOli)
+        LC08coly = colFilter(LC08col, roi, startDate, endDate).map(prepOli)
+        LE07coly = colFilter(LE07col, roi, startDate, endDate).map(prepEtm)
+        LT05coly = colFilter(LT05col, roi, startDate, endDate).map(prepEtm)
+        LT04coly = colFilter(LT04col, roi, startDate, endDate).map(prepEtm)
+
+        # Merge the collections.
+        col = LC09coly.merge(LC08coly).merge(LE07coly).merge(LT05coly).merge(LT04coly)
+
+        quarter = col.median()
+        nBands = quarter.bandNames().size()
+        quarter = ee.Image(ee.Algorithms.If(nBands, quarter, dummyImg))
+        return quarter.set(
+            {
+                "system:time_start": startDate.millis(),
+                "nBands": nBands,
+                "system:date": ee.Date(startDate).format(date_format),
+            }
+        )
+
+    # Make a dummy image for missing years.
+    bandNames = ee.List(["Blue", "Green", "Red", "NIR", "SWIR1", "SWIR2", "pixel_qa"])
+    fillerValues = ee.List.repeat(0, bandNames.size())
+    dummyImg = ee.Image.constant(fillerValues).rename(bandNames).selfMask().int16()
+
+    # Make list of /quarterly/monthly image composites.
+
+    if frequency == "year":
+        years = ee.List.sequence(start_year, end_year, step)
+        imgList = years.map(getAnnualComp)
+    elif frequency == "quarter":
+        quarters = date_sequence(
+            str(start_year) + "-01-01",
+            str(end_year) + "-12-31",
+            "quarter",
+            date_format,
+            step,
+        )
+        imgList = quarters.map(getQuarterlyComp)
+    elif frequency == "month":
+        months = date_sequence(
+            str(start_year) + "-01-01",
+            str(end_year) + "-12-31",
+            "month",
+            date_format,
+            step,
+        )
+        imgList = months.map(getMonthlyComp)
+
+    # Convert image composite list to collection
+    imgCol = ee.ImageCollection.fromImages(imgList)
+
+    imgCol = imgCol.map(
+        lambda img: img.clip(roi).set({"coordinates": roi.coordinates()})
+    )
+
+    return imgCol
+
+
+# Create landsat timelapse, simplified from GEEMAP
+def landsat_timelapse(
+    roi=None,
+    out_gif=None,
+    start_year=1984,
+    end_year=None,
+    start_date="06-10",
+    end_date="09-20",
+    bands=["NIR", "Red", "Green"],
+    vis_params=None,
+    dimensions=768,
+    frames_per_second=5,
+    crs="EPSG:3857",
+    apply_fmask=True,
+    frequency="year",
+):
+    """Generates a Landsat timelapse GIF image. This function is adapted from https://emaprlab.users.earthengine.app/view/lt-gee-time-series-animator. A huge thank you to Justin Braaten for sharing his fantastic work.
+
+    Args:
+        roi (object, optional): Region of interest to create the timelapse. Defaults to None.
+        out_gif (str, optional): File path to the output animated GIF. Defaults to None.
+        start_year (int, optional): Starting year for the timelapse. Defaults to 1984.
+        end_year (int, optional): Ending year for the timelapse. Defaults to None, which will use the current year.
+        start_date (str, optional): Starting date (month-day) each year for filtering ImageCollection. Defaults to '06-10'.
+        end_date (str, optional): Ending date (month-day) each year for filtering ImageCollection. Defaults to '09-20'.
+        bands (list, optional): Three bands selected from ['Blue', 'Green', 'Red', 'NIR', 'SWIR1', 'SWIR2', 'pixel_qa']. Defaults to ['NIR', 'Red', 'Green'].
+        vis_params (dict, optional): Visualization parameters. Defaults to None.
+        dimensions (int, optional): a number or pair of numbers (in format 'WIDTHxHEIGHT') Maximum dimensions of the thumbnail to render, in pixels. If only one number is passed, it is used as the maximum, and the other dimension is computed by proportional scaling. Defaults to 768.
+        frames_per_second (int, optional): Animation speed. Defaults to 5.
+        crs (str, optional): The coordinate reference system to use. Defaults to "EPSG:3857".
+        apply_fmask (bool, optional): Whether to apply Fmask (Function of mask) for automated clouds, cloud shadows, snow, and water masking.
+        frequency (str, optional): Frequency of the timelapse: year, quarter, month. Defaults to 'year'.
+
+    Returns:
+        str: File path to the output GIF image.
+    """
+
+    if roi is None:
+        roi = ee.Geometry.Polygon(
+            [
+                [
+                    [-115.471773, 35.892718],
+                    [-115.471773, 36.409454],
+                    [-114.271283, 36.409454],
+                    [-114.271283, 35.892718],
+                    [-115.471773, 35.892718],
+                ]
+            ],
+            None,
+            False,
+        )
+    elif isinstance(roi, ee.Feature) or isinstance(roi, ee.FeatureCollection):
+        roi = roi.geometry()
+    elif isinstance(roi, ee.Geometry):
+        pass
+    else:
+        arcpy.AddError("The provided roi is invalid. It must be an ee.Geometry")
+
+    out_gif = os.path.abspath(out_gif)
+    out_dir = os.path.dirname(out_gif)
+
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+
+    if end_year is None:
+        end_year = get_current_year()
+
+    allowed_bands = ["Blue", "Green", "Red", "NIR", "SWIR1", "SWIR2", "pixel_qa"]
+
+    if len(bands) == 3 and all(x in allowed_bands for x in bands):
+        pass
+    else:
+        arcpy.AddError(
+            "You can only select 3 bands from the following: {}".format(
+                ", ".join(allowed_bands)
+            )
+        )
+
+    try:
+        if vis_params is None:
+            vis_params = {}
+            vis_params["bands"] = bands
+            vis_params["min"] = 0
+            vis_params["max"] = 0.4
+            vis_params["gamma"] = [1, 1, 1]
+
+        raw_col = landsat_timeseries(
+            roi,
+            start_year,
+            end_year,
+            start_date,
+            end_date,
+            apply_fmask,
+            frequency,
+        )
+
+        col = raw_col.select(bands).map(
+            lambda img: img.visualize(**vis_params).set(
+                {
+                    "system:time_start": img.get("system:time_start"),
+                    "system:date": img.get("system:date"),
+                }
+            )
+        )
+
+        video_args = vis_params.copy()
+        video_args["dimensions"] = dimensions
+        video_args["region"] = roi
+        video_args["framesPerSecond"] = frames_per_second
+        video_args["crs"] = crs
+        video_args["bands"] = ["vis-red", "vis-green", "vis-blue"]
+        video_args["min"] = 0
+        video_args["max"] = 255
+
+        download_ee_video(col, video_args, out_gif)
+
+        if os.path.exists(out_gif):
+            date_list = col.aggregate_array("system:date").getInfo()
+            add_date_to_gif(out_gif, out_gif, date_list)
+
+        return out_gif
+
+    except Exception as e:
+        arcpy.AddError(e)
 
 
 # List all functions in the imported module
@@ -639,6 +1471,8 @@ class Toolbox:
         tools.append(DownloadFeatColbyID)
         tools.append(DownloadFeatColbyObj)
         tools.append(DownloadImgCol2Gif)
+        # currently not used, because the timelapse function causes too much data usage
+        # tools.append(DownloadLandsatTimelapse2Gif)
         tools.append(Upload2GCS)
         tools.append(GCSFile2Asset)
         tools.append(SaveAsset2JSON)
@@ -649,6 +1483,7 @@ class Toolbox:
         tools.append(ApplyMapFunctionbyID)
         tools.append(ApplyMapFunctionbyObj)
         tools.append(ApplyReducerbyID)
+        tools.append(ApplyReducerbyObj)
         tools.append(RunPythonScript)
 
         self.tools = tools
@@ -4333,6 +5168,249 @@ class DownloadImgCol2Gif:
         return
 
 
+# Download Landsat Timelapse to GIF
+class DownloadLandsatTimelapse2Gif:
+
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Download Landsat Timelapse to GIF"
+        self.description = ""
+        self.category = "Data Management Tools"
+        self.canRunInBackgroud = False
+
+    def getParameterInfo(self):
+        """Define the tool parameters."""
+
+        param0 = arcpy.Parameter(
+            name="filter_dates",
+            displayName="Filter by dates in YYYY-MM-DD",
+            datatype="GPValueTable",
+            direction="Input",
+            parameterType="Required",
+        )
+        param0.columns = [["GPString", "Starting Date"], ["GPString", "Ending Date"]]
+        param0.value = [["1984-01-01", "2024-12-31"]]
+
+        param1 = arcpy.Parameter(
+            name="bands",
+            displayName="Select the bands of the gif (maximum 3)",
+            datatype="GPString",
+            direction="Input",
+            multiValue=True,
+            parameterType="Required",
+        )
+
+        param2 = arcpy.Parameter(
+            name="roi_type",
+            displayName="Choose the region of interest type",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+
+        param2.filter.list = ["Use a polygon", "Use the current map extent"]
+
+        param3 = arcpy.Parameter(
+            name="in_poly",
+            displayName="Choose a polygon as region of interest",
+            datatype="GPFeatureLayer",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param4 = arcpy.Parameter(
+            name="dims",
+            displayName="Specify the dimensions of the gif",
+            datatype="GPDouble",
+            direction="Input",
+            parameterType="Required",
+        )
+        param4.value = 768
+
+        param5 = arcpy.Parameter(
+            name="fps",
+            displayName="Specify the frames per second of the gif",
+            datatype="GPDouble",
+            direction="Input",
+            parameterType="Required",
+        )
+        param5.value = 5
+
+        param6 = arcpy.Parameter(
+            name="crs",
+            displayName="Specify the CRS of the gif",
+            datatype="GPString",
+            direction="Input",
+            multiValue=False,
+            parameterType="Optional",
+        )
+
+        param6.value = "EPSG:3857"
+
+        param7 = arcpy.Parameter(
+            name="out_gif",
+            displayName="Specify the output gif file name",
+            datatype="DEFile",
+            direction="Output",
+            parameterType="Required",
+        )
+
+        param7.filter.list = ["gif"]
+
+        params = [
+            param0,
+            param1,
+            param2,
+            param3,
+            param4,
+            param5,
+            param6,
+            param7,
+        ]
+
+        return params
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+
+        parameters[1].filter.list = ["Blue", "Green", "Red", "NIR", "SWIR1", "SWIR2"]
+
+        # Disable input feature if map extent is used
+        if (
+            parameters[2].valueAsText == "Use the current map extent"
+        ):  # map extent selected
+            parameters[3].enabled = False
+        else:
+            parameters[3].enabled = True
+
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter. This method is called after internal validation."""
+        # User must select a polygon feature layer if "Use a polygon" is selected
+        if parameters[2].valueAsText == "Use a polygon":
+            if not parameters[3].valueAsText:
+                parameters[3].setErrorMessage("Please select a polygon feature layer.")
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+        # Multiple images could be selected
+        band_str = parameters[1].valueAsText
+        roi_type = parameters[2].valueAsText
+        in_poly = parameters[3].valueAsText
+        dims = parameters[4].valueAsText
+        fps = parameters[5].valueAsText
+        crs = parameters[6].valueAsText
+        out_gif = parameters[7].valueAsText
+
+        # Get the filter dates
+        if parameters[0].valueAsText:
+            val_list = parameters[0].values
+            start_date = val_list[0][0]
+            end_date = val_list[0][1]
+        else:
+            start_date = None
+            end_date = None
+
+        validate_date(start_date)
+        validate_date(end_date)
+
+        # Add bands to videoArgs if specfied
+        if band_str:
+            # Remove ' in band string in case users add it
+            if "'" in band_str:
+                band_str = band_str.replace("'", "")
+            bands = band_str.split(";")
+            bands_only = [iband.split("--")[0] for iband in bands]
+
+        arcpy.AddMessage("Bands selected: " + str(bands_only))
+
+        # Get the region of interests
+        # Use map view extent if checked
+        if roi_type == "Use the current map extent":  # use map view
+            xmin, ymin, xmax, ymax = get_map_view_extent()
+            bbox = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
+            roi = ee.Geometry.Polygon(bbox.coordinates(), None, False)
+        # Use input feature layer as ROI
+        else:
+            spatial_ref = arcpy.Describe(in_poly).spatialReference
+            poly_prj = spatial_ref.PCSCode
+            if poly_prj == 0:
+                poly_prj = spatial_ref.GCSCode
+            arcpy.AddMessage("Input feature layer projection is " + str(poly_prj))
+
+            # Project input feature to GEE image coordinate system if needed
+            target_poly = in_poly
+            if str(poly_prj) not in "EPSG:4326":
+                arcpy.AddMessage("Projecting input feature layer to EPSG:4326 ...")
+                out_sr = arcpy.SpatialReference(4326)
+                arcpy.Project_management(in_poly, "poly_temp", out_sr)
+                target_poly = "poly_temp"
+
+            # convert input feature to geojson
+            arcpy.FeaturesToJSON_conversion(
+                target_poly, "temp.geojson", "FORMATTED", "", "", "GEOJSON"
+            )
+
+            # Read the GeoJSON file
+            upper_path = os.path.dirname(arcpy.env.workspace)
+            file_geojson = os.path.join(upper_path, "temp.geojson")
+            with open(file_geojson) as f:
+                geojson_data = json.load(f)
+
+            # Collect polygon object coordinates
+            coords = []
+            for feature in geojson_data["features"]:
+                coords.append(feature["geometry"]["coordinates"])
+            arcpy.AddMessage("Total number of polygon objects: " + str(len(coords)))
+
+            # Create an Earth Engine MultiPolygon from the GeoJSON
+            roi = ee.Geometry.MultiPolygon(coords, None, False)
+            # Delete temporary geojson
+            arcpy.management.Delete(file_geojson)
+
+        arcpy.AddMessage(f"Region of Interest: {roi.getInfo()}['coordinates']")
+
+        arcpy.AddMessage("Image asset projection is " + crs)
+
+        # Make sure output gif file ends with .gif
+        if not out_gif.endswith(".gif"):
+            out_gif = out_gif + ".gif"
+
+        arcpy.AddMessage(f"Downloading timelapse to : {out_gif}. Please wait ...")
+
+        landsat_timelapse(
+            roi=roi,
+            out_gif=out_gif,
+            start_year=int(start_date[0:4]) if start_date else None,
+            end_year=int(end_date[0:4]) if end_date else None,
+            start_date=start_date[5:10],
+            end_date=end_date[5:10],
+            bands=bands_only if band_str else None,
+            vis_params=None,
+            dimensions=int(dims) if dims else None,
+            frames_per_second=int(fps) if fps else None,
+            crs=crs if crs else None,
+            apply_fmask=True,
+            frequency="year",
+        )
+
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and
+        added to the display."""
+        return
+
+
 # Save GEE Asset to Serialized JSON File
 class SaveAsset2JSON:
     def __init__(self):
@@ -4890,49 +5968,7 @@ class ApplyFilterbyID:
             ["GPString", "Filters"],
             ["GPString", "Arguments"],
         ]
-        # all filters in the ee.Filter
-        filters = [
-            "ee.Filter.and",  # Combines two or more filters with logical AND
-            "ee.Filter.area",
-            "ee.Filter.aside",
-            "ee.Filter.bounds",  # Filter by geographic bounds (within a geometry)
-            "ee.Filter.calendarRange",  # Filter by calendar range (e.g., specific years, months, days)
-            "ee.Filter.contains",  # Checks if a collection contains a specific value
-            "ee.Filter.date",  # Filter by date range
-            "ee.Filter.daterangeContains",
-            "ee.Filter.dayofYear",
-            "ee.Filter.disjoint",
-            "ee.Filter.eq",  # Equality filter (equals)
-            "ee.Filter.equals",
-            "ee.Filter.evaluate",
-            "ee.Filter.expression",
-            "ee.Filter.getInfo",
-            "ee.Filter.greaterThan",
-            "ee.Filter.greaterThanOrEuqals",
-            "ee.Filter.gt",  # Greater than filter
-            "ee.Filter.gte",  # Greater than or equal to filter
-            "ee.Filter.hasType",
-            "ee.Filter.inList",  # Filter by values within a list (like SQL's IN clause)
-            "ee.Filter.intersects",  # Filter features that intersect a geometry
-            "ee.Filter.isContained",  # Checks if a geometry is contained by another geometry
-            "ee.Filter.lessThan",
-            "ee.Filter.lessThanOrEquals",
-            "ee.Filter.listContains",  # Filter if a list contains a specific value
-            "ee.Filter.lt",  # Less than filter
-            "ee.Filter.lte",  # Less than or equal to filter
-            "ee.Filter.maxDifference",
-            "ee.Filter.neq",  # Not equal filter
-            "ee.Filter.not",  # Negates a filter
-            "ee.Filter.notEuqals",
-            "ee.Filter.notNull",  # Filters features where a property is not null
-            "ee.Filter.or",  # Combines two or more filters with logical OR
-            "ee.Filter.rangeContains",
-            "ee.Filter.serialize",
-            "ee.Filter.stringContains",  # Checks if a string contains a substring
-            "ee.Filter.stringEndsWith",  # Checks if a string ends with a specific substring
-            "ee.Filter.stringStartsWith",  # Checks if a string starts with a specific substring
-            "ee.Filter.withinDistance",
-        ]
+        filters = get_filter_list()
         param2.filters[0].list = filters
 
         param3 = arcpy.Parameter(
@@ -5043,49 +6079,7 @@ class ApplyFilterbyObj:
             ["GPString", "Filters"],
             ["GPString", "Arguments"],
         ]
-        # all filters in the ee.Filter
-        filters = [
-            "ee.Filter.and",  # Combines two or more filters with logical AND
-            "ee.Filter.area",
-            "ee.Filter.aside",
-            "ee.Filter.bounds",  # Filter by geographic bounds (within a geometry)
-            "ee.Filter.calendarRange",  # Filter by calendar range (e.g., specific years, months, days)
-            "ee.Filter.contains",  # Checks if a collection contains a specific value
-            "ee.Filter.date",  # Filter by date range
-            "ee.Filter.daterangeContains",
-            "ee.Filter.dayofYear",
-            "ee.Filter.disjoint",
-            "ee.Filter.eq",  # Equality filter (equals)
-            "ee.Filter.equals",
-            "ee.Filter.evaluate",
-            "ee.Filter.expression",
-            "ee.Filter.getInfo",
-            "ee.Filter.greaterThan",
-            "ee.Filter.greaterThanOrEuqals",
-            "ee.Filter.gt",  # Greater than filter
-            "ee.Filter.gte",  # Greater than or equal to filter
-            "ee.Filter.hasType",
-            "ee.Filter.inList",  # Filter by values within a list (like SQL's IN clause)
-            "ee.Filter.intersects",  # Filter features that intersect a geometry
-            "ee.Filter.isContained",  # Checks if a geometry is contained by another geometry
-            "ee.Filter.lessThan",
-            "ee.Filter.lessThanOrEquals",
-            "ee.Filter.listContains",  # Filter if a list contains a specific value
-            "ee.Filter.lt",  # Less than filter
-            "ee.Filter.lte",  # Less than or equal to filter
-            "ee.Filter.maxDifference",
-            "ee.Filter.neq",  # Not equal filter
-            "ee.Filter.not",  # Negates a filter
-            "ee.Filter.notEuqals",
-            "ee.Filter.notNull",  # Filters features where a property is not null
-            "ee.Filter.or",  # Combines two or more filters with logical OR
-            "ee.Filter.rangeContains",
-            "ee.Filter.serialize",
-            "ee.Filter.stringContains",  # Checks if a string contains a substring
-            "ee.Filter.stringEndsWith",  # Checks if a string ends with a specific substring
-            "ee.Filter.stringStartsWith",  # Checks if a string starts with a specific substring
-            "ee.Filter.withinDistance",
-        ]
+        filters = get_filter_list()
         param1.filters[0].list = filters
 
         param2 = arcpy.Parameter(
@@ -5137,218 +6131,6 @@ class ApplyFilterbyObj:
             arcpy.AddMessage(f"Applying filter: {command_string}")
             constructed_filter = eval(command_string)
             ee_object = ee_object.filter(constructed_filter)
-
-        # Save the serialized string as JSON to the specified output path
-        if not out_json.endswith(".json"):
-            out_json = out_json + ".json"
-
-        # save to json
-        arcgee.data.save_ee_result(ee_object, out_json)
-
-        return
-
-    def postExecute(self, parameters):
-        """This method takes place after outputs are processed and
-        added to the display."""
-        return
-
-
-# Apply Reducers to GEE dataset by Asset ID
-class ApplyReducerbyID:
-
-    def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
-        self.label = "Apply Reducers to GEE Dataset by Asset ID"
-        self.description = ""
-        self.category = "Data Processing Tools"
-        self.canRunInBackgroud = False
-
-    def getParameterInfo(self):
-        """Define the tool parameters."""
-        param0 = arcpy.Parameter(
-            name="data_type",
-            displayName="Choose the type of the dataset to be filtered",
-            datatype="GPString",
-            direction="Input",
-            parameterType="Required",
-        )
-        param0.filter.list = ["FeatureCollection", "Image", "ImageCollection"]
-
-        param1 = arcpy.Parameter(
-            name="reducer_type",
-            displayName="Choose the type of reducer",
-            datatype="GPString",
-            direction="Input",
-            parameterType="Required",
-        )
-
-        param2 = arcpy.Parameter(
-            name="asset_id",
-            displayName="Specify the asset ID of the dataset",
-            datatype="GPString",
-            direction="Input",
-            parameterType="Required",
-        )
-
-        param3 = arcpy.Parameter(
-            name="reducer_list",
-            displayName="Specify the reducers",
-            datatype="GPString",
-            direction="Input",
-            multiValue=True,
-            parameterType="Required",
-        )
-        param3.columns = [
-            ["GPString", "Filters"],
-            ["GPString", "Arguments"],
-        ]
-        # all reducers in ee.Reducer
-        reducers = [
-            "ee.Reducer.allNonZero",
-            "ee.Reducer.anyNonZero",
-            "ee.Reducer.autoHistogram",
-            "ee.Reducer.bitwiseAnd",
-            "ee.Reducer.bitwiseOr",
-            "ee.Reducer.centeredCovariance",
-            "ee.Reducer.circularMean",
-            "ee.Reducer.circularStddev",
-            "ee.Reducer.circularVariance",
-            "ee.Reducer.combine",
-            "ee.Reducer.count",
-            "ee.Reducer.countDistinct",
-            "ee.Reducer.countDistinctNonNull",
-            "ee.Reducer.countEvery",
-            "ee.Reducer.countRuns",
-            "ee.Reducer.covariance",
-            "ee.Reducer.disaggregate",
-            "ee.Reducer.first",
-            "ee.Reducer.firstNonNull",
-            "ee.Reducer.fixed2DHistogram",
-            "ee.Reducer.fixedHistogram",
-            "ee.Reducer.forEach",
-            "ee.Reducer.forEachBand",
-            "ee.Reducer.frequencyHistogram",
-            "ee.Reducer.geometricMedian",
-            "ee.Reducer.getOutputs",
-            "ee.Reducer.group",
-            "ee.Reducer.histogram",
-            "ee.Reducer.intervalMean",
-            "ee.Reducer.kendallsCorrelation",
-            "ee.Reducer.kurtosis",
-            "ee.Reducer.last",
-            "ee.Reducer.lastNonNull",
-            "ee.Reducer.linearFit",
-            "ee.Reducer.linearRegression",
-            "ee.Reducer.max",
-            "ee.Reducer.mean",
-            "ee.Reducer.median",
-            "ee.Reducer.min",
-            "ee.Reducer.minMax",
-            "ee.Reducer.mode",
-            "ee.Reducer.pearsonsCorrelation",
-            "ee.Reducer.percentile",
-            "ee.Reducer.product",
-            "ee.Reducer.repeat",
-            "ee.Reducer.ridgeRegression",
-            "ee.Reducer.robustLinearRegression",
-            "ee.Reducer.sampleStdDev",
-            "ee.Reducer.sampleVariance",
-            "ee.Reducer.sensSlope",
-            "ee.Reducer.setOutputs",
-            "ee.Reducer.skew",
-            "ee.Reducer.spearmansCorrelation",
-            "ee.Reducer.splitWeigths",
-            "ee.Reducer.stdDev",
-            "ee.Reducer.sum",
-            "ee.Reducer.toCollection",
-            "ee.Reducer.toList",
-            "ee.Reducer.unweighted",
-            "ee.Reducer.variance",
-        ]
-        param3.filters[0].list = reducers
-
-        param4 = arcpy.Parameter(
-            name="out_json",
-            displayName="Specify the output JSON file to save the serialized object",
-            datatype="DEFile",
-            direction="Output",
-            parameterType="Required",
-        )
-
-        param4.filter.list = ["json"]
-
-        params = [param0, param1, param2, param3, param4]
-        return params
-
-    def isLicensed(self):
-        """Set whether the tool is licensed to execute."""
-        return True
-
-    def updateParameters(self, parameters):
-        """Modify the values and properties of parameters before internal
-        validation is performed.  This method is called whenever a parameter
-        has been changed."""
-        data_type = parameters[0].valueAsText
-        if data_type == "FeatureCollection":
-            parameters[1].filter.list = ["reduceColumns", "reduceToImage"]
-        elif data_type == "Image":
-            parameters[1].filter.list = [
-                "reduce",
-                "reduceConnectedComponents",
-                "reduceNeighborhood",
-                "reduceRegion",
-                "reduceRegions",
-                "reduceResolution",
-                "reduceToVectors",
-            ]
-        elif data_type == "ImageCollection":
-            parameters[1].filter.list = ["reduce", "reduceColumns", "reduceToImage"]
-        else:
-            parameters[1].filter.list = []
-
-        return
-
-    def updateMessages(self, parameters):
-        """Modify the messages created by internal validation for each tool
-        parameter. This method is called after internal validation."""
-        return
-
-    def execute(self, parameters, messages):
-        """The source code of the tool."""
-
-        # Read input parameters
-        data_type = parameters[0].valueAsText
-        reducer_type = parameters[1].valueAsText
-        asset_id = parameters[2].valueAsText
-        reducers = parameters[3].values
-        out_json = parameters[4].valueAsText
-
-        asset_id = clean_asset_id(asset_id)
-
-        # Retrieve the Earth Engine object based on the asset id and data type
-        if data_type == "FeatureCollection":
-            ee_object = ee.FeatureCollection(asset_id)
-        elif data_type == "Image":
-            ee_object = ee.Image(asset_id)
-        elif data_type == "ImageCollection":
-            ee_object = ee.ImageCollection(asset_id)
-        else:
-            raise ValueError(f"Unsupported data type: {data_type}")
-
-        # Apply the filters from the filter list to the Earth Engine object
-        for reducer_item in reducers:
-            reducer_name = reducer_item[0]
-            reducer_arg = reducer_item[1]
-
-            # Construct a command string based on the reducer
-            command_string = f"{reducer_name}({reducer_arg})"
-            arcpy.AddMessage(
-                f"Applying reducer: {command_string} with type: {reducer_type}"
-            )
-            constructed_reducer = eval(command_string)
-
-            ee_method = getattr(ee_object, reducer_type)
-            ee_object = ee_method(constructed_reducer)
 
         # Save the serialized string as JSON to the specified output path
         if not out_json.endswith(".json"):
@@ -5618,10 +6400,11 @@ class ApplyMapFunctionbyObj:
         # load collection object
         ee_object = arcgee.data.load_ee_result(json_path)
 
-        #  Cast the object to target data type
+        #  Re-cast the object to target data type
         if data_type == "FeatureCollection":
             ee_object = ee.FeatureCollection(ee_object)
         elif data_type == "ImageCollection":
+
             ee_object = ee.ImageCollection(ee_object)
         else:
             raise ValueError(f"Unsupported data type: {data_type}")
@@ -5637,6 +6420,467 @@ class ApplyMapFunctionbyObj:
 
         # Save the serialized string as JSON to the specified output path
         if not out_json.endswith(".json"):
+            out_json = out_json + ".json"
+
+        # save to json
+        arcgee.data.save_ee_result(ee_object, out_json)
+
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and
+        added to the display."""
+        return
+
+
+# Apply Reducers to GEE dataset by Asset ID
+class ApplyReducerbyID:
+
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Apply Reducers to Earth Engine Dataset by Asset ID"
+        self.description = ""
+        self.category = "Data Processing Tools"
+        self.canRunInBackgroud = False
+
+    def getParameterInfo(self):
+        """Define the tool parameters."""
+        param0 = arcpy.Parameter(
+            name="data_type",
+            displayName="Choose the dataset type to be reduced",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+        param0.filter.list = ["FeatureCollection", "Image", "ImageCollection"]
+
+        param1 = arcpy.Parameter(
+            name="reduction_method",
+            displayName="Choose the reduction method",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+
+        param2 = arcpy.Parameter(
+            name="reduction_args",
+            displayName="Specify the arguments of the reduction method",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param3 = arcpy.Parameter(
+            name="asset_id",
+            displayName="Specify the asset ID of the dataset",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+
+        param4 = arcpy.Parameter(
+            name="filter_list",
+            displayName="Specify the filters",
+            datatype="GPString",
+            direction="Input",
+            multiValue=True,
+            parameterType="Required",
+        )
+        param4.columns = [
+            ["GPString", "Filters"],
+            ["GPString", "Arguments"],
+        ]
+
+        filters = get_filter_list()
+        param4.filters[0].list = filters
+
+        param5 = arcpy.Parameter(
+            name="reducer_list",
+            displayName="Specify the reducers",
+            datatype="GPString",
+            direction="Input",
+            multiValue=True,
+            parameterType="Required",
+        )
+        param5.columns = [
+            ["GPString", "Reducers"],
+            ["GPString", "Arguments"],
+        ]
+
+        reducers = get_reducer_list()
+        param5.filters[0].list = reducers
+
+        param6 = arcpy.Parameter(
+            name="shared_inputs",
+            displayName="Use the same inputs for all reducers",
+            datatype="GPBoolean",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param7 = arcpy.Parameter(
+            name="out_json",
+            displayName="Specify the output JSON file to save the serialized object",
+            datatype="DEFile",
+            direction="Output",
+            parameterType="Required",
+        )
+
+        param7.filter.list = ["json"]
+
+        params = [param0, param1, param2, param3, param4, param5, param6, param7]
+        return params
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+        data_type = parameters[0].valueAsText
+        if data_type == "FeatureCollection":
+            parameters[1].filter.list = ["reduceColumns", "reduceToImage"]
+        elif data_type == "Image":
+            parameters[1].filter.list = [
+                "reduce",
+                "reduceConnectedComponents",
+                "reduceNeighborhood",
+                "reduceRegion",
+                "reduceRegions",
+                "reduceResolution",
+                "reduceToVectors",
+            ]
+        elif data_type == "ImageCollection":
+            parameters[1].filter.list = ["reduce", "reduceColumns", "reduceToImage"]
+        else:
+            parameters[1].filter.list = []
+
+        # when multiple reducers are selected, the shared inputs parameter is enabled
+        reducers = parameters[5].values
+        if reducers and len(reducers) > 1:
+            parameters[6].enabled = True
+        else:
+            parameters[6].enabled = False
+
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter. This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+
+        # Read input parameters
+        data_type = parameters[0].valueAsText
+        reduction_method = parameters[1].valueAsText
+        reduction_args = parameters[2].valueAsText
+        asset_id = parameters[3].valueAsText
+        filters = parameters[4].values
+        reducers = parameters[5].values
+        shared_inputs = parameters[6].value
+        out_json = parameters[7].valueAsText
+
+        asset_id = clean_asset_id(asset_id)
+
+        # Retrieve the Earth Engine object based on the asset id and data type
+        if data_type == "FeatureCollection":
+            ee_object = ee.FeatureCollection(asset_id)
+        elif data_type == "Image":
+            ee_object = ee.Image(asset_id)
+        elif data_type == "ImageCollection":
+            ee_object = ee.ImageCollection(asset_id)
+        else:
+            raise ValueError(f"Unsupported data type: {data_type}")
+
+        # Apply the filters from the filter list to the Earth Engine object
+        for filter_item in filters:
+            filter_type = filter_item[0]
+            filter_arg = filter_item[1]
+
+            # Construct a command string based on the filter type
+            command_string = f"{filter_type}({filter_arg})"
+            arcpy.AddMessage(f"Applying filter: {command_string}")
+            constructed_filter = eval(command_string)
+            ee_object = ee_object.filter(constructed_filter)
+
+        # Construct all reducers first
+        # Multiple reducers will be treated as combined reducer
+        reducer_list = []
+        for reducer_item in reducers:
+
+            reducer_name = reducer_item[0]
+            reducer_arg = reducer_item[1]
+
+            # Construct a command string based on the reducer
+            command_string = f"{reducer_name}({reducer_arg})"
+            arcpy.AddMessage(f"Constructing reducer: {command_string}")
+            constructed_reducer = eval(command_string)
+            reducer_list.append(constructed_reducer)
+
+        # Combine reducers if more than one
+        if len(reducer_list) > 1:
+            final_reducer = reducer_list[0]
+            for reducer in reducer_list[1:]:
+                final_reducer = final_reducer.combine(
+                    reducer2=reducer, sharedInputs=shared_inputs
+                )
+            arcpy.AddMessage("Combined multiple reducers")
+        else:
+
+            final_reducer = reducer_list[0]
+
+        # Apply the final reducer
+        arcpy.AddMessage(f"Applying reduction method:{data_type}'.'{reduction_method}")
+        ee_method = getattr(ee_object, reduction_method)
+        if reduction_args:
+            # Convert the string arguments into a dictionary of kwargs
+            kwargs = {}
+            for arg in reduction_args.split(","):
+                key, value = arg.strip().split("=")
+                # Convert string values to appropriate Python types
+                if value.lower() == "true":
+                    value = True
+                elif value.lower() == "false":
+                    value = False
+                elif value.startswith("'") or value.startswith('"'):
+                    value = value.strip("'\"")
+                else:
+                    try:
+                        value = float(value)
+                    except ValueError:
+                        # If not a number, treat as a variable name
+                        value = eval(value)
+                kwargs[key] = value
+
+            # Pass reducer and parsed kwargs to the method
+            ee_object = ee_method(reducer=final_reducer, **kwargs)
+        else:
+            ee_object = ee_method(reducer=final_reducer)
+
+        # Save the serialized string as JSON to the specified output path
+        if not out_json.endswith(".json"):
+
+            out_json = out_json + ".json"
+
+        # save to json
+        arcgee.data.save_ee_result(ee_object, out_json)
+
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and
+        added to the display."""
+        return
+
+
+# Apply Reducers to GEE dataset by Serialized JSON Object
+class ApplyReducerbyObj:
+
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Apply Reducers to Earth Engine Dataset by Serialized Object"
+        self.description = ""
+        self.category = "Data Processing Tools"
+        self.canRunInBackgroud = False
+
+    def getParameterInfo(self):
+        """Define the tool parameters."""
+        param0 = arcpy.Parameter(
+            name="data_type",
+            displayName="Choose the dataset type to be reduced",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+        param0.filter.list = ["FeatureCollection", "Image", "ImageCollection"]
+
+        param1 = arcpy.Parameter(
+            name="reduction_method",
+            displayName="Choose the reduction method",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+
+        param2 = arcpy.Parameter(
+            name="reduction_args",
+            displayName="Specify the arguments of the reduction method",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param3 = arcpy.Parameter(
+            name="json_path",
+            displayName="Specify the path to the serialized JSON object",
+            datatype="DEFile",
+            direction="Input",
+            parameterType="Required",
+        )
+        param3.filter.list = ["json"]
+
+        param4 = arcpy.Parameter(
+            name="reducer_list",
+            displayName="Specify the reducers",
+            datatype="GPString",
+            direction="Input",
+            multiValue=True,
+            parameterType="Required",
+        )
+        param4.columns = [
+            ["GPString", "Reducers"],
+            ["GPString", "Arguments"],
+        ]
+
+        reducers = get_reducer_list()
+        param4.filters[0].list = reducers
+
+        param5 = arcpy.Parameter(
+            name="shared_inputs",
+            displayName="Use the same inputs for all reducers",
+            datatype="GPBoolean",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param6 = arcpy.Parameter(
+            name="out_json",
+            displayName="Specify the output JSON file to save the serialized object",
+            datatype="DEFile",
+            direction="Output",
+            parameterType="Required",
+        )
+
+        param6.filter.list = ["json"]
+
+        params = [param0, param1, param2, param3, param4, param5, param6]
+        return params
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+        data_type = parameters[0].valueAsText
+        if data_type == "FeatureCollection":
+            parameters[1].filter.list = ["reduceColumns", "reduceToImage"]
+        elif data_type == "Image":
+            parameters[1].filter.list = [
+                "reduce",
+                "reduceConnectedComponents",
+                "reduceNeighborhood",
+                "reduceRegion",
+                "reduceRegions",
+                "reduceResolution",
+                "reduceToVectors",
+            ]
+        elif data_type == "ImageCollection":
+            parameters[1].filter.list = ["reduce", "reduceColumns", "reduceToImage"]
+        else:
+            parameters[1].filter.list = []
+
+        # when multiple reducers are selected, the shared inputs parameter is enabled
+        reducers = parameters[4].values
+        if reducers and len(reducers) > 1:
+            parameters[5].enabled = True
+        else:
+            parameters[5].enabled = False
+
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter. This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+
+        # Read input parameters
+        data_type = parameters[0].valueAsText
+        reduction_method = parameters[1].valueAsText
+        reduction_args = parameters[2].valueAsText
+        json_path = parameters[3].valueAsText
+        reducers = parameters[4].values
+        shared_inputs = parameters[5].value
+        out_json = parameters[6].valueAsText
+
+        ee_object = arcgee.data.load_ee_result(json_path)
+
+        # Retrieve the Earth Engine object based on the asset id and data type
+        if data_type == "FeatureCollection":
+            ee_object = ee.FeatureCollection(ee_object)
+        elif data_type == "Image":
+            ee_object = ee.Image(ee_object)
+        elif data_type == "ImageCollection":
+            ee_object = ee.ImageCollection(ee_object)
+        else:
+            raise ValueError(f"Unsupported data type: {data_type}")
+
+        # Construct all reducers first
+        # Multiple reducers will be treated as combined reducer
+        reducer_list = []
+        for reducer_item in reducers:
+
+            reducer_name = reducer_item[0]
+            reducer_arg = reducer_item[1]
+
+            # Construct a command string based on the reducer
+            command_string = f"{reducer_name}({reducer_arg})"
+            arcpy.AddMessage(f"Constructing reducer: {command_string}")
+            constructed_reducer = eval(command_string)
+            reducer_list.append(constructed_reducer)
+
+        # Combine reducers if more than one
+        if len(reducer_list) > 1:
+            final_reducer = reducer_list[0]
+            for reducer in reducer_list[1:]:
+                final_reducer = final_reducer.combine(
+                    reducer2=reducer, sharedInputs=shared_inputs
+                )
+            arcpy.AddMessage("Combined multiple reducers")
+        else:
+
+            final_reducer = reducer_list[0]
+
+        # Apply the final reducer
+        arcpy.AddMessage(f"Applying reduction method:{data_type}'.'{reduction_method}")
+        ee_method = getattr(ee_object, reduction_method)
+        if reduction_args:
+            # Convert the string arguments into a dictionary of kwargs
+            kwargs = {}
+            for arg in reduction_args.split(","):
+                key, value = arg.strip().split("=")
+                # Convert string values to appropriate Python types
+                if value.lower() == "true":
+                    value = True
+                elif value.lower() == "false":
+                    value = False
+                elif value.startswith("'") or value.startswith('"'):
+                    value = value.strip("'\"")
+                else:
+                    try:
+                        value = float(value)
+                    except ValueError:
+                        # If not a number, treat as a variable name
+                        value = eval(value)
+                kwargs[key] = value
+
+            # Pass reducer and parsed kwargs to the method
+            ee_object = ee_method(reducer=final_reducer, **kwargs)
+        else:
+            ee_object = ee_method(reducer=final_reducer)
+
+        # Save the serialized string as JSON to the specified output path
+        if not out_json.endswith(".json"):
+
             out_json = out_json + ".json"
 
         # save to json

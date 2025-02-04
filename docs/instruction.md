@@ -371,6 +371,8 @@ This script downloads the Earth Engine image collection dataset to GeoTIFF by it
 
 ### Download Image Collection to GIF
 
+
+
 ### Save Earth Engine Asset to Serialized JSON File
 
 This script exports Earth Engine dataset from an asset tag to a serialized JSON file, allowing for quick access in the future without needing to recall the asset tag.
@@ -494,11 +496,49 @@ For a quick guide on mapping over feature collection dataset, please visit [this
 5. Specify the output JSON file name
 
 
-### Apply Reducers to GEE Dataset by Asset ID
+### Apply Reducers to Earth Engine Dataset by Asset ID
+
+This script applies reducers to the feature collection, image or image collection dataset by asset ID and saves the processed dataset to a serialized JSON object for future use.
+
+To browser all available earth engine filters, please visit [this link](https://developers.google.com/earth-engine/apidocs/ee-reducer-allnonzero).
+
+For reducer overview, please visit [this link](https://developers.google.com/earth-engine/guides/reducers_intro).
+
+![Alt Text](images/ApplyReducerbyID.png)
+
+
+#### Parameters
+
+1. Choose the type of dataset to process
+2. Choose the reduction method
+3. Specify the arguments for the reduction method
+4. Asset ID
+5. Specify the filters and the corresponding arguments
+6. Specify the reducers and the corresponding arguments
+7. Specify the output JSON file name
 
 
 
-### Apply Reducers to GEE Dataset by Serialized Object
+
+### Apply Reducers to Earth Engine Dataset by Serialized Object
+
+This script applies reducers to the feature collection, image or image collection dataset by serialized JSON object and saves the processed dataset to a new serialized JSON object for future use. It is useful when you want to apply reducers to the existing JSON object.
+
+To browser all available earth engine filters, please visit [this link](https://developers.google.com/earth-engine/apidocs/ee-reducer-allnonzero).
+
+For reducer overview, please visit [this link](https://developers.google.com/earth-engine/guides/reducers_intro).
+
+![Alt Text](images/ApplyReducerbyJSON.png)
+
+#### Parameters
+
+1. Choose the type of dataset to process
+2. Choose the reduction method
+3. Specify the arguments for the reduction method
+4. Serialized JSON file
+5. Specify the reducers and the corresponding arguments
+6. Specify the output JSON file name
+
 
 
 ### Run User-Provided Python Script
