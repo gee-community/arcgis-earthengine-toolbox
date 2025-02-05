@@ -348,8 +348,30 @@ This script downloads the Earth Engine image collection dataset to GeoTIFF by it
  7. Specify the scale in meters (image resolution)
  8. Use a polygon feature as region of interest
  9. Use the extent of the current map view as region of interest
- 10. Specify the output GeoTIFF name
+ 10. Specify the output folder
  11. Check the box to load images to map after download 
+
+
+### Download Image Collection by Asset ID at Multiple Regions
+
+This script downloads the Earth Engine image collection dataset to GeoTIFF by its asset ID at multiple regions. Each object in the input polygon features is considered as a region of interest. Images will be clipped to each region of interest.
+
+
+![Alt Text](images/DownloadICbyID_Multi.png)
+
+#### Parameters
+
+1. Asset ID
+2. Filter by dates
+3. Use a polygon feature as region of interest
+4. Select the type of bounds to filter by
+5. Specify the maximum number of images to download per region
+6. Select the bands to download
+7. Specify the scale in meters (image resolution)
+8. Specify the output folder
+9. Check the box to load images to map after download
+
+
 
 ### Download Image Collection by Serialized Object
 

@@ -1468,10 +1468,12 @@ class Toolbox:
         tools.append(DownloadImgbyObj)
         tools.append(DownloadImgColbyID)
         tools.append(DownloadImgColbyObj)
+        tools.append(DownloadImgColbyIDMultiRegion)
         tools.append(DownloadFeatColbyID)
         tools.append(DownloadFeatColbyObj)
         tools.append(DownloadImgCol2Gif)
         # currently not used, because the timelapse function causes too much data usage
+
         # tools.append(DownloadLandsatTimelapse2Gif)
         tools.append(Upload2GCS)
         tools.append(GCSFile2Asset)
@@ -4264,6 +4266,311 @@ class DownloadImgColbyObj:
             image_to_geotiff(
                 image, bands_only, crs, scale_ds, roi, use_projection, out_tiff
             )
+
+        # Add out tiff to map layer
+        if load_tiff == "true":
+            arcpy.AddMessage("Load image to map ...")
+            aprx = arcpy.mp.ArcGISProject("CURRENT")
+            aprxMap = aprx.activeMap
+            for out_tiff in out_tiff_list:
+                aprxMap.addDataFromPath(out_tiff)
+
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and
+        added to the display."""
+        return
+
+
+# Download GEE Image Collection by Asset ID at multiple regions
+class DownloadImgColbyIDMultiRegion:
+
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Download Image Collection by Asset ID at Multiple Regions"
+        self.description = ""
+        self.category = "Data Management Tools"
+        self.canRunInBackgroud = False
+
+    def getParameterInfo(self):
+        """Define the tool parameters."""
+
+        # Image collection inputs are optional
+        param0 = arcpy.Parameter(
+            name="ic_id",
+            displayName="Specify the image collection asset ID",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+
+        param1 = arcpy.Parameter(
+            name="filter_dates",
+            displayName="Filter by dates in YYYY-MM-DD",
+            datatype="GPValueTable",
+            direction="Input",
+            parameterType="Optional",
+        )
+        param1.columns = [["GPString", "Starting Date"], ["GPString", "Ending Date"]]
+        param1.value = [["2014-03-01", "2014-05-01"]]
+
+        param2 = arcpy.Parameter(
+            name="in_poly",
+            displayName="Choose a polygon as region of interest",
+            datatype="GPFeatureLayer",
+            direction="Input",
+            parameterType="Required",
+        )
+
+        param3 = arcpy.Parameter(
+            name="bound_type",
+            displayName="Select the type of filter-by-location",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+            multiValue=False,
+        )
+        param3.filter.list = ["Centroid of Polygon", "Bounding Box of Polygon"]
+
+        param4 = arcpy.Parameter(
+            name="max_num",
+            displayName="Select the maximum number of images to download per region",
+            datatype="GPDouble",
+            direction="Input",
+            multiValue=False,
+            parameterType="Optional",
+        )
+
+        param5 = arcpy.Parameter(
+            name="bands",
+            displayName="Select the bands to download",
+            datatype="GPString",
+            direction="Input",
+            multiValue=True,
+            parameterType="Required",
+        )
+
+        param6 = arcpy.Parameter(
+            name="scale",
+            displayName="Specify the scale for the output images",
+            datatype="GPDouble",
+            direction="Input",
+            multiValue=False,
+            parameterType="Required",
+        )
+
+        param7 = arcpy.Parameter(
+            name="out_folder",
+            displayName="Specify the output folder",
+            datatype="DEFolder",
+            direction="Input",
+            parameterType="Required",
+        )
+
+        param8 = arcpy.Parameter(
+            name="load_tiff",
+            displayName="Load images to map after download",
+            datatype="GPBoolean",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        params = [
+            param0,
+            param1,
+            param2,
+            param3,
+            param4,
+            param5,
+            param6,
+            param7,
+            param8,
+        ]
+        return params
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+
+        # Get the filter dates
+        if parameters[1].valueAsText:
+            val_list = parameters[1].values
+            start_date = val_list[0][0]
+            end_date = val_list[0][1]
+        else:
+            start_date = None
+            end_date = None
+
+        # Check image list of a given collection asset
+        asset_id = parameters[0].valueAsText
+
+        # Image collection size could be huge, may take long time to load image IDs without filters
+        # Only retrieve the list of images, when either filter dates or filter bounds are selected
+        # if asset_id and ((start_date and end_date) or (lon and lat)):
+        if asset_id:
+            asset_id = clean_asset_id(asset_id)
+            collection = ee.ImageCollection(asset_id)
+            # Filter image collection as specified
+            if start_date is not None and end_date is not None:
+                collection = collection.filterDate(start_date, end_date)
+
+            # Update only when band filter list is empty
+            if not parameters[5].filter.list:
+                # Get the first select image
+                image = collection.first()
+                band_names = image.bandNames()
+                band_list = band_names.getInfo()
+                # Add band resolution information to display
+                band_res_list = []
+                for iband in band_list:
+                    band_tmp = image.select(iband)
+                    proj = band_tmp.projection()
+                    res = proj.nominalScale().getInfo()
+                    band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
+                parameters[5].filter.list = band_res_list
+
+            # Capture the suggested scale value based on selected bands
+            band_str = parameters[5].valueAsText
+            if band_str and not parameters[6].value:
+                # Remove ' in band string in case users add it
+                if "'" in band_str:
+                    band_str = band_str.replace("'", "")
+                bands = band_str.split(";")
+                scale_only = [float(iband.split("--")[1]) for iband in bands]
+                parameters[6].value = max(scale_only)
+
+        # Reset band filter list when asset id changes
+        if not asset_id:
+            parameters[5].filter.list = []
+
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter. This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        import rasterio
+
+        """The source code of the tool."""
+        # Get the parameters
+        asset_id = parameters[0].valueAsText
+        filter_dates = parameters[1].value
+        in_poly = parameters[2].valueAsText
+        bound_type = parameters[3].valueAsText
+        max_num = parameters[4].value
+        band_str = parameters[5].valueAsText
+        scale = parameters[6].valueAsText
+        out_folder = parameters[7].valueAsText
+        load_tiff = parameters[8].valueAsText
+
+        asset_id = clean_asset_id(asset_id)
+        collection = ee.ImageCollection(asset_id)
+
+        # Get the filter dates
+        if filter_dates:
+            start_date = filter_dates[0][0]
+            end_date = filter_dates[0][1]
+        else:
+            start_date = None
+            end_date = None
+
+        # Filter image collection as specified
+        if start_date is not None and end_date is not None:
+            collection = collection.filterDate(start_date, end_date)
+
+        # Get the coordinate list of the selected polygons
+        coords_list = get_polygon_coords(in_poly)
+
+        # Get the selected bands
+        # Remove ' in band string in case user adds it
+        if "'" in band_str:
+            band_str = band_str.replace("'", "")
+        bands = band_str.split(";")
+        bands_only = [iband.split("--")[0] for iband in bands]
+        arcpy.AddMessage("Bands selected: " + ",".join(bands_only))
+
+        # Get the scale for xarray dataset
+        scale_ds = float(scale)
+
+        # Get the first image of the collection
+        image = collection.first()
+
+        # Get crs code for xarray metadata
+        # crs information could be missing, then use wkt from projection
+        try:
+            crs = image.select(0).projection().getInfo()["crs"]
+            arcpy.AddMessage("Image projection CRS is " + crs)
+        except:
+            # crs is not explictly defined
+            arcpy.AddMessage("Image projection CRS is unknown.")
+            wkt = image.select(0).projection().getInfo()["wkt"]
+            crs = rasterio.crs.CRS.from_wkt(wkt)
+
+        # Check if use projection or crs code
+        image = ee.ImageCollection(image)
+        use_projection = whether_use_projection(image)
+
+        out_tiff_list = []
+        # Iterate each selected region
+        icount = 1
+        for coords in coords_list:
+            arcpy.AddMessage("Download images at region " + str(icount) + " ...")
+            # Create an Earth Engine MultiPolygon from the GeoJSON
+            roi = ee.Geometry.MultiPolygon([coords])
+            # Filter image collection by ROI
+            if bound_type == "Centroid of Polygon":
+                # Get the centroid of the polygon
+                centroid = roi.centroid()
+                collection_region = collection.filterBounds(centroid)
+            elif bound_type == "Bounding Box of Polygon":
+                collection_region = collection.filterBounds(roi)
+
+            # select the max number of images
+            if max_num:
+                collection_region = collection_region.limit(max_num)
+
+            image_list = collection_region.aggregate_array("system:index").getInfo()
+            if len(image_list) == 0:
+                arcpy.AddMessage("No images found at region " + str(icount) + ".")
+                icount += 1
+                continue
+
+            # Iterate each selected image
+            for img_name in image_list:
+
+                # For image collection, concatenate to get the image asset ID
+                img_id = asset_id + "/" + img_name
+
+                # Create output file name based on image IDs
+                out_tiff = os.path.join(
+                    out_folder,
+                    img_name.replace("/", "_")
+                    + "_region"
+                    + str(icount).zfill(2)
+                    + ".tif",
+                )
+                out_tiff_list.append(out_tiff)
+
+                arcpy.AddMessage("Download image: " + img_id + " ...")
+                # Must be image collection to convert to xarray
+                image = ee.ImageCollection(ee.Image(img_id))
+                # Filter image by selected bands
+                image = image.select(bands_only)
+
+                # download image as geotiff
+                image_to_geotiff(
+                    image, bands_only, crs, scale_ds, roi, use_projection, out_tiff
+                )
+
+            icount += 1
 
         # Add out tiff to map layer
         if load_tiff == "true":
