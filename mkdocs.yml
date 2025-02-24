@@ -1,0 +1,9 @@
+site_name: Earth Engine ArcGIS Connector Docs
+nav:
+    - Overview: index.md
+    - Installation: installation.md
+    - User Instruction: instruction.md
+theme:
+    name: material
+plugins:
+    - search
