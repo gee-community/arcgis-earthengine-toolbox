@@ -5,1436 +5,8 @@ import ee
 import os
 import json
 import requests
-import numpy as np
-import xarray
-import datetime
-
-# ArcGEE version
-__version__ = "0.0.1"
-
 from google.cloud import storage
 import arcgee
-
-# import logging
-
-# import arcgee.arctools as arctools
-
-# logger = logging.getLogger(__name__)
-
-""" Define functions"""
-
-
-def get_reducer_list():
-    """
-    Get the complete list of available reducers from ee.Reducer.
-
-    Returns:
-        list: A list of all reducer names available in ee.Reducer.
-    """
-    reducers = [
-        "ee.Reducer.allNonZero",
-        "ee.Reducer.anyNonZero",
-        "ee.Reducer.autoHistogram",
-        "ee.Reducer.bitwiseAnd",
-        "ee.Reducer.bitwiseOr",
-        "ee.Reducer.centeredCovariance",
-        "ee.Reducer.circularMean",
-        "ee.Reducer.circularStddev",
-        "ee.Reducer.circularVariance",
-        "ee.Reducer.combine",
-        "ee.Reducer.count",
-        "ee.Reducer.countDistinct",
-        "ee.Reducer.countDistinctNonNull",
-        "ee.Reducer.countEvery",
-        "ee.Reducer.countRuns",
-        "ee.Reducer.covariance",
-        "ee.Reducer.disaggregate",
-        "ee.Reducer.first",
-        "ee.Reducer.firstNonNull",
-        "ee.Reducer.fixed2DHistogram",
-        "ee.Reducer.fixedHistogram",
-        "ee.Reducer.forEach",
-        "ee.Reducer.forEachBand",
-        "ee.Reducer.frequencyHistogram",
-        "ee.Reducer.geometricMedian",
-        "ee.Reducer.getOutputs",
-        "ee.Reducer.group",
-        "ee.Reducer.histogram",
-        "ee.Reducer.intervalMean",
-        "ee.Reducer.kendallsCorrelation",
-        "ee.Reducer.kurtosis",
-        "ee.Reducer.last",
-        "ee.Reducer.lastNonNull",
-        "ee.Reducer.linearFit",
-        "ee.Reducer.linearRegression",
-        "ee.Reducer.max",
-        "ee.Reducer.mean",
-        "ee.Reducer.median",
-        "ee.Reducer.min",
-        "ee.Reducer.minMax",
-        "ee.Reducer.mode",
-        "ee.Reducer.pearsonsCorrelation",
-        "ee.Reducer.percentile",
-        "ee.Reducer.product",
-        "ee.Reducer.repeat",
-        "ee.Reducer.ridgeRegression",
-        "ee.Reducer.robustLinearRegression",
-        "ee.Reducer.sampleStdDev",
-        "ee.Reducer.sampleVariance",
-        "ee.Reducer.sensSlope",
-        "ee.Reducer.setOutputs",
-        "ee.Reducer.skew",
-        "ee.Reducer.spearmansCorrelation",
-        "ee.Reducer.splitWeigths",
-        "ee.Reducer.stdDev",
-        "ee.Reducer.sum",
-        "ee.Reducer.toCollection",
-        "ee.Reducer.toList",
-        "ee.Reducer.unweighted",
-        "ee.Reducer.variance",
-    ]
-    return reducers
-
-
-def get_filter_list():
-    """
-    Get the complete list of available filters from ee.Filter.
-
-    Returns:
-        list: A list of all filter names available in ee.Filter, including filters for:
-            - Logical operations (and, or, not)
-            - Temporal filtering (date, calendarRange, dayOfYear)
-            - Spatial filtering (bounds, intersects, contains)
-            - Value comparisons (equals, greaterThan, lessThan, etc.)
-            - String operations (stringContains, stringStartsWith, etc.)
-            - And more
-
-    """
-    # all filters in the ee.Filter
-    filters = [
-        "ee.Filter.and",  # Combines two or more filters with logical AND
-        "ee.Filter.area",
-        "ee.Filter.aside",
-        "ee.Filter.bounds",  # Filter by geographic bounds (within a geometry)
-        "ee.Filter.calendarRange",  # Filter by calendar range (e.g., specific years, months, days)
-        "ee.Filter.contains",  # Checks if a collection contains a specific value
-        "ee.Filter.date",  # Filter by date range
-        "ee.Filter.daterangeContains",
-        "ee.Filter.dayofYear",
-        "ee.Filter.disjoint",
-        "ee.Filter.eq",  # Equality filter (equals)
-        "ee.Filter.equals",
-        "ee.Filter.evaluate",
-        "ee.Filter.expression",
-        "ee.Filter.getInfo",
-        "ee.Filter.greaterThan",
-        "ee.Filter.greaterThanOrEuqals",
-        "ee.Filter.gt",  # Greater than filter
-        "ee.Filter.gte",  # Greater than or equal to filter
-        "ee.Filter.hasType",
-        "ee.Filter.inList",  # Filter by values within a list (like SQL's IN clause)
-        "ee.Filter.intersects",  # Filter features that intersect a geometry
-        "ee.Filter.isContained",  # Checks if a geometry is contained by another geometry
-        "ee.Filter.lessThan",
-        "ee.Filter.lessThanOrEquals",
-        "ee.Filter.listContains",  # Filter if a list contains a specific value
-        "ee.Filter.lt",  # Less than filter
-        "ee.Filter.lte",  # Less than or equal to filter
-        "ee.Filter.maxDifference",
-        "ee.Filter.neq",  # Not equal filter
-        "ee.Filter.not",  # Negates a filter
-        "ee.Filter.notEuqals",
-        "ee.Filter.notNull",  # Filters features where a property is not null
-        "ee.Filter.or",  # Combines two or more filters with logical OR
-        "ee.Filter.rangeContains",
-        "ee.Filter.serialize",
-        "ee.Filter.stringContains",  # Checks if a string contains a substring
-        "ee.Filter.stringEndsWith",  # Checks if a string ends with a specific substring
-        "ee.Filter.stringStartsWith",  # Checks if a string starts with a specific substring
-        "ee.Filter.withinDistance",
-    ]
-
-    return filters
-
-
-def add_date_to_gif(
-    input_gif,
-    output_gif,
-    dates,
-    font_path=None,
-    font_size=40,
-    position=(10, 10),
-    color="white",
-):
-    """
-    Adds a date label to each frame of a GIF.
-
-    Args:
-        input_gif (str): Path to the input GIF file.
-        output_gif (str): Path to save the output GIF file.
-        dates (list): List of dates to add to each frame. Must match the number of frames in the GIF.
-        font_path (str): Path to a font file. Defaults to a system font.
-        font_size (int): Font size for the date text.
-        position (tuple): (x, y) position for the date label.
-        color (str): Color of the text. Defaults to white.
-    """
-    from PIL import Image, ImageDraw, ImageFont, ImageSequence
-
-    # Open the input GIF
-    gif = Image.open(input_gif)
-
-    # Load the font (use a default font if no font_path is provided)
-    font = ImageFont.truetype(font_path or "arial.ttf", font_size)
-
-    frames = []
-    for i, frame in enumerate(ImageSequence.Iterator(gif)):
-        # Ensure the number of dates matches the frames
-        if i >= len(dates):
-            break
-
-        # Copy the frame to edit
-        frame = frame.convert("RGBA")
-        draw = ImageDraw.Draw(frame)
-
-        # Add the date text
-        draw.text(position, dates[i], font=font, fill=color)
-
-        # Append the edited frame
-        frames.append(frame)
-
-    # Save the frames as a new GIF
-    frames[0].save(
-        output_gif,
-        save_all=True,
-        append_images=frames[1:],
-        loop=gif.info.get("loop", 0),
-        duration=gif.info.get("duration", 100),
-    )
-
-
-def validate_date(date_str, date_format="%Y-%m-%d"):
-    """Validates that a date string matches the expected format.
-
-    Args:
-        date_str (str): The date string to validate
-        date_format (str, optional): Expected date format. Defaults to "%Y-%m-%d".
-
-    Raises:
-        ValueError: If the date string does not match the expected format
-
-    Examples:
-        >>> validate_date("2023-01-01")  # Valid date
-        >>> validate_date("01/01/2023")  # Raises ValueError
-    """
-    try:
-        # Try to parse the date string with the expected format
-        datetime.datetime.strptime(date_str, date_format)
-        arcpy.AddMessage(f"Valid date: {date_str}")
-    except ValueError:
-        # Add error message if the format is incorrect
-        arcpy.AddError(
-            f"Invalid date format: '{date_str}'. Expected format: {date_format}."
-        )
-        raise  # Re-raise the error to stop execution
-
-
-def download_ee_video(collection, video_args, out_gif, timeout=300, proxies=None):
-    """Downloads a video thumbnail as a GIF image from Earth Engine.
-
-    Args:
-        collection (object): An ee.ImageCollection.
-        video_args (object): Parameters for expring the video thumbnail.
-        out_gif (str): File path to the output GIF.
-        timeout (int, optional): The number of seconds the request will be timed out. Defaults to 300.
-        proxies (dict, optional): A dictionary of proxy servers to use. Defaults to None.
-    """
-
-    out_gif = os.path.abspath(out_gif)
-    if not out_gif.endswith(".gif"):
-        print("The output file must have an extension of .gif.")
-        return
-
-    if not os.path.exists(os.path.dirname(out_gif)):
-        os.makedirs(os.path.dirname(out_gif))
-
-    if "region" in video_args.keys():
-        roi = video_args["region"]
-
-        if not isinstance(roi, ee.Geometry):
-            try:
-                roi = roi.geometry()
-            except Exception as e:
-                print("Could not convert the provided roi to ee.Geometry")
-                print(e)
-                return
-
-        video_args["region"] = roi
-    if "dimensions" not in video_args:
-        video_args["dimensions"] = 768
-
-    try:
-        print("Generating URL...")
-        url = collection.getVideoThumbURL(video_args)
-
-        print(f"Downloading GIF image from {url}\nPlease wait ...")
-        r = requests.get(url, stream=True, timeout=timeout, proxies=proxies)
-
-        if r.status_code != 200:
-            print("An error occurred while downloading.")
-            print(r.json()["error"]["message"])
-            return
-        else:
-            with open(out_gif, "wb") as fd:
-                for chunk in r.iter_content(chunk_size=1024):
-                    fd.write(chunk)
-            print(f"The GIF image has been saved to: {out_gif}")
-    except Exception as e:
-        print(e)
-
-
-def date_sequence(start, end, unit, date_format="YYYY-MM-dd", step=1):
-    """Creates a date sequence.
-
-    Args:
-        start (str): The start date, e.g., '2000-01-01'.
-        end (str): The end date, e.g., '2000-12-31'.
-        unit (str): One of 'year', 'quarter', 'month' 'week', 'day', 'hour', 'minute', or 'second'.
-        date_format (str, optional): A pattern, as described at http://joda-time.sourceforge.net/apidocs/org/joda/time/format/DateTimeFormat.html. Defaults to 'YYYY-MM-dd'.
-        step (int, optional): The step size. Defaults to 1.
-
-    Returns:
-        ee.List: A list of date sequence.
-    """
-
-    def get_quarter(d):
-        return str((int(d[5:7]) - 1) // 3 * 3 + 1).zfill(2)
-
-    def get_monday(d):
-        date_obj = datetime.datetime.strptime(d, "%Y-%m-%d")
-        start_of_week = date_obj - datetime.timedelta(days=date_obj.weekday())
-        return start_of_week.strftime("%Y-%m-%d")
-
-    if unit == "year":
-        start = start[:4] + "-01-01"
-    elif unit == "month":
-        start = start[:7] + "-01"
-    elif unit == "quarter":
-        start = start[:5] + get_quarter(start) + "-01"
-    elif unit == "week":
-        start = get_monday(start)
-
-    start_date = ee.Date(start)
-    end_date = ee.Date(end)
-
-    if unit != "quarter":
-        count = ee.Number(end_date.difference(start_date, unit)).toInt()
-        num_seq = ee.List.sequence(0, count)
-        if step > 1:
-            num_seq = num_seq.slice(0, num_seq.size(), step)
-        date_seq = num_seq.map(
-            lambda d: start_date.advance(d, unit).format(date_format)
-        )
-
-    else:
-        unit = "month"
-        count = ee.Number(end_date.difference(start_date, unit)).divide(3).toInt()
-        num_seq = ee.List.sequence(0, count.multiply(3), 3)
-        date_seq = num_seq.map(
-            lambda d: start_date.advance(d, unit).format(date_format)
-        )
-
-    return date_seq
-
-
-def get_current_year():
-    """Get the current year.
-
-    Returns:
-        int: The current year.
-    """
-    today = datetime.date.today()
-    return today.year
-
-
-# Generate landsat timeseries, from GEEMAP
-def landsat_timeseries(
-    roi=None,
-    start_year=1984,
-    end_year=None,
-    start_date="06-10",
-    end_date="09-20",
-    apply_fmask=True,
-    frequency="year",
-    date_format=None,
-    step=1,
-):
-    """Generates an annual Landsat ImageCollection. This algorithm is adapted from https://gist.github.com/jdbcode/76b9ac49faf51627ebd3ff988e10adbc. A huge thank you to Justin Braaten for sharing his fantastic work.
-
-    Args:
-        roi (object, optional): Region of interest to create the timelapse. Defaults to None.
-        start_year (int, optional): Starting year for the timelapse. Defaults to 1984.
-        end_year (int, optional): Ending year for the timelapse. Defaults to None, which means the current year.
-        start_date (str, optional): Starting date (month-day) each year for filtering ImageCollection. Defaults to '06-10'.
-        end_date (str, optional): Ending date (month-day) each year for filtering ImageCollection. Defaults to '09-20'.
-        apply_fmask (bool, optional): Whether to apply Fmask (Function of mask) for automated clouds, cloud shadows, snow, and water masking.
-        frequency (str, optional): Frequency of the timelapse: year, quarter, month. Defaults to 'year'.
-        date_format (str, optional): Format of the date. Defaults to None.
-        step (int, optional): The step size to use when creating the date sequence. Defaults to 1.
-    Returns:
-        object: Returns an ImageCollection containing annual Landsat images.
-    """
-
-    # Input and output parameters.
-    import re
-
-    if roi is None:
-        roi = ee.Geometry.Polygon(
-            [
-                [
-                    [-115.471773, 35.892718],
-                    [-115.471773, 36.409454],
-                    [-114.271283, 36.409454],
-                    [-114.271283, 35.892718],
-                    [-115.471773, 35.892718],
-                ]
-            ],
-            None,
-            False,
-        )
-
-    if end_year is None:
-        end_year = get_current_year()
-
-    if not isinstance(roi, ee.Geometry):
-        try:
-            roi = roi.geometry()
-        except Exception as e:
-            arcpy.AddMessage("Could not convert the provided roi to ee.Geometry")
-            arcpy.AddError(e)
-
-    feq_dict = {
-        "year": "YYYY",
-        "month": "YYYY-MM",
-        "quarter": "YYYY-MM",
-    }
-
-    if date_format is None:
-        date_format = feq_dict[frequency]
-
-    if frequency not in feq_dict:
-        arcpy.AddError("frequency must be year, quarter, or month.")
-
-    # Setup vars to get dates.
-    if (
-        isinstance(start_year, int)
-        and (start_year >= 1984)
-        and (start_year < get_current_year())
-    ):
-        pass
-    else:
-        arcpy.AddError("The start year must be an integer >= 1984.")
-
-    if (
-        isinstance(end_year, int)
-        and (end_year > 1984)
-        and (end_year <= get_current_year())
-    ):
-        pass
-    else:
-        arcpy.AddError(f"The end year must be an integer <= {get_current_year()}.")
-
-    if re.match(r"[0-9]{2}-[0-9]{2}", start_date) and re.match(
-        r"[0-9]{2}-[0-9]{2}", end_date
-    ):
-        pass
-    else:
-        arcpy.AddError(
-            "The start date and end date must be month-day, such as 06-10, 09-20"
-        )
-
-    try:
-        datetime.datetime(int(start_year), int(start_date[:2]), int(start_date[3:5]))
-        datetime.datetime(int(end_year), int(end_date[:2]), int(end_date[3:5]))
-    except Exception as e:
-        arcpy.AddMessage("The input dates are invalid.")
-        arcpy.AddError(e)
-
-    def days_between(d1, d2):
-        d1 = datetime.datetime.strptime(d1, "%Y-%m-%d")
-        d2 = datetime.datetime.strptime(d2, "%Y-%m-%d")
-        return abs((d2 - d1).days)
-
-    n_days = days_between(
-        str(start_year) + "-" + start_date, str(start_year) + "-" + end_date
-    )
-    start_month = int(start_date[:2])
-    start_day = int(start_date[3:5])
-
-    # Landsat collection preprocessingEnabled
-    # Get Landsat surface reflectance collections for OLI, ETM+ and TM sensors.
-    LC09col = ee.ImageCollection("LANDSAT/LC09/C02/T1_L2")
-    LC08col = ee.ImageCollection("LANDSAT/LC08/C02/T1_L2")
-    LE07col = ee.ImageCollection("LANDSAT/LE07/C02/T1_L2")
-    LT05col = ee.ImageCollection("LANDSAT/LT05/C02/T1_L2")
-    LT04col = ee.ImageCollection("LANDSAT/LT04/C02/T1_L2")
-
-    # Define a collection filter by date, bounds, and quality.
-    def colFilter(col, roi, start_date, end_date):
-        """Filter an image collection by region of interest and date range.
-
-        Args:
-            col (ee.ImageCollection): Input image collection
-            roi (ee.Geometry): Region of interest
-            start_date (str): Start date in 'YYYY-MM-DD' format
-            end_date (str): End date in 'YYYY-MM-DD' format
-
-        Returns:
-            ee.ImageCollection: Filtered image collection
-        """
-        return col.filterBounds(roi).filterDate(start_date, end_date)
-
-    # Function to get and rename bands of interest from OLI.
-    def renameOli(img):
-        """Rename bands of interest from OLI sensor.
-
-        Args:
-            img (ee.Image): Input image from OLI sensor
-
-        Returns:
-            ee.Image: Image with renamed bands
-        """
-        return img.select(
-            ["SR_B2", "SR_B3", "SR_B4", "SR_B5", "SR_B6", "SR_B7"],
-            ["Blue", "Green", "Red", "NIR", "SWIR1", "SWIR2"],
-        )
-
-    # Function to get and rename bands of interest from ETM+.
-    def renameEtm(img):
-        """Rename bands of interest from ETM+ sensor.
-
-        Args:
-            img (ee.Image): Input image from ETM+ sensor
-
-        Returns:
-            ee.Image: Image with renamed bands
-        """
-        return img.select(
-            ["SR_B1", "SR_B2", "SR_B3", "SR_B4", "SR_B5", "SR_B7"],
-            ["Blue", "Green", "Red", "NIR", "SWIR1", "SWIR2"],
-        )
-
-    def fmask(image):
-        """Apply Fmask (Function of mask) for cloud and shadow masking.
-
-        Args:
-            image (ee.Image): Input Landsat image
-
-        Returns:
-            ee.Image: Masked image with scaled surface reflectance values
-
-        Notes:
-            Bit values in QA_PIXEL band:
-            - Bit 0: Fill
-            - Bit 1: Dilated Cloud
-            - Bit 2: Cirrus
-            - Bit 3: Cloud
-            - Bit 4: Cloud Shadow
-        """
-        qaMask = image.select("QA_PIXEL").bitwiseAnd(int("11111", 2)).eq(0)
-        opticalBands = image.select("SR_B.").multiply(0.0000275).add(-0.2)
-        return image.addBands(opticalBands, None, True).updateMask(qaMask)
-
-    # Define function to prepare OLI images.
-    def prepOli(img):
-        """Prepare OLI sensor images by applying scaling and optional masking.
-
-        Args:
-            img (ee.Image): Input OLI sensor image
-
-        Returns:
-            ee.Image: Processed image with renamed bands and bicubic resampling
-        """
-        orig = img
-        if apply_fmask:
-            img = fmask(img)
-        else:
-            img = img.select("SR_B.").multiply(0.0000275).add(-0.2)
-        img = renameOli(img)
-        return ee.Image(img.copyProperties(orig, orig.propertyNames())).resample(
-            "bicubic"
-        )
-
-    # Define function to prepare ETM+ images.
-    def prepEtm(img):
-        """Prepare ETM+ sensor images by applying scaling and optional masking.
-
-        Args:
-            img (ee.Image): Input ETM+ sensor image
-
-        Returns:
-            ee.Image: Processed image with renamed bands and bicubic resampling
-        """
-        orig = img
-        if apply_fmask:
-            img = fmask(img)
-        else:
-            img = img.select("SR_B.").multiply(0.0000275).add(-0.2)
-        img = renameEtm(img)
-        return ee.Image(img.copyProperties(orig, orig.propertyNames())).resample(
-            "bicubic"
-        )
-
-    # Get annual median collection.
-    def getAnnualComp(y):
-        """Get annual median composite for a given year.
-
-        Args:
-            y (int): Year to process
-
-        Returns:
-            ee.Image: Annual median composite with metadata properties
-        """
-        startDate = ee.Date.fromYMD(
-            ee.Number(y), ee.Number(start_month), ee.Number(start_day)
-        )
-        endDate = startDate.advance(ee.Number(n_days), "day")
-
-        # Filter collections and prepare them for merging.
-        LC09coly = colFilter(LC09col, roi, startDate, endDate).map(prepOli)
-        LC08coly = colFilter(LC08col, roi, startDate, endDate).map(prepOli)
-        LE07coly = colFilter(LE07col, roi, startDate, endDate).map(prepEtm)
-        LT05coly = colFilter(LT05col, roi, startDate, endDate).map(prepEtm)
-        LT04coly = colFilter(LT04col, roi, startDate, endDate).map(prepEtm)
-
-        # Merge the collections.
-        col = LC09coly.merge(LC08coly).merge(LE07coly).merge(LT05coly).merge(LT04coly)
-
-        yearImg = col.median()
-        nBands = yearImg.bandNames().size()
-        yearImg = ee.Image(ee.Algorithms.If(nBands, yearImg, dummyImg))
-        return yearImg.set(
-            {
-                "year": y,
-                "system:time_start": startDate.millis(),
-                "nBands": nBands,
-                "system:date": ee.Date(startDate).format(date_format),
-            }
-        )
-
-    # Get monthly median collection.
-    def getMonthlyComp(startDate):
-        """Get monthly median composite starting from a given date.
-
-        Args:
-            startDate (ee.Date): Start date for the monthly composite
-
-        Returns:
-            ee.Image: Monthly median composite with metadata properties
-        """
-        startDate = ee.Date(startDate)
-        endDate = startDate.advance(1, "month")
-
-        # Filter collections and prepare them for merging.
-        LC09coly = colFilter(LC09col, roi, startDate, endDate).map(prepOli)
-        LC08coly = colFilter(LC08col, roi, startDate, endDate).map(prepOli)
-        LE07coly = colFilter(LE07col, roi, startDate, endDate).map(prepEtm)
-        LT05coly = colFilter(LT05col, roi, startDate, endDate).map(prepEtm)
-        LT04coly = colFilter(LT04col, roi, startDate, endDate).map(prepEtm)
-
-        # Merge the collections.
-        col = LC09coly.merge(LC08coly).merge(LE07coly).merge(LT05coly).merge(LT04coly)
-
-        monthImg = col.median()
-        nBands = monthImg.bandNames().size()
-        monthImg = ee.Image(ee.Algorithms.If(nBands, monthImg, dummyImg))
-        return monthImg.set(
-            {
-                "system:time_start": startDate.millis(),
-                "nBands": nBands,
-                "system:date": ee.Date(startDate).format(date_format),
-            }
-        )
-
-    # Get quarterly median collection.
-    def getQuarterlyComp(startDate):
-        """Get quarterly (3-month) median composite starting from a given date.
-
-        Args:
-            startDate (ee.Date): Start date for the quarterly composite
-
-        Returns:
-            ee.Image: Quarterly median composite with metadata properties
-        """
-        startDate = ee.Date(startDate)
-
-        endDate = startDate.advance(3, "month")
-
-        # Filter collections and prepare them for merging.
-        LC09coly = colFilter(LC09col, roi, startDate, endDate).map(prepOli)
-        LC08coly = colFilter(LC08col, roi, startDate, endDate).map(prepOli)
-        LE07coly = colFilter(LE07col, roi, startDate, endDate).map(prepEtm)
-        LT05coly = colFilter(LT05col, roi, startDate, endDate).map(prepEtm)
-        LT04coly = colFilter(LT04col, roi, startDate, endDate).map(prepEtm)
-
-        # Merge the collections.
-        col = LC09coly.merge(LC08coly).merge(LE07coly).merge(LT05coly).merge(LT04coly)
-
-        quarter = col.median()
-        nBands = quarter.bandNames().size()
-        quarter = ee.Image(ee.Algorithms.If(nBands, quarter, dummyImg))
-        return quarter.set(
-            {
-                "system:time_start": startDate.millis(),
-                "nBands": nBands,
-                "system:date": ee.Date(startDate).format(date_format),
-            }
-        )
-
-    # Make a dummy image for missing years.
-    bandNames = ee.List(["Blue", "Green", "Red", "NIR", "SWIR1", "SWIR2", "pixel_qa"])
-    fillerValues = ee.List.repeat(0, bandNames.size())
-    dummyImg = ee.Image.constant(fillerValues).rename(bandNames).selfMask().int16()
-
-    # Make list of /quarterly/monthly image composites.
-
-    if frequency == "year":
-        years = ee.List.sequence(start_year, end_year, step)
-        imgList = years.map(getAnnualComp)
-    elif frequency == "quarter":
-        quarters = date_sequence(
-            str(start_year) + "-01-01",
-            str(end_year) + "-12-31",
-            "quarter",
-            date_format,
-            step,
-        )
-        imgList = quarters.map(getQuarterlyComp)
-    elif frequency == "month":
-        months = date_sequence(
-            str(start_year) + "-01-01",
-            str(end_year) + "-12-31",
-            "month",
-            date_format,
-            step,
-        )
-        imgList = months.map(getMonthlyComp)
-
-    # Convert image composite list to collection
-    imgCol = ee.ImageCollection.fromImages(imgList)
-
-    imgCol = imgCol.map(
-        lambda img: img.clip(roi).set({"coordinates": roi.coordinates()})
-    )
-
-    return imgCol
-
-
-# Create landsat timelapse, simplified from GEEMAP
-def landsat_timelapse(
-    roi=None,
-    out_gif=None,
-    start_year=1984,
-    end_year=None,
-    start_date="06-10",
-    end_date="09-20",
-    bands=["NIR", "Red", "Green"],
-    vis_params=None,
-    dimensions=768,
-    frames_per_second=5,
-    crs="EPSG:3857",
-    apply_fmask=True,
-    frequency="year",
-):
-    """Generates a Landsat timelapse GIF image. This function is adapted from https://emaprlab.users.earthengine.app/view/lt-gee-time-series-animator. A huge thank you to Justin Braaten for sharing his fantastic work.
-
-    Args:
-        roi (object, optional): Region of interest to create the timelapse. Defaults to None.
-        out_gif (str, optional): File path to the output animated GIF. Defaults to None.
-        start_year (int, optional): Starting year for the timelapse. Defaults to 1984.
-        end_year (int, optional): Ending year for the timelapse. Defaults to None, which will use the current year.
-        start_date (str, optional): Starting date (month-day) each year for filtering ImageCollection. Defaults to '06-10'.
-        end_date (str, optional): Ending date (month-day) each year for filtering ImageCollection. Defaults to '09-20'.
-        bands (list, optional): Three bands selected from ['Blue', 'Green', 'Red', 'NIR', 'SWIR1', 'SWIR2', 'pixel_qa']. Defaults to ['NIR', 'Red', 'Green'].
-        vis_params (dict, optional): Visualization parameters. Defaults to None.
-        dimensions (int, optional): a number or pair of numbers (in format 'WIDTHxHEIGHT') Maximum dimensions of the thumbnail to render, in pixels. If only one number is passed, it is used as the maximum, and the other dimension is computed by proportional scaling. Defaults to 768.
-        frames_per_second (int, optional): Animation speed. Defaults to 5.
-        crs (str, optional): The coordinate reference system to use. Defaults to "EPSG:3857".
-        apply_fmask (bool, optional): Whether to apply Fmask (Function of mask) for automated clouds, cloud shadows, snow, and water masking.
-        frequency (str, optional): Frequency of the timelapse: year, quarter, month. Defaults to 'year'.
-
-    Returns:
-        str: File path to the output GIF image.
-    """
-
-    if roi is None:
-        roi = ee.Geometry.Polygon(
-            [
-                [
-                    [-115.471773, 35.892718],
-                    [-115.471773, 36.409454],
-                    [-114.271283, 36.409454],
-                    [-114.271283, 35.892718],
-                    [-115.471773, 35.892718],
-                ]
-            ],
-            None,
-            False,
-        )
-    elif isinstance(roi, ee.Feature) or isinstance(roi, ee.FeatureCollection):
-        roi = roi.geometry()
-    elif isinstance(roi, ee.Geometry):
-        pass
-    else:
-        arcpy.AddError("The provided roi is invalid. It must be an ee.Geometry")
-
-    out_gif = os.path.abspath(out_gif)
-    out_dir = os.path.dirname(out_gif)
-
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
-
-    if end_year is None:
-        end_year = get_current_year()
-
-    allowed_bands = ["Blue", "Green", "Red", "NIR", "SWIR1", "SWIR2", "pixel_qa"]
-
-    if len(bands) == 3 and all(x in allowed_bands for x in bands):
-        pass
-    else:
-        arcpy.AddError(
-            "You can only select 3 bands from the following: {}".format(
-                ", ".join(allowed_bands)
-            )
-        )
-
-    try:
-        if vis_params is None:
-            vis_params = {}
-            vis_params["bands"] = bands
-            vis_params["min"] = 0
-            vis_params["max"] = 0.4
-            vis_params["gamma"] = [1, 1, 1]
-
-        raw_col = landsat_timeseries(
-            roi,
-            start_year,
-            end_year,
-            start_date,
-            end_date,
-            apply_fmask,
-            frequency,
-        )
-
-        col = raw_col.select(bands).map(
-            lambda img: img.visualize(**vis_params).set(
-                {
-                    "system:time_start": img.get("system:time_start"),
-                    "system:date": img.get("system:date"),
-                }
-            )
-        )
-
-        video_args = vis_params.copy()
-        video_args["dimensions"] = dimensions
-        video_args["region"] = roi
-        video_args["framesPerSecond"] = frames_per_second
-        video_args["crs"] = crs
-        video_args["bands"] = ["vis-red", "vis-green", "vis-blue"]
-        video_args["min"] = 0
-        video_args["max"] = 255
-
-        download_ee_video(col, video_args, out_gif)
-
-        if os.path.exists(out_gif):
-            date_list = col.aggregate_array("system:date").getInfo()
-            add_date_to_gif(out_gif, out_gif, date_list)
-
-        return out_gif
-
-    except Exception as e:
-        arcpy.AddError(e)
-
-
-# List all functions in the imported module
-def list_functions_from_script(module):
-    """List all functions in the imported module.
-
-    Args:
-        module (module): The module from which to list functions.
-
-    Returns:
-        list: A list of function names available in the module.
-    """
-    import inspect
-
-    function_list = []
-    for name, obj in inspect.getmembers(module):
-        if inspect.isfunction(obj):
-            function_list.append(name)
-    return function_list
-
-
-def clean_asset_id(asset_id):
-    """Clean the asset ID string by removing any whitespace, trailing slash, and quotes.
-
-    Args:
-        asset_id (str): Input asset ID string
-
-    Returns:
-        str: Cleaned asset ID string
-    """
-    asset_id = asset_id.strip().strip('"').strip("'")
-    if asset_id.endswith("/"):
-        asset_id = asset_id[:-1]
-    return asset_id
-
-
-def check_ee_datatype(parameter, type_str):
-    """Check the Earth Engine data type of the input object."""
-    asset_id = parameter.valueAsText
-    asset_id = clean_asset_id(asset_id)
-    # type_str = "IMAGE" or "TABLE" or "IMAGE_COLLECTION"
-    if type_str == "TABLE":
-        type_out = "FEATURE COLLECTION"
-    else:
-        type_out = type_str.replace("_", " ")
-
-    # asset ID could be invalid
-    try:
-        data_type = get_ee_datatype(asset_id)
-        if data_type != type_str:
-            parameter.setErrorMessage(
-                f"The input asset ID is not {type_out} . Please input a valid {type_out} asset ID."
-            )
-            return
-    except Exception as e:
-        parameter.setErrorMessage(
-            f"Error: {str(e)}. Please input a valid {type_out} asset ID."
-        )
-        return
-
-
-def get_ee_datatype(asset_id):
-    """Get the Earth Engine data type of the input object.
-
-    Returns:
-        str: Earth Engine data type of the input object
-    """
-    # Get the input object
-    obj = ee.data.getAsset(asset_id)
-    # Get the data type of the input object
-    data_type = obj["type"]
-    return data_type
-
-
-def init_and_set_tags(project=None, workload_tag=None):
-    """Initialize Earth Engine and set user agent and workload tags.
-
-    Args:
-        project (str, optional): Google Cloud project ID. Defaults to None.
-        workload_tag (str, optional): Custom workload tag. Defaults to None.
-    """
-    ee.Initialize(project=project)
-
-    user_agent = f"ArcGIS_EE/{__version__}/ArcPy/{arcpy.__version__}"
-    if ee.data.getUserAgent() != user_agent:
-        ee.data.setUserAgent(user_agent)
-
-    ee.data.setDefaultWorkloadTag("arcgis-ee-connector")
-
-    if workload_tag is not None:
-        ee.data.setWorkloadTag(workload_tag)
-
-    # check initialization setup
-    project_id = ee.data.getProjectConfig()["name"].split("/")[1]
-    arcpy.AddMessage(f"Current project ID: {project_id}")
-    arcpy.AddMessage(f"Current user agent: {ee.data.getUserAgent()}")
-    arcpy.AddMessage(f"Current workload tag: {ee.data.getWorkloadTag()}")
-    arcpy.AddMessage("Earth Engine is ready to use.")
-
-    return
-
-
-# Project a point to a different spatial reference
-def project_to_new_sr(x, y, in_spatial_ref, out_spatial_ref):
-    """Project a point from input spatial reference to output spatial reference.
-
-    Args:
-        x (float): X coordinate in input spatial reference
-        y (float): Y coordinate in input spatial reference
-        in_spatial_ref (SpatialReference): Input spatial reference object
-        out_spatial_ref (SpatialReference): Output spatial reference object
-
-    Returns:
-        tuple: coordinates in output spatial reference
-    """
-    point = arcpy.Point(x, y)
-    point_geom = arcpy.PointGeometry(point, in_spatial_ref)
-    new_sr = arcpy.SpatialReference(out_spatial_ref)
-    point_geom_wgs84 = point_geom.projectAs(new_sr)
-    return point_geom_wgs84.centroid.X, point_geom_wgs84.centroid.Y
-
-
-# Get centroid and extent coordinates of input image or feature collection
-def get_object_centroid(obj, error_margin):
-    """Get the centroid and extent coordinates of an Earth Engine object.
-
-    Args:
-        obj (ee.Image or ee.FeatureCollection): Earth Engine object
-        error_margin (float): Error margin for geometry calculations
-
-    Returns:
-        tuple: (centroid_coords, extent_coords) where:
-            - centroid_coords is [lon, lat] of centroid
-            - extent_coords is list of corner coordinates defining the bounds
-    """
-    # get centroid geometry from input image
-    centroid = obj.geometry().centroid(error_margin)
-    # coordinates in list
-    centroid_coords = centroid.coordinates().getInfo()
-    # get image extent
-    extent = obj.geometry().bounds(error_margin)
-    # coordinates in list
-    extent_coords = extent.coordinates().get(0).getInfo()
-    return centroid_coords, extent_coords
-
-
-# Zoom project map view to point
-def zoom_to_point(aprx, point_coords, extent_coords):
-    """Zoom the map view to a point with buffer based on extent.
-
-    Args:
-        aprx (ArcGISProject): ArcGIS Pro project object
-        point_coords (list): [lon, lat] coordinates of center point
-        extent_coords (list): List of corner coordinates defining the bounds
-    """
-    # get current project map view
-    view = aprx.activeView
-    # Create an extent around the centroid
-    centroid_x, centroid_y = point_coords
-    bottom_left = extent_coords[0]
-    top_right = extent_coords[2]
-    x_min = bottom_left[0]
-    y_min = bottom_left[1]
-    x_max = top_right[0]
-    y_max = top_right[1]
-    width = x_max - x_min
-    height = y_max - y_min
-    zoom_buffer = max(width, height) * 0.6
-
-    extent = arcpy.Extent(
-        centroid_x - zoom_buffer,  # xmin
-        centroid_y - zoom_buffer,  # ymin
-        centroid_x + zoom_buffer,  # xmax
-        centroid_y + zoom_buffer,  # ymax
-    )
-    # assuming the ee object centroid and extent are always in lat/lon
-    extent.spatialReference = arcpy.SpatialReference(4326)
-
-    # Set the map view to the new extent
-    view.camera.setExtent(extent)
-
-    return
-
-
-# Get map view extent
-def get_map_view_extent(target_epsg=4326):
-    """Get the current map view extent coordinates in WGS 84.
-    Args:
-        target_epsg (int): Target EPSG code for the extent coordinates
-    Returns:
-        tuple: (xmin, ymin, xmax, ymax) coordinates in WGS 84
-    """
-    aprx = arcpy.mp.ArcGISProject("CURRENT")
-    # Get the active map view
-    view = aprx.activeView
-    # Get the current camera object, which includes the map view extent
-    camera = view.camera
-
-    # Extract the projection and the boundary coordinates (extent)
-    spatial_ref = camera.getExtent().spatialReference
-    xmin = camera.getExtent().XMin
-    ymin = camera.getExtent().YMin
-    xmax = camera.getExtent().XMax
-    ymax = camera.getExtent().YMax
-    # Check if projection code is the target EPSG code
-    # projected
-    poly_prj = spatial_ref.PCSCode
-    if poly_prj == 0:
-        # geographic
-        poly_prj = spatial_ref.GCSCode
-    # Always using latitude and longtiude for ee.Geometry, ee will automatically transform
-    if str(poly_prj) not in "EPSG:" + str(target_epsg):
-        # Convert the extent corners to target EPSG
-        xmin, ymin = project_to_new_sr(xmin, ymin, spatial_ref, target_epsg)
-        xmax, ymax = project_to_new_sr(xmax, ymax, spatial_ref, target_epsg)
-
-    return xmin, ymin, xmax, ymax
-
-
-# Get the coordinates from polygon feature layer
-def get_polygon_coords(in_poly):
-    """Extract coordinates from a polygon feature layer and convert to WGS 84.
-
-    Args:
-        in_poly (str): Input polygon feature layer path/name
-
-    Returns:
-        list: List of polygon coordinates in WGS 84
-    """
-    spatial_ref = arcpy.Describe(in_poly).spatialReference
-    poly_prj = spatial_ref.PCSCode
-    if poly_prj == 0:
-        poly_prj = spatial_ref.GCSCode
-    arcpy.AddMessage("Input feature layer projection CRS is " + str(poly_prj))
-
-    # Project input feature to EPSG:4326 if needed
-    target_poly = in_poly
-    if str(poly_prj) not in "EPSG:4326":
-        arcpy.AddMessage("Projecting input feature layer to EPSG:4326 ...")
-        out_sr = arcpy.SpatialReference(4326)
-        arcpy.Project_management(in_poly, "poly_temp", out_sr)
-        target_poly = "poly_temp"
-
-    # convert input feature to geojson
-    arcpy.FeaturesToJSON_conversion(
-        target_poly, "temp.geojson", "FORMATTED", "", "", "GEOJSON"
-    )
-
-    # Read the GeoJSON file
-    upper_path = os.path.dirname(arcpy.env.workspace)
-    file_geojson = os.path.join(upper_path, "temp.geojson")
-    with open(file_geojson) as f:
-        geojson_data = json.load(f)
-
-    # Collect polygon object coordinates
-    coords = []
-    for feature in geojson_data["features"]:
-        coords.append(feature["geometry"]["coordinates"])
-    arcpy.AddMessage("Total number of polygon objects: " + str(len(coords)))
-
-    # Delete temporary geojson
-    if target_poly == "poly_temp":
-        arcpy.management.Delete("poly_temp")
-    arcpy.management.Delete(file_geojson)
-
-    return coords
-
-
-# Check whether use projection or crs code for image to xarray dataset
-def whether_use_projection(ic):
-    """Check whether to use projection or CRS code for image to xarray dataset.
-
-    Args:
-        ic (ee.ImageCollection): Input image collection
-
-    Returns:
-        bool: True if projection should be used, False if CRS code should be used
-    """
-    # Start with original projection
-    prj = ic.first().select(0).projection()
-    # Check crs code
-    crs_code = prj.crs().getInfo()
-    # Three scenarios: EPSG is unknown, EPSG is 4326, EPSG is others
-    if (crs_code is None) or (crs_code == "EPSG:4326"):
-        use_projection = True
-        arcpy.AddMessage("Open dataset with projection")
-    # ESPG is others
-    # ValueError: cannot convert float NaN to integer will occur if using projection
-    else:
-        use_projection = False
-        arcpy.AddMessage("Open dataset with CRS code")
-
-    return use_projection
-
-
-# Download GEE Image to GeoTiff
-def image_to_geotiff(
-    ic,
-    bands,
-    crs,
-    scale_ds,
-    roi,
-    use_projection,
-    out_tiff,
-):
-    """Download a GEE Image to GeoTiff format.
-
-    Args:
-        ic (ee.ImageCollection): Input image collection
-        bands (list): List of band names to include
-        crs (str): Coordinate reference system
-        scale_ds (float): Scale/resolution for downloading
-        roi (ee.Geometry): Region of interest geometry
-        use_projection (bool): Whether to use projection or CRS code
-        out_tiff (str): Output GeoTiff file path
-    """
-    import rasterio
-    from rasterio.transform import from_origin
-
-    prj = ic.first().select(0).projection()
-    crs_code = prj.crs().getInfo()
-
-    # When EPSG is unknown or 4326, use projection
-    if use_projection:
-        ds = xarray.open_dataset(
-            ic,
-            engine="ee",
-            projection=prj,
-            scale=scale_ds,
-            **({"geometry": roi} if roi is not None else {}),
-        )
-        # Use either X/Y or lat/lon depending on the availability
-        if "X" in list(ds.variables.keys()):
-            arcpy.AddMessage("Use X/Y to define tranform")
-            transform = from_origin(
-                ds["X"].values[0], ds["Y"].values[-1], scale_ds, -scale_ds
-            )
-        else:
-            arcpy.AddMessage("Use lat/lon to define transform")
-            scale_x = abs(ds["lon"].values[0] - ds["lon"].values[1])
-            scale_y = abs(ds["lat"].values[0] - ds["lat"].values[1])
-            transform = from_origin(
-                ds["lon"].values[0], ds["lat"].values[-1], scale_x, -scale_y
-            )
-    # ESPG is others, use crs code
-    # ValueError: cannot convert float NaN to integer will occur if using projection
-    else:
-        ds = xarray.open_dataset(
-            ic,
-            engine="ee",
-            crs=crs_code,
-            scale=scale_ds,
-            **({"geometry": roi} if roi is not None else {}),
-        )
-        if "X" in list(ds.variables.keys()):
-            arcpy.AddMessage("Use X/Y to define tranform")
-            transform = from_origin(
-                ds["X"].values[0], ds["Y"].values[0], scale_ds, -scale_ds
-            )
-        else:
-            arcpy.AddMessage("Use lat/lon to define transform")
-            scale_x = abs(ds["lon"].values[0] - ds["lon"].values[1])
-            scale_y = abs(ds["lat"].values[0] - ds["lat"].values[1])
-            transform = from_origin(
-                ds["lon"].values[0], ds["lat"].values[0], scale_x, -scale_y
-            )
-    # Display transform parameters
-    arcpy.AddMessage(transform)
-
-    meta = {
-        "driver": "GTiff",
-        "height": ds[bands[0]].shape[2],
-        "width": ds[bands[0]].shape[1],
-        "count": len(bands),  # Number of bands
-        "dtype": ds[bands[0]].dtype,  # Data type of the array
-        "crs": crs,  # Coordinate Reference System, change if needed
-        "transform": transform,
-    }
-
-    # Store band names
-    band_names = {}
-    i = 1
-    for iband in bands:
-        band_names["band_" + str(i)] = iband
-        i += 1
-
-    # Write the array to a multiband GeoTIFF file
-    arcpy.AddMessage("Save image to " + out_tiff + " ...")
-    i = 1
-    with rasterio.open(out_tiff, "w", **meta) as dst:
-        for iband in bands:
-            if use_projection:
-                dst.write(np.flipud(np.transpose(ds[iband].values[0])), i)
-            else:
-                dst.write(np.transpose(ds[iband].values[0]), i)
-
-            i += 1
-        # write band names into output tiff
-        dst.update_tags(**band_names)
-    return
-
-
-# Upload local file to Google Cloud Storage bucket
-def upload_to_gcs_bucket(
-    storage_client, bucket_name, source_file_name, destination_blob_name
-):
-    """Upload a local file to Google Cloud Storage bucket.
-
-    Args:
-        storage_client (google.cloud.storage.Client): Storage client instance
-        bucket_name (str): Name of the GCS bucket
-        source_file_name (str): Local file path to upload
-        destination_blob_name (str): Destination path in GCS bucket
-    """
-    arcpy.AddMessage("Upload to Google Cloud Storage ...")
-    # Get the bucket that the file will be uploaded to
-    bucket = storage_client.bucket(bucket_name)
-
-    # Create a new blob and upload the file's content
-    blob = bucket.blob(destination_blob_name)
-
-    # Upload the file
-    blob.upload_from_filename(source_file_name)
-
-    full_blob_name = bucket_name + "/" + destination_blob_name
-    arcpy.AddMessage(f"File {source_file_name} has been uploaded to {full_blob_name}.")
-
-
-# Convert Google Cloud Storage file to Earth Engine asset
-def gcs_file_to_ee_asset(asset_type, asset_id, bucket_uri):
-    """Convert a Google Cloud Storage file to an Earth Engine asset.
-
-    Args:
-        asset_type (str): Type of Earth Engine asset to create
-        asset_id (str): ID for the new Earth Engine asset
-        bucket_uri (str): URI of the file in Google Cloud Storage
-    """
-    import subprocess
-
-    arcpy.AddMessage("Convert Google Cloud Storage file to Earth Engine asset ...")
-    arcpy.AddMessage("Upload " + bucket_uri + " to " + asset_id)
-    # Define the Earth Engine CLI command
-    command = [
-        "earthengine",
-        "upload",
-        asset_type,
-        "--asset_id=" + asset_id,
-        bucket_uri,
-    ]
-
-    # Run the command
-    process = subprocess.run(
-        command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-
-    # Output the result
-    arcpy.AddMessage(process.stdout.decode("utf-8"))
-
-
-# Create an Earth Engine image collection
-def create_image_collection(asset_folder):
-    """Create an Earth Engine image collection.
-
-    Args:
-        asset_folder (str): Path where the image collection will be created
-    """
-    import subprocess
-
-    arcpy.AddMessage("Create an Earth Engine image collection ...")
-    # Define the Earth Engine CLI command
-    command = [
-        "earthengine",
-        "create",
-        "collection",
-        asset_folder,
-    ]
-
-    # Run the command
-    process = subprocess.run(
-        command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-
-    # Output the result
-    arcpy.AddMessage(process.stdout.decode("utf-8"))
-
-
-# Create a folder on Earth Engine
-def create_ee_folder(asset_folder):
-    """Create a folder on Earth Engine.
-
-    Args:
-        asset_folder (str): Path where the folder will be created
-    """
-    import subprocess
-
-    arcpy.AddMessage("Create an Earth Engine folder ...")
-    # Define the Earth Engine CLI command
-    command = [
-        "earthengine",
-        "create",
-        "folder",
-        asset_folder,
-    ]
-
-    # Run the command
-    process = subprocess.run(
-        command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-
-    # Output the result
-    arcpy.AddMessage(process.stdout.decode("utf-8"))
-
-
-# Check if an Earth Engine asset already exists
-def asset_exists(asset_id):
-    """Check if an Earth Engine asset already exists.
-
-    Args:
-        asset_id (str): ID of the Earth Engine asset to check
-
-    Returns:
-        bool: True if asset exists, False otherwise
-    """
-    try:
-        # Try to retrieve asset information
-        ee.data.getAsset(asset_id)
-        return True
-    except ee.EEException:
-        # Asset does not exist
-        return False
-
-
-# List all folders in the bucket
-def list_folders_recursive(storage_client, bucket_name, prefix=""):
-    """Recursively list all folders in a Google Cloud Storage bucket.
-
-    Args:
-        storage_client (google.cloud.storage.Client): Storage client instance
-        bucket_name (str): Name of the GCS bucket
-        prefix (str, optional): Prefix to filter folders. Defaults to "".
-
-    Returns:
-        list: Sorted list of folder paths in the bucket
-    """
-    # List blobs with a delimiter to group them by "folders"
-    blobs = storage_client.list_blobs(bucket_name, prefix=prefix, delimiter="/")
-
-    # Need this code to active blob prefixes, otherwise, blob.prefixes are empty
-    for blob in blobs:
-        blob_name = blob.name
-
-    folder_list = []
-    # Folders are stored in the prefixes attribute
-    if blobs.prefixes:
-        for folder in blobs.prefixes:
-            folder_list.append(folder)
-            # Recursively call the function to go deeper into the folder
-            folder_list.extend(
-                list_folders_recursive(storage_client, bucket_name, prefix=folder)
-            )
-
-    return sorted(folder_list)
-
-
-# List files within a folder in the bucket
-def list_files_in_folder(storage_client, bucket_name, folder_name):
-    """List files within a specified folder in a Google Cloud Storage bucket.
-
-    Args:
-        storage_client (google.cloud.storage.Client): Storage client instance
-        bucket_name (str): Name of the GCS bucket
-        folder_name (str): Path to the folder within the bucket
-
-    Returns:
-        list: List of file paths within the specified folder
-    """
-    blobs = storage_client.list_blobs(bucket_name, prefix=folder_name)
-
-    # Filter out any "folders" (items ending with a trailing slash)
-    files = [blob.name for blob in blobs if not blob.name.endswith("/")]
-
-    return files
 
 
 """ Toolbox """
@@ -1562,7 +134,7 @@ class GEEInit:
         project_id = parameters[0].valueAsText
         workload_tag = parameters[1].valueAsText
 
-        init_and_set_tags(project_id, workload_tag)
+        arcgee.data.init_and_set_tags(project_id, workload_tag)
 
         return
 
@@ -1729,7 +301,7 @@ class GEEAuth:
         def authenticate_earth_engine(project_id):
             try:
                 ee.Authenticate()
-                init_and_set_tags(project_id, workload_tag)
+                arcgee.data.init_and_set_tags(project_id, workload_tag)
                 arcpy.AddMessage("Authentication successful")
             except Exception as e:
                 arcpy.AddMessage(f"Authentication failed: {e}")
@@ -1836,7 +408,7 @@ class AddImg2MapbyID:
         # Update only when filter list is empty
         if img_id and not parameters[1].filter.list:
             # clean asset id string to remove whitespace, quotes, and trailing slash
-            img_id = clean_asset_id(img_id)
+            img_id = arcgee.data.clean_asset_id(img_id)
             image = ee.Image(img_id)
             band_names = image.bandNames()
             band_list = band_names.getInfo()
@@ -1909,7 +481,7 @@ class AddImg2MapbyID:
             vis_params["palette"] = palette
 
         # Get image by label
-        img_id = clean_asset_id(img_id)
+        img_id = arcgee.data.clean_asset_id(img_id)
         img = ee.Image(img_id)
         # Get the map ID and token
         map_id_dict = img.getMapId(vis_params)
@@ -1929,8 +501,8 @@ class AddImg2MapbyID:
 
         # Zoom to image centroid if provided by dataset
         try:
-            centroid_coords, bounds_coords = get_object_centroid(img, 1)
-            zoom_to_point(aprx, centroid_coords, bounds_coords)
+            centroid_coords, bounds_coords = arcgee.data.get_object_centroid(img, 1)
+            arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
         except:
             pass
 
@@ -2120,8 +692,8 @@ class AddImg2MapbyObj:
 
         # Zoom to image centroid if provided by dataset
         try:
-            centroid_coords, bounds_coords = get_object_centroid(img, 1)
-            zoom_to_point(aprx, centroid_coords, bounds_coords)
+            centroid_coords, bounds_coords = arcgee.data.get_object_centroid(img, 1)
+            arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
         except:
             pass
         return
@@ -2277,7 +849,7 @@ class AddImgCol2MapbyID:
         if parameters[3].value:
             # Disable input coordinates if map extent is used
             parameters[2].enabled = False
-            xmin, ymin, xmax, ymax = get_map_view_extent()
+            xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             # Get the centroid of map extent
             lon = (xmin + xmax) / 2
             lat = (ymin + ymax) / 2
@@ -2298,7 +870,7 @@ class AddImgCol2MapbyID:
         # Only retrieve the list of images, when either filter dates or filter bounds are selected
         # if asset_id and ((start_date and end_date) or (lon and lat)):
         if asset_id:
-            asset_id = clean_asset_id(asset_id)
+            asset_id = arcgee.data.clean_asset_id(asset_id)
             collection = ee.ImageCollection(asset_id)
             # Filter image collection as specified
             if lon is not None and lat is not None:
@@ -2307,7 +879,7 @@ class AddImgCol2MapbyID:
                 )
             if start_date is not None and end_date is not None:
                 collection = collection.filterDate(start_date, end_date)
-            # Get image IDs from collection, limit to 50 images to avoid slow response
+            # Get image IDs from collection, limit to 100 images to avoid slow response
             image_ids = collection.limit(100).aggregate_array("system:index").getInfo()
             parameters[4].filter.list = image_ids
 
@@ -2355,7 +927,7 @@ class AddImgCol2MapbyID:
         gamma_str = parameters[8].valueAsText
         palette_str = parameters[9].valueAsText
 
-        asset_id = clean_asset_id(asset_id)
+        asset_id = arcgee.data.clean_asset_id(asset_id)
         # Construct asset id for selected image
         img_id = asset_id + "/" + img_name
 
@@ -2417,8 +989,8 @@ class AddImgCol2MapbyID:
 
         # Zoom to image centroid if provided by dataset
         try:
-            centroid_coords, bounds_coords = get_object_centroid(img, 1)
-            zoom_to_point(aprx, centroid_coords, bounds_coords)
+            centroid_coords, bounds_coords = arcgee.data.get_object_centroid(img, 1)
+            arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
         except:
             pass
 
@@ -2441,7 +1013,7 @@ class AddImgCol2MapbyID:
             if parameters[3].value:
                 # Disable input coordinates if map extent is used
                 parameters[2].enabled = False
-                xmin, ymin, xmax, ymax = get_map_view_extent()
+                xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
                 # Get the centroid of map extent
                 lon = (xmin + xmax) / 2
                 lat = (ymin + ymax) / 2
@@ -2563,7 +1135,7 @@ class AddImgCol2MapbyObj:
             collection = ee.ImageCollection(arcgee.data.load_ee_result(json_path))
             # Only fill the image id filter list when it is empty
             if not parameters[1].filter.list:
-                # Get image IDs from collection, limit to 100 to avoid slow response
+                # Get image IDs from collection, limit to 100 images to avoid slow response
                 image_names = (
                     collection.limit(100).aggregate_array("system:index").getInfo()
                 )
@@ -2676,8 +1248,8 @@ class AddImgCol2MapbyObj:
 
         # Zoom to image centroid if provided by dataset
         try:
-            centroid_coords, bounds_coords = get_object_centroid(img, 1)
-            zoom_to_point(aprx, centroid_coords, bounds_coords)
+            centroid_coords, bounds_coords = arcgee.data.get_object_centroid(img, 1)
+            arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
         except:
             pass
 
@@ -2751,25 +1323,32 @@ class AddFeatCol2MapbyID:
 
         param3 = arcpy.Parameter(
             name="filter_bounds",
+            displayName="Select the type of filter-by-location",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+
+        param3.filter.list = [
+            "Coordinates (Point)",
+            "Map Centroid (Point)",
+            "Polygon (Area)",
+            "Map Extent (Area)",
+        ]
+
+        param4 = arcpy.Parameter(
+            name="use_coords",
             displayName="Filter by location in coordinates",
             datatype="GPValueTable",
             direction="Input",
             parameterType="Optional",
         )
-        param3.columns = [["GPString", "Longitude"], ["GPString", "Latitude"]]
-
-        param4 = arcpy.Parameter(
-            name="use_centroid",
-            displayName="Use the center of the current map view extent (point)",
-            datatype="GPBoolean",
-            direction="Input",
-            parameterType="Optional",
-        )
+        param4.columns = [["GPString", "Longitude"], ["GPString", "Latitude"]]
 
         param5 = arcpy.Parameter(
-            name="use_extent",
-            displayName="Use the current map view extent (area)",
-            datatype="GPBoolean",
+            name="use_poly",
+            displayName="Choose a polygon as region of interest",
+            datatype="GPFeatureLayer",
             direction="Input",
             parameterType="Optional",
         )
@@ -2857,7 +1436,7 @@ class AddFeatCol2MapbyID:
         asset_id = parameters[0].valueAsText
 
         if asset_id and not parameters[1].filters[0].list:
-            asset_id = clean_asset_id(asset_id)
+            asset_id = arcgee.data.clean_asset_id(asset_id)
             fc = ee.FeatureCollection(asset_id)
             prop_names = fc.first().propertyNames().getInfo()
             parameters[1].filters[0].list = sorted(prop_names)
@@ -2866,21 +1445,13 @@ class AddFeatCol2MapbyID:
         if not asset_id:
             parameters[1].filters[0].list = []
 
-        # Disable input coordinates if map extent is used
-        if parameters[4].value:
-            parameters[3].enabled = False
-            parameters[5].enabled = False
-        else:
-            parameters[3].enabled = True
-            parameters[5].enabled = True
+        parameters[4].enabled = False
+        parameters[5].enabled = False
 
-        # Disable centoer of map extent if map extent is used
-        if parameters[5].value:
-            # parameters[3].enabled = False
-            parameters[4].enabled = False
-        else:
-            # parameters[3].enabled = True
+        if parameters[3].valueAsText == "Coordinates (Point)":
             parameters[4].enabled = True
+        elif parameters[3].valueAsText == "Polygon (Area)":
+            parameters[5].enabled = True
 
         return
 
@@ -2889,7 +1460,7 @@ class AddFeatCol2MapbyID:
         parameter. This method is called after internal validation."""
         # Make sure the input datatype is feature collection
         if parameters[0].valueAsText:
-            check_ee_datatype(parameters[0], "TABLE")
+            arcgee.data.check_ee_datatype(parameters[0], "TABLE")
 
         # Make sure property name is only used once
         prop_list = []
@@ -2910,9 +1481,10 @@ class AddFeatCol2MapbyID:
         The source code of the tool.
         """
         asset_id = parameters[0].valueAsText
+        filter_bounds = parameters[3].valueAsText
         feat_color = parameters[6].valueAsText
 
-        asset_id = clean_asset_id(asset_id)
+        asset_id = arcgee.data.clean_asset_id(asset_id)
 
         # point_shape= parameters[2].valueAsText
         # point_size = parameters[3].valueAsText
@@ -2983,30 +1555,41 @@ class AddFeatCol2MapbyID:
             fc = fc.filterDate(start_date, end_date)
 
         # Filter by bounds if specified
-        if parameters[4].value or parameters[5].value:  # Use map extent
-            xmin, ymin, xmax, ymax = get_map_view_extent()
-            # Filter by point
-            if parameters[4].value:
-                # Get the centroid of map extent
-                lon = (xmin + xmax) / 2
-                lat = (ymin + ymax) / 2
-                fc = fc.filterBounds(ee.Geometry.Point((float(lon), float(lat))))
-            else:  # filter by area
-                roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
-                fc = fc.filterBounds(roi)
+        if filter_bounds:
+            arcpy.AddMessage("Filter by bounds ...")
 
-        else:  # use input coordinates
-            if parameters[3].valueAsText:
-                val_list = parameters[3].values
+        if filter_bounds == "Coordinates (Point)":
+            if parameters[4].valueAsText:
+                val_list = parameters[4].values
                 lon = val_list[0][0]
                 lat = val_list[0][1]
                 fc = fc.filterBounds(ee.Geometry.Point((float(lon), float(lat))))
-            else:  # no filter by bounds
-                lon = None
-                lat = None
+        elif filter_bounds == "Map Centroid (Point)":
+            xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
+            # Get the centroid of map extent
+            lon = (xmin + xmax) / 2
+            lat = (ymin + ymax) / 2
+            fc = fc.filterBounds(ee.Geometry.Point((float(lon), float(lat))))
+        elif filter_bounds == "Map Extent (Area)":
+            xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
+            roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
+            fc = fc.filterBounds(roi)
+        elif filter_bounds == "Polygon (Area)":
+            if parameters[5].valueAsText:
+                # Get input feature coordinates to list
+                coords = arcgee.data.get_polygon_coords(parameters[5].valueAsText)
+                # Create an Earth Engine MultiPolygon from the GeoJSON
+                roi = ee.Geometry.MultiPolygon(coords)
+                fc = fc.filterBounds(roi)
+
+        # Limit the number of features to 100,000 to avoid slow response
+        fc = fc.limit(100000)
 
         # Feature collection could contain zero record after filters
         if fc.size().getInfo() > 0:
+            arcpy.AddMessage(
+                "Google Earth Engine is preparing the map URL of the selected dataset ..."
+            )
             # Get the map ID and token
             map_id_dict = fc.getMapId(vis_params)
 
@@ -3014,6 +1597,7 @@ class AddFeatCol2MapbyID:
             map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
 
             # Add map URL to the current ArcMap
+            arcpy.AddMessage("Adding the map URL to ArcGIS ...")
             aprx = arcpy.mp.ArcGISProject("CURRENT")
             aprxMap = aprx.listMaps("Map")[0]
             tsl = aprxMap.addDataFromPath(map_url)
@@ -3021,8 +1605,8 @@ class AddFeatCol2MapbyID:
 
             # Zoom to feature collection centroid if provided by dataset
             try:
-                centroid_coords, bounds_coords = get_object_centroid(fc, 1)
-                zoom_to_point(aprx, centroid_coords, bounds_coords)
+                centroid_coords, bounds_coords = arcgee.data.get_object_centroid(fc, 1)
+                arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
             except:
                 pass
 
@@ -3202,8 +1786,15 @@ class AddFeatCol2MapbyObj:
         # if opacity :
         #     vis_params['fillColorOpacity'] = float(opacity)
 
+        # Limit the number of features to 100,000 to avoid slow response
+        fc = fc.limit(100000)
+        # Get the map ID and token
+
         # Feature collection could contain zero record after filters
         if fc.size().getInfo() > 0:
+            arcpy.AddMessage(
+                "Google Earth Engine is preparing the map URL of the selected dataset ..."
+            )
             # Get the map ID and token
             map_id_dict = fc.getMapId(vis_params)
 
@@ -3211,6 +1802,7 @@ class AddFeatCol2MapbyObj:
             map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
 
             # Add map URL to the current ArcMap
+            arcpy.AddMessage("Adding the map URL to ArcGIS ...")
             aprx = arcpy.mp.ArcGISProject("CURRENT")
             aprxMap = aprx.listMaps("Map")[0]
             tsl = aprxMap.addDataFromPath(map_url)
@@ -3218,8 +1810,8 @@ class AddFeatCol2MapbyObj:
 
             # Zoom to feature collection centroid if provided by dataset
             try:
-                centroid_coords, bounds_coords = get_object_centroid(fc, 1)
-                zoom_to_point(aprx, centroid_coords, bounds_coords)
+                centroid_coords, bounds_coords = arcgee.data.get_object_centroid(fc, 1)
+                arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
             except:
                 pass
 
@@ -3337,7 +1929,7 @@ class DownloadImgbyID:
 
         # Update only when filter list is empty
         if img_id and not parameters[1].filter.list:
-            img_id = clean_asset_id(img_id)
+            img_id = arcgee.data.clean_asset_id(img_id)
             image = ee.Image(img_id)
             band_names = image.bandNames()
             band_list = band_names.getInfo()
@@ -3404,18 +1996,18 @@ class DownloadImgbyID:
             out_tiff = out_tiff + ".tif"
 
         # Check image projection
-        asset_id = clean_asset_id(asset_id)
+        asset_id = arcgee.data.clean_asset_id(asset_id)
         image = ee.Image(asset_id)
 
         # Get the region of interests
         # Use map view extent if checked
         if use_extent == "true":
-            xmin, ymin, xmax, ymax = get_map_view_extent()
+            xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
         # Use input feature layer as ROI
         elif in_poly:
             # Get input feature coordinates to list
-            coords = get_polygon_coords(in_poly)
+            coords = arcgee.data.get_polygon_coords(in_poly)
             # Create an Earth Engine MultiPolygon from the GeoJSON
             roi = ee.Geometry.MultiPolygon(coords)
         # Not using any ROI, download entire image
@@ -3445,9 +2037,9 @@ class DownloadImgbyID:
         image = image.select(bands_only)
 
         # check if use projection
-        use_projection = whether_use_projection(image)
+        use_projection = arcgee.data.whether_use_projection(image)
         # download image as geotiff
-        image_to_geotiff(
+        arcgee.data.image_to_geotiff(
             image, bands_only, crs, scale_ds, roi, use_projection, out_tiff
         )
 
@@ -3636,12 +2228,12 @@ class DownloadImgbyObj:
         # Get the region of interests
         # Use map view extent if checked
         if use_extent == "true":
-            xmin, ymin, xmax, ymax = get_map_view_extent()
+            xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
         # Use input feature layer as ROI
         elif in_poly:
             # Get input feature coordinates to list
-            coords = get_polygon_coords(in_poly)
+            coords = arcgee.data.get_polygon_coords(in_poly)
             # Create an Earth Engine MultiPolygon from the GeoJSON
             roi = ee.Geometry.MultiPolygon(coords)
         # Not using any ROI, download entire image
@@ -3671,9 +2263,9 @@ class DownloadImgbyObj:
         image = image.select(bands_only)
 
         # check if use projection
-        use_projection = whether_use_projection(image)
+        use_projection = arcgee.data.whether_use_projection(image)
         # download image as geotiff
-        image_to_geotiff(
+        arcgee.data.image_to_geotiff(
             image, bands_only, crs, scale_ds, roi, use_projection, out_tiff
         )
 
@@ -3837,7 +2429,7 @@ class DownloadImgColbyID:
         if parameters[3].value:  # use map extent
             # Disable input coordinates if map extent is used
             parameters[2].enabled = False
-            xmin, ymin, xmax, ymax = get_map_view_extent()
+            xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             # Get the centroid of map extent
             lon = (xmin + xmax) / 2
             lat = (ymin + ymax) / 2
@@ -3858,7 +2450,7 @@ class DownloadImgColbyID:
         # Only retrieve the list of images, when either filter dates or filter bounds are selected
         # if asset_id and ((start_date and end_date) or (lon and lat)):
         if asset_id:
-            asset_id = clean_asset_id(asset_id)
+            asset_id = arcgee.data.clean_asset_id(asset_id)
             collection = ee.ImageCollection(asset_id)
             # Filter image collection as specified
             if lon is not None and lat is not None:
@@ -3944,12 +2536,12 @@ class DownloadImgColbyID:
         # Get the region of interests
         # Use map view extent if checked
         if use_extent == "true":
-            xmin, ymin, xmax, ymax = get_map_view_extent()
+            xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
         # Use input feature layer as ROI
         elif in_poly:
             # Get input feature coordinates to list
-            coords = get_polygon_coords(in_poly)
+            coords = arcgee.data.get_polygon_coords(in_poly)
             # Create an Earth Engine MultiPolygon from the GeoJSON
             roi = ee.Geometry.MultiPolygon(coords)
         # Not using any ROI, download entire image
@@ -3959,7 +2551,7 @@ class DownloadImgColbyID:
         # Get the scale for xarray dataset
         scale_ds = float(scale)
 
-        asset_id = clean_asset_id(asset_id)
+        asset_id = arcgee.data.clean_asset_id(asset_id)
         # Check first image projection
         image = ee.Image(asset_id + "/" + img_name_list[0])
 
@@ -3976,7 +2568,7 @@ class DownloadImgColbyID:
 
         # Check if use projection or crs code
         image = ee.ImageCollection(image)
-        use_projection = whether_use_projection(image)
+        use_projection = arcgee.data.whether_use_projection(image)
 
         out_tiff_list = []
         # Iterate each selected image
@@ -3993,10 +2585,30 @@ class DownloadImgColbyID:
             image = ee.ImageCollection(ee.Image(img_id))
             # Filter image by selected bands
             image = image.select(bands_only)
+            if roi is None:
+                try:
+                    arcpy.AddMessage("Try to get ROI from the object ...")
+                    # get extend of the object
+                    centroid_coords, bounds_coords = arcgee.data.get_object_centroid(
+                        image, 1
+                    )
+                    x_min, y_min, x_max, y_max = arcgee.data.convert_coords_to_bbox(
+                        bounds_coords
+                    )
+                    arcpy.AddMessage([x_min, y_min, x_max, y_max])
+                    roi_used = ee.Geometry.BBox(x_min, y_min, x_max, y_max)
+                except:
+                    arcpy.AddWarning(
+                        "No ROI provided, download entire image ... This may cause memory issues!"
+                    )
+                    roi_used = None
+
+            else:
+                roi_used = roi
 
             # download image as geotiff
-            image_to_geotiff(
-                image, bands_only, crs, scale_ds, roi, use_projection, out_tiff
+            arcgee.data.image_to_geotiff(
+                image, bands_only, crs, scale_ds, roi_used, use_projection, out_tiff
             )
 
         # Add out tiff to map layer
@@ -4213,12 +2825,12 @@ class DownloadImgColbyObj:
         # Get the region of interests
         # Use map view extent if checked
         if use_extent == "true":
-            xmin, ymin, xmax, ymax = get_map_view_extent()
+            xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
         # Use input feature layer as ROI
         elif in_poly:
             # Get input feature coordinates to list
-            coords = get_polygon_coords(in_poly)
+            coords = arcgee.data.get_polygon_coords(in_poly)
             # Create an Earth Engine MultiPolygon from the GeoJSON
             roi = ee.Geometry.MultiPolygon(coords)
         # Not using any ROI, download entire image
@@ -4244,7 +2856,7 @@ class DownloadImgColbyObj:
 
         # Check if use projection or crs code
         image = ee.ImageCollection(image)
-        use_projection = whether_use_projection(image)
+        use_projection = arcgee.data.whether_use_projection(image)
 
         out_tiff_list = []
         # Iterate each selected image
@@ -4262,9 +2874,30 @@ class DownloadImgColbyObj:
             # Filter image by selected bands
             image = image.select(bands_only)
 
+            if roi is None:
+                try:
+                    arcpy.AddMessage("Try to get ROI from the object ...")
+                    # get extend of the object
+                    centroid_coords, bounds_coords = arcgee.data.get_object_centroid(
+                        image, 1
+                    )
+                    x_min, y_min, x_max, y_max = arcgee.data.convert_coords_to_bbox(
+                        bounds_coords
+                    )
+                    arcpy.AddMessage([x_min, y_min, x_max, y_max])
+                    roi_used = ee.Geometry.BBox(x_min, y_min, x_max, y_max)
+                except:
+                    arcpy.AddWarning(
+                        "No ROI provided, download entire image ... This may cause memory issues!"
+                    )
+                    roi_used = None
+
+            else:
+                roi_used = roi
+
             # download image as geotiff
-            image_to_geotiff(
-                image, bands_only, crs, scale_ds, roi, use_projection, out_tiff
+            arcgee.data.image_to_geotiff(
+                image, bands_only, crs, scale_ds, roi_used, use_projection, out_tiff
             )
 
         # Add out tiff to map layer
@@ -4414,7 +3047,7 @@ class DownloadImgColbyIDMultiRegion:
         # Only retrieve the list of images, when either filter dates or filter bounds are selected
         # if asset_id and ((start_date and end_date) or (lon and lat)):
         if asset_id:
-            asset_id = clean_asset_id(asset_id)
+            asset_id = arcgee.data.clean_asset_id(asset_id)
             collection = ee.ImageCollection(asset_id)
             # Filter image collection as specified
             if start_date is not None and end_date is not None:
@@ -4471,7 +3104,7 @@ class DownloadImgColbyIDMultiRegion:
         out_folder = parameters[7].valueAsText
         load_tiff = parameters[8].valueAsText
 
-        asset_id = clean_asset_id(asset_id)
+        asset_id = arcgee.data.clean_asset_id(asset_id)
         collection = ee.ImageCollection(asset_id)
 
         # Get the filter dates
@@ -4487,7 +3120,7 @@ class DownloadImgColbyIDMultiRegion:
             collection = collection.filterDate(start_date, end_date)
 
         # Get the coordinate list of the selected polygons
-        coords_list = get_polygon_coords(in_poly)
+        coords_list = arcgee.data.get_polygon_coords(in_poly)
 
         # Get the selected bands
         # Remove ' in band string in case user adds it
@@ -4516,7 +3149,7 @@ class DownloadImgColbyIDMultiRegion:
 
         # Check if use projection or crs code
         image = ee.ImageCollection(image)
-        use_projection = whether_use_projection(image)
+        use_projection = arcgee.data.whether_use_projection(image)
 
         out_tiff_list = []
         # Iterate each selected region
@@ -4566,7 +3199,7 @@ class DownloadImgColbyIDMultiRegion:
                 image = image.select(bands_only)
 
                 # download image as geotiff
-                image_to_geotiff(
+                arcgee.data.image_to_geotiff(
                     image, bands_only, crs, scale_ds, roi, use_projection, out_tiff
                 )
 
@@ -4721,7 +3354,7 @@ class DownloadFeatColbyID:
         asset_id = parameters[0].valueAsText
 
         if asset_id:
-            asset_id = clean_asset_id(asset_id)
+            asset_id = arcgee.data.clean_asset_id(asset_id)
             fc = ee.FeatureCollection(asset_id)
             prop_names = fc.first().propertyNames().getInfo()
             # Update only when filter list is empty
@@ -4750,7 +3383,7 @@ class DownloadFeatColbyID:
         parameter. This method is called after internal validation."""
         # Make sure the input datatype is feature collection
         if parameters[0].valueAsText:
-            check_ee_datatype(parameters[0], "TABLE")
+            arcgee.data.check_ee_datatype(parameters[0], "TABLE")
 
         # Make sure property name is only used once
         prop_list = []
@@ -4776,7 +3409,7 @@ class DownloadFeatColbyID:
         out_filename = parameters[7].valueAsText
         load_feat = parameters[8].value
 
-        asset_id = clean_asset_id(asset_id)
+        asset_id = arcgee.data.clean_asset_id(asset_id)
 
         # Get image by label
         fc = ee.FeatureCollection(asset_id)
@@ -4830,19 +3463,19 @@ class DownloadFeatColbyID:
                 lat = val_list[0][1]
                 fc = fc.filterBounds(ee.Geometry.Point((float(lon), float(lat))))
         elif filter_bounds == "Map Centroid (Point)":
-            xmin, ymin, xmax, ymax = get_map_view_extent()
+            xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             # Get the centroid of map extent
             lon = (xmin + xmax) / 2
             lat = (ymin + ymax) / 2
             fc = fc.filterBounds(ee.Geometry.Point((float(lon), float(lat))))
         elif filter_bounds == "Map Extent (Area)":
-            xmin, ymin, xmax, ymax = get_map_view_extent()
+            xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
             fc = fc.filterBounds(roi)
         elif filter_bounds == "Polygon (Area)":
             if parameters[5].valueAsText:
                 # Get input feature coordinates to list
-                coords = get_polygon_coords(parameters[5].valueAsText)
+                coords = arcgee.data.get_polygon_coords(parameters[5].valueAsText)
                 # Create an Earth Engine MultiPolygon from the GeoJSON
                 roi = ee.Geometry.MultiPolygon(coords)
                 fc = fc.filterBounds(roi)
@@ -5211,7 +3844,7 @@ class DownloadImgCol2Gif:
         if parameters[3].value:  # use map extent
             # Disable input coordinates if map extent is used
             parameters[2].enabled = False
-            xmin, ymin, xmax, ymax = get_map_view_extent()
+            xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             # Get the centroid of map extent
             lon = (xmin + xmax) / 2
             lat = (ymin + ymax) / 2
@@ -5230,7 +3863,7 @@ class DownloadImgCol2Gif:
 
         # Get image collection
         if asset_id:
-            asset_id = clean_asset_id(asset_id)
+            asset_id = arcgee.data.clean_asset_id(asset_id)
             collection = ee.ImageCollection(asset_id)
             has_filter = False
             # Filter image collection as specified
@@ -5311,7 +3944,7 @@ class DownloadImgCol2Gif:
         if parameters[3].value:  # use map extent
             # Disable input coordinates if map extent is used
             parameters[2].enabled = False
-            xmin, ymin, xmax, ymax = get_map_view_extent()
+            xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             # Get the centroid of map extent
             lon = (xmin + xmax) / 2
             lat = (ymin + ymax) / 2
@@ -5326,7 +3959,7 @@ class DownloadImgCol2Gif:
                 lat = None
 
         # Get image collection
-        asset_id = clean_asset_id(asset_id)
+        asset_id = arcgee.data.clean_asset_id(asset_id)
         collection = ee.ImageCollection(asset_id)
         # Filter image collection as specified
         if lon is not None and lat is not None:
@@ -5375,7 +4008,7 @@ class DownloadImgCol2Gif:
         # Get the region of interests
         # Use map view extent if checked
         if use_extent == "true":  # use map view
-            xmin, ymin, xmax, ymax = get_map_view_extent()
+            xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             bbox = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
             roi = ee.Geometry.Polygon(bbox.coordinates(), None, False)
             # Get the region of interest
@@ -5627,8 +4260,8 @@ class DownloadLandsatTimelapse2Gif:
             start_date = None
             end_date = None
 
-        validate_date(start_date)
-        validate_date(end_date)
+        arcgee.data.validate_date(start_date)
+        arcgee.data.validate_date(end_date)
 
         # Add bands to videoArgs if specfied
         if band_str:
@@ -5643,7 +4276,7 @@ class DownloadLandsatTimelapse2Gif:
         # Get the region of interests
         # Use map view extent if checked
         if roi_type == "Use the current map extent":  # use map view
-            xmin, ymin, xmax, ymax = get_map_view_extent()
+            xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             bbox = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
             roi = ee.Geometry.Polygon(bbox.coordinates(), None, False)
         # Use input feature layer as ROI
@@ -5694,7 +4327,7 @@ class DownloadLandsatTimelapse2Gif:
 
         arcpy.AddMessage(f"Downloading timelapse to : {out_gif}. Please wait ...")
 
-        landsat_timelapse(
+        arcgee.data.landsat_timelapse(
             roi=roi,
             out_gif=out_gif,
             start_year=int(start_date[0:4]) if start_date else None,
@@ -5782,7 +4415,7 @@ class SaveAsset2JSON:
         data_type = parameters[1].valueAsText
         out_json = parameters[2].valueAsText
 
-        asset_id = clean_asset_id(asset_id)
+        asset_id = arcgee.data.clean_asset_id(asset_id)
 
         if not out_json.endswith(".json"):
             out_json = out_json + ".json"
@@ -5913,7 +4546,7 @@ class Upload2GCS:
             # When bucket name is selected, list all available folders
             if parameters[1].valueAsText:
                 bucket_name = parameters[1].valueAsText
-                parameters[2].filter.list = list_folders_recursive(
+                parameters[2].filter.list = arcgee.data.list_folders_recursive(
                     self.storage_client, bucket_name
                 )
 
@@ -5968,14 +4601,16 @@ class Upload2GCS:
         for ifile in file_list:
             file_name = os.path.basename(ifile)
             out_file = bucket_folder + file_name
-            upload_to_gcs_bucket(storage_client, bucket_name, ifile, out_file)
+            arcgee.data.upload_to_gcs_bucket(
+                storage_client, bucket_name, ifile, out_file
+            )
             gcs_file_list.append(out_file)
             # check file extension
             file_extension = os.path.splitext(file_name)[1]
             # For shape file, need to upload accessary files
             if file_extension == ".shp":
                 for extension in [".shx", ".dbf", ".prj", ".cpg"]:
-                    upload_to_gcs_bucket(
+                    arcgee.data.upload_to_gcs_bucket(
                         storage_client,
                         bucket_name,
                         ifile.replace(".shp", extension),
@@ -5995,14 +4630,14 @@ class Upload2GCS:
                 collection_asset_folder = asset_id
                 # for image asset type, create image collection
                 if asset_type == "image":
-                    if not asset_exists(collection_asset_folder):
-                        create_image_collection(collection_asset_folder)
+                    if not arcgee.data.asset_exists(collection_asset_folder):
+                        arcgee.data.create_image_collection(collection_asset_folder)
                     else:
                         arcpy.AddMessage("The image collection already exists.")
                 # if table, create a folder, all files will be uploaded to this folder
                 else:
-                    if not asset_exists(collection_asset_folder):
-                        create_ee_folder(collection_asset_folder)
+                    if not arcgee.data.asset_exists(collection_asset_folder):
+                        arcgee.data.create_ee_folder(collection_asset_folder)
                     else:
                         arcpy.AddMessage("The folder already exists.")
 
@@ -6015,9 +4650,9 @@ class Upload2GCS:
                     # use file name as item id
                     file_name = os.path.splitext(os.path.basename(bucket_uri))[0]
                     item_id = f"{collection_asset_folder}/{file_name}"
-                    gcs_file_to_ee_asset(asset_type, item_id, bucket_uri)
+                    arcgee.data.gcs_file_to_ee_asset(asset_type, item_id, bucket_uri)
                 else:
-                    gcs_file_to_ee_asset(asset_type, asset_id, bucket_uri)
+                    arcgee.data.gcs_file_to_ee_asset(asset_type, asset_id, bucket_uri)
 
         return
 
@@ -6121,7 +4756,7 @@ class GCSFile2Asset:
             # When bucket name is selected, list all available folders
             if parameters[1].valueAsText:
                 bucket_name = parameters[1].valueAsText
-                parameters[2].filter.list = list_folders_recursive(
+                parameters[2].filter.list = arcgee.data.list_folders_recursive(
                     self.storage_client, bucket_name
                 )
 
@@ -6131,7 +4766,7 @@ class GCSFile2Asset:
                 folder_name = parameters[2].valueAsText
                 # only certain formats are accepted as earth engine asset
                 extensions = ("tif", "shp", "csv", "zip", "tfrecord")
-                file_list = list_files_in_folder(
+                file_list = arcgee.data.list_files_in_folder(
                     self.storage_client, bucket_name, folder_name
                 )
                 parameters[3].filter.list = [
@@ -6196,14 +4831,14 @@ class GCSFile2Asset:
             collection_asset_folder = asset_id
             # for image asset type, create image collection
             if asset_type == "image":
-                if not asset_exists(collection_asset_folder):
-                    create_image_collection(collection_asset_folder)
+                if not arcgee.data.asset_exists(collection_asset_folder):
+                    arcgee.data.create_image_collection(collection_asset_folder)
                 else:
                     arcpy.AddMessage("The image collection already exists.")
             # if table, create a folder, all files will be uploaded to this folder
             else:
-                if not asset_exists(collection_asset_folder):
-                    create_ee_folder(collection_asset_folder)
+                if not arcgee.data.asset_exists(collection_asset_folder):
+                    arcgee.data.create_ee_folder(collection_asset_folder)
                 else:
                     arcpy.AddMessage("The folder already exists.")
 
@@ -6219,9 +4854,9 @@ class GCSFile2Asset:
                 # use file name as item id
                 file_name = os.path.splitext(os.path.basename(bucket_uri))[0]
                 item_id = f"{collection_asset_folder}/{file_name}"
-                gcs_file_to_ee_asset(asset_type, item_id, bucket_uri)
+                arcgee.data.gcs_file_to_ee_asset(asset_type, item_id, bucket_uri)
             else:
-                gcs_file_to_ee_asset(asset_type, asset_id, bucket_uri)
+                arcgee.data.gcs_file_to_ee_asset(asset_type, asset_id, bucket_uri)
 
         return
 
@@ -6275,7 +4910,7 @@ class ApplyFilterbyID:
             ["GPString", "Filters"],
             ["GPString", "Arguments"],
         ]
-        filters = get_filter_list()
+        filters = arcgee.data.get_filter_list()
         param2.filters[0].list = filters
 
         param3 = arcpy.Parameter(
@@ -6386,7 +5021,7 @@ class ApplyFilterbyObj:
             ["GPString", "Filters"],
             ["GPString", "Arguments"],
         ]
-        filters = get_filter_list()
+        filters = arcgee.data.get_filter_list()
         param1.filters[0].list = filters
 
         param2 = arcpy.Parameter(
@@ -6533,7 +5168,7 @@ class ApplyMapFunctionbyID:
             map_lib = os.path.splitext(os.path.basename(file_path))[0]
             module = importlib.import_module(map_lib)
 
-            function_list = list_functions_from_script(module)
+            function_list = arcgee.data.list_functions_from_script(module)
             parameters[3].filter.list = function_list
 
         return
@@ -6674,7 +5309,7 @@ class ApplyMapFunctionbyObj:
             map_lib = os.path.splitext(os.path.basename(file_path))[0]
             module = importlib.import_module(map_lib)
 
-            function_list = list_functions_from_script(module)
+            function_list = arcgee.data.list_functions_from_script(module)
             parameters[3].filter.list = function_list
 
         return
@@ -6798,7 +5433,7 @@ class ApplyReducerbyID:
             ["GPString", "Arguments"],
         ]
 
-        filters = get_filter_list()
+        filters = arcgee.data.get_filter_list()
         param4.filters[0].list = filters
 
         param5 = arcpy.Parameter(
@@ -6814,7 +5449,7 @@ class ApplyReducerbyID:
             ["GPString", "Arguments"],
         ]
 
-        reducers = get_reducer_list()
+        reducers = arcgee.data.get_reducer_list()
         param5.filters[0].list = reducers
 
         param6 = arcpy.Parameter(
@@ -6891,7 +5526,7 @@ class ApplyReducerbyID:
         shared_inputs = parameters[6].value
         out_json = parameters[7].valueAsText
 
-        asset_id = clean_asset_id(asset_id)
+        asset_id = arcgee.data.clean_asset_id(asset_id)
 
         # Retrieve the Earth Engine object based on the asset id and data type
         if data_type == "FeatureCollection":
@@ -7043,7 +5678,7 @@ class ApplyReducerbyObj:
             ["GPString", "Arguments"],
         ]
 
-        reducers = get_reducer_list()
+        reducers = arcgee.data.get_reducer_list()
         param4.filters[0].list = reducers
 
         param5 = arcpy.Parameter(

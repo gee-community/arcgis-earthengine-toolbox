@@ -132,7 +132,9 @@ The script initialize the use of Google Earth Engine with a project ID and workl
 
 ### Add Feature Collection to Map by Asset ID
 
-This script adds the Earth Engine Feature Collection dataset to ArcPro as a base map by its asset ID and customizes the visualization parameters. Please note that the dataset is added as a Tiled Service Layer (TSL), which cannot be edited directly. The user will need to download the dataset for analysis in ArcPro. To browse all datasets, please visit this [link](https://developers.google.com/earth-engine/datasets/catalog).
+This script adds the Earth Engine Feature Collection dataset to ArcPro as a base map by its asset ID and customizes the visualization parameters. **To avoid slow response, the feature collection size is limited to 100,000 elements.**
+
+Please note that the dataset is added as a Tiled Service Layer (TSL), which cannot be edited directly. The user will need to download the dataset for analysis in ArcPro. To browse all datasets, please visit this [link](https://developers.google.com/earth-engine/datasets/catalog).
 
 ![Alt Text](images/AddFC2MapbyID.png)
 
@@ -150,6 +152,8 @@ This script adds the Earth Engine Feature Collection dataset to ArcPro as a base
 ### Add Feature Collection to Map by Serialized Object 
 
 This script adds the Earth Engine Feature Collection dataset to ArcPro as a base map by its serialized JSON object and customizes the visualization parameters. The serialized JSON object is the string representation of the dataset. The user can save the serialized Earth Engine object (Image, Image Collection, Feature, Feature Collection, List, Geometry, etc. ) to JSON file. This is helpful when the user filters the dataset and saves the modified dataset for future access. 
+
+**To avoid slow response, the feature collection size is limited to 100,000 elements. If the feature collection size is larger than 100,000 elements after filtering, the script will only display the first 100,000 elements.**
 
 ![Alt Text](images/AddFC2MapbyJSON.png)
 
