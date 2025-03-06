@@ -60,9 +60,11 @@ The `earthengine-api` is then ready for authentication and initialization.
 
 Here is the video guide for the Conda environment setup:
 
-<a href="https://www.youtube.com/watch?v=wuC4rKjKZEQ" target="_blank">
-  <img src="https://img.youtube.com/vi/wuC4rKjKZEQ/0.jpg" alt="Video Title" width="480" height="360" border="10" />
-</a>
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=wuC4rKjKZEQ" target="_blank">
+    <img src="https://img.youtube.com/vi/wuC4rKjKZEQ/0.jpg" alt="Conda Environment Setup Video Guide" width="720" height="405" border="10" />
+  </a>
+</div>
 
 
 ## Download ArcGEE Connector Toolbox
