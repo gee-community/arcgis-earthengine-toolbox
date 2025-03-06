@@ -56,7 +56,16 @@ After running the above commands, close Python Command Prompt, and start ArcPro.
     import xee
     import rasterio
 
-The `earthengine-api` is then ready for authentication and initialization. 
+The `earthengine-api` is then ready for authentication and initialization.
+
+Here is the video guide for the Conda environment setup:
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=wuC4rKjKZEQ" target="_blank">
+    <img src="https://img.youtube.com/vi/wuC4rKjKZEQ/0.jpg" alt="Conda Environment Setup Video Guide" width="720" height="405" border="10" />
+  </a>
+</div>
+
 
 ## Download ArcGEE Connector Toolbox
 
@@ -85,7 +94,7 @@ The ArcGEE Connector Toolbox can be obtained through the following steps:
 
 Google Cloud SDK is required to fully utilize the ArcGEE Connector Toolbox. Specifically, it is used to upload local data to Google Cloud Storage and convert the data to Earth Engine Image objects. 
 
-To install the Google Cloud SDK, admin permissions are often required, especially on systems where the SDK needs to modify system files or be installed for all users. It’s also possible to install the SDK without admin rights if you install it in a user-specific directory. 
+To install the Google Cloud SDK, admin permissions are often required, especially on systems where the SDK needs to modify system files or be installed for all users. It's also possible to install the SDK without admin rights if you install it in a user-specific directory. 
 
 Admin rights are typically only required during installation. Most gcloud commands and operations can be performed without admin rights, provided the user has the correct permissions within Google Cloud.
 
