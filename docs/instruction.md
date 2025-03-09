@@ -98,7 +98,15 @@ The project ID and workload tag are optional inputs here. If the user inputs the
 3.	grants you (or the user) the correct roles and permissions.
 
 
-Please note that if you have installed Google Cloud SDK shell and set up the application default credentials, this script will authenticate Earth Engine using the quota project ID in the `application_default_credentials.json` usually located at `C:\Users\user_name\AppData\Roaming\gcloud`. If you don't have Google Cloud SDK shell, the script will authenticate through the web browser. 
+Please note that if you have installed Google Cloud SDK shell and set up the application default credentials, you don't need to run this script. The Earth Engine has already been authenticated automatically.
+
+Here is the video guide for the Earth Engine authentication:
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=Onke2gSq3wE" target="_blank">
+    <img src="https://img.youtube.com/vi/Onke2gSq3wE/0.jpg" alt="Earth Engine Authentication" width="640" height="360" border="10" />
+  </a>
+</div>
 
 #### Parameters
  1. Google Cloud project ID (Optional)
@@ -129,6 +137,14 @@ The script initialize the use of Google Earth Engine with a project ID and workl
 #### Parameters 
  1. Google Cloud project ID 
  2. Workload tag (Optional)
+
+Here is the video guide for the Earth Engine initialization:
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=jg1FjUxZ8Tc" target="_blank">
+    <img src="https://img.youtube.com/vi/jg1FjUxZ8Tc/0.jpg" alt="Earth Engine Initialization" width="640" height="360" border="10" />
+  </a>
+</div>
 
 ## Data Exploration Tools 
 
