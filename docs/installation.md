@@ -67,17 +67,17 @@ Here is the video guide for the Conda environment setup:
 </div>
 
 
-## Download ArcGEE Connector Toolbox
+## Download the GEE Connector Toolbox
 
-The ArcGEE Connector Toolbox can be obtained through the following steps:
+The GEE Connector can be obtained through the following steps:
 
 ![Alt Text](images/DownloadToolbox.png)
 
-1. Download the repository from this [link](https://github.com/di-private/redlands-desktop-engine/tree/woolpert_dev) using either method:
+1. Download the repository from this [link](https://github.com/gee-community/arcgis-earthengine-toolbox/tree/main) using either method:
    - Clone the repository using git: `git clone https://github.com/di-private/redlands-desktop-engine.git`
    - Or download as ZIP file and extract it to your desired location
 
-   You can download the repository folder to your ArcPro project folder such as `C:\Users\<username>\Documents\ArcGIS\Projects\<project_name>\ArcGEE Connector Toolbox`. Meanwhile, you can also download the repository folder to any other location and connect it to ArcPro. 
+   You can download the repository folder to your ArcPro project folder such as `C:\Users\<username>\Documents\ArcGIS\Projects\<project_name>\GEE Connector`. Meanwhile, you can also download the repository folder to any other location and connect it to ArcPro. 
 
 2. Add the toolbox to ArcPro:
    - Open ArcPro
@@ -90,15 +90,20 @@ The ArcGEE Connector Toolbox can be obtained through the following steps:
 ![Alt Text](images/GEE_toolbox.png)
 
 
+
 ## Google Cloud SDK
 
-Google Cloud SDK is required to fully utilize the ArcGEE Connector Toolbox. Specifically, it is used to upload local data to Google Cloud Storage and convert the data to Earth Engine Image objects. 
+Google Cloud SDK is required to fully utilize the GEE Connector. Specifically, it is used to upload local data to Google Cloud Storage and convert the data to Earth Engine assets.
+
+### Downloading Google Cloud SDK 
+
+Please check this [link](https://cloud.google.com/sdk/docs/install) for instructions of downloading the Google Cloud SDK.     
 
 To install the Google Cloud SDK, admin permissions are often required, especially on systems where the SDK needs to modify system files or be installed for all users. It's also possible to install the SDK without admin rights if you install it in a user-specific directory. 
 
 Admin rights are typically only required during installation. Most gcloud commands and operations can be performed without admin rights, provided the user has the correct permissions within Google Cloud.
 
-When Google Cloud SDK is installed, the Google Cloud default credentials may affect Google Earth Engine authentication through ArcGEE Connector Toolbox. Therefore, it is recommended to modify Google Cloud default credentials to be consistent with the target Google project for Earth Engine. To achieve this, follow the steps below.
+**When Google Cloud SDK is installed, the Google Earth Engine authentication will use Google Cloud Application Default Credentials.** Therefore, the user needs to setup the Google Cloud Application Default Credentials before using Earth Engine. To achieve this, follow the steps below.
 
 ### Finding Your Google Cloud Project ID
 Before proceeding, you'll need your Google Cloud Project ID. To find it:
@@ -116,40 +121,18 @@ The Google Cloud SDK shell (commonly referred to as the gcloud command-line inte
 
 1. In Windows OS, search for "Google Cloud SDK Shell", click to open. To run the Google Cloud SDK Shell as administrator, right-click on the Google Cloud SDK Shell, and select **Run as administrator**. 
 
-   **For the first time setup, skip Step 2 and Step 3, go to Step 4.**
-
-2. Check the active Google account using:
-   ```
-   gcloud auth list
-   ```
-   Make sure the account aligns with the target Google project for Earth Engine. If you need to switch to another account, run:
-   ```
-   gcloud auth login
-   ```
-   A browser window will open asking you to choose the target Google account for Earth Engine.
-
-3. Check the active Google project using:
-   ```
-   gcloud config list
-   ```
-   Verify that the project ID matches your target Google project for Earth Engine. To switch to a different project, run:
-   ```
-   gcloud config set project YOUR_PROJECT_ID
-   ```
-   Replace `YOUR_PROJECT_ID` with the Project ID you found in the Google Cloud Console.
-
-4. For the first time setup, authenticate to create the `application_default_credentials.json` file using:
+2. Authenticate application default login to create the `application_default_credentials.json` file using:
    ```
    gcloud auth application-default login
    ```
-   A browser window will pop up asking you to choose the target Google account and project.
+   A web browser window will pop up asking you to choose the target Google account. Follow the instructions from the web browser to complete the authentication.
    
-   For the existing setup, update the `application_default_credentials.json` file using:
+   To set a specific project ID after application default login, use the command below:
    ```
    gcloud auth application-default set-quota-project QUOTA_PROJECT_ID
    ```
-   Replace `QUOTA_PROJECT_ID` with the Project ID you found in the Google Cloud Console.
+   Replace `QUOTA_PROJECT_ID` with the target project ID. Then the `application_default_credentials.json` file will be updated accordingly. 
 
    **Note:** The `application_default_credentials.json` file is usually located in the `C:\Users\<username>\AppData\Roaming\gcloud` directory.
 
-   After this, when you run `ee.Initialize()`, it will automatically use the default project specified in the `application_default_credentials.json` file.
+   After you successfully authenticate the application default login, your Google Earth Engine is already authenticated. When you run `ee.Initialize()`, it will automatically use the default project ID specified in the `application_default_credentials.json` file.

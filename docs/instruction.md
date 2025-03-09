@@ -1,12 +1,12 @@
-# ArcGEE Connector User Guide
+# GEE Connector User Guide
 
 ## Introduction
 
-This user guide provides instructions for using the ArcGEE Connector, a Python toolbox that allows users to interact with Google Earth Engine (GEE) from ArcGIS Pro. The toolbox provides a set of tools for managing Earth Engine assets, downloading and uploading data, and processing data using Earth Engine's API.
+This user guide provides instructions for using the GEE Connector, a Python toolbox that allows users to interact with Google Earth Engine (GEE) from ArcGIS Pro. The toolbox provides a set of tools for exploring, downloading and uploading, and processing the dataset using Earth Engine Python API.
 
 ## Prerequisites
 
-Before using the ArcGEE Connector, ensure you have the following:
+Before using the toolbox, ensure you have the following:
 
 1. ArcGIS Pro installed on your computer.
 2. Google Earth Engine API enabled for your Google Cloud project.
@@ -79,11 +79,13 @@ A section displays any messages generated during execution, such as progress upd
 
 4. Environment Settings:
 
-Users can modify environment settings like processing extents, output coordinate systems, and cell sizes through an additional expandable menu. **Environment settings are unnecessary for the ArcGEE Connector.**
+Users can modify environment settings like processing extents, output coordinate systems, and cell sizes through an additional expandable menu. **Environment settings are unnecessary for the GEE Connector.**
 
 ## Authentication Tools
 
 ### Authenticate Earth Engine
+
+**Note: If you have already installed Google Cloud SDK, you will need to set up the application default login for Earth Engine authentication. To do this, go to Installation.md and follow the instructions. This script is for users who do not have Google Cloud SDK.**
 
 This script authenticates the use of Google Earth Engine with provided Google account. **The user only needs to run this script once on the same computer.** 
 
