@@ -62,7 +62,7 @@ Here is the video guide for the Conda environment setup:
 
 <div align="center">
   <a href="https://www.youtube.com/watch?v=wuC4rKjKZEQ" target="_blank">
-    <img src="https://img.youtube.com/vi/wuC4rKjKZEQ/0.jpg" alt="Conda Environment Setup Video Guide" width="720" height="405" border="10" />
+    <img src="https://img.youtube.com/vi/wuC4rKjKZEQ/0.jpg" alt="Conda Environment Setup Video Guide" width="480" height="270" border="10" />
   </a>
 </div>
 
@@ -103,7 +103,7 @@ To install the Google Cloud SDK, admin permissions are often required, especiall
 
 Admin rights are typically only required during installation. Most gcloud commands and operations can be performed without admin rights, provided the user has the correct permissions within Google Cloud.
 
-**When Google Cloud SDK is installed, the Google Earth Engine authentication will use Google Cloud Application Default Credentials.** Therefore, the user needs to setup the Google Cloud Application Default Credentials before using Earth Engine. To achieve this, follow the steps below.
+**When Google Cloud SDK is installed, the Google Earth Engine authentication will use Google Cloud Application Default Credentials.** Therefore, the user needs to setup the Google Cloud Application Default Credentials before using the Earth Engine. To achieve this, follow the steps below.
 
 ### Finding Your Google Cloud Project ID
 Before proceeding, you'll need your Google Cloud Project ID. To find it:
@@ -116,8 +116,6 @@ Before proceeding, you'll need your Google Cloud Project ID. To find it:
 ### Configuring Google Cloud SDK
 
 The Google Cloud SDK shell (commonly referred to as the gcloud command-line interface) operates in a terminal or command prompt environment and has a standard text-based interface. It doesn't have a graphical user interface but relies on commands and text outputs.
-
-![Alt Text](images/gcloud_shell.png)
 
 1. In Windows OS, search for "Google Cloud SDK Shell", click to open. To run the Google Cloud SDK Shell as administrator, right-click on the Google Cloud SDK Shell, and select **Run as administrator**. 
 
@@ -136,3 +134,11 @@ The Google Cloud SDK shell (commonly referred to as the gcloud command-line inte
    **Note:** The `application_default_credentials.json` file is usually located in the `C:\Users\<username>\AppData\Roaming\gcloud` directory.
 
    After you successfully authenticate the application default login, your Google Earth Engine is already authenticated. When you run `ee.Initialize()`, it will automatically use the default project ID specified in the `application_default_credentials.json` file.
+
+Here is the video guide for the Google Cloud SDK application default login setup:
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=r4mVuRjXvio" target="_blank">
+    <img src="https://img.youtube.com/vi/r4mVuRjXvio/0.jpg" alt="Google Cloud SDK Application Default Login Video Guide" width="480" height="270" border="10" />
+  </a>
+</div>
