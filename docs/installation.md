@@ -125,15 +125,15 @@ The Google Cloud SDK shell (commonly referred to as the gcloud command-line inte
    ```
    A web browser window will pop up asking you to choose the target Google account. Follow the instructions from the web browser to complete the authentication.
    
-   To set a specific project ID after application default login, use the command below:
+3. To set a specific project ID after application default login, use the command below:
    ```
    gcloud auth application-default set-quota-project QUOTA_PROJECT_ID
    ```
    Replace `QUOTA_PROJECT_ID` with the target project ID. Then the `application_default_credentials.json` file will be updated accordingly. 
 
-   **Note:** The `application_default_credentials.json` file is usually located in the `C:\Users\<username>\AppData\Roaming\gcloud` directory.
+**Note:** The `application_default_credentials.json` file is usually located in the `C:\Users\<username>\AppData\Roaming\gcloud` directory.
 
-   After you successfully authenticate the application default login, your Google Earth Engine is already authenticated. When you run `ee.Initialize()`, it will automatically use the default project ID specified in the `application_default_credentials.json` file.
+After you successfully authenticate the application default login, your Google Earth Engine is already authenticated. When you run `ee.Initialize()`, it will automatically use the default project ID specified in the `application_default_credentials.json` file.
 
 Here is the video guide for the Google Cloud SDK application default login setup:
 

@@ -119,7 +119,7 @@ This script displays the current Google Cloud quota project ID and allows users 
 
 ![Alt Text](images/CheckProjectID.png)
 
-Please note that if you have installed Google Cloud SDK shell, you cannot switch quota project ID using this script. Instead, open the Google Cloud SDK shell, copy and paste the following command `gcloud auth application-default set-quota-project QUOTA_PROJECT_ID`, replace the `QUOTA_PROJECT_ID` with your target project ID.
+Please note that if you have installed Google Cloud SDK shell, you can also switch quota project ID using it. To do this, run the Google Cloud SDK shell, copy and paste the following command `gcloud auth application-default set-quota-project QUOTA_PROJECT_ID`, replace the `QUOTA_PROJECT_ID` with your target project ID.
 
 #### Parameters
  1. Current project ID (automatically displays)
@@ -127,6 +127,14 @@ Please note that if you have installed Google Cloud SDK shell, you cannot switch
  3. New project ID (Optional)
  4. New workload tag (Optional)  
 
+
+Here is the video guide for the project ID and workload tag switching:
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=eWkmTi1Vdn4" target="_blank">
+    <img src="https://img.youtube.com/vi/eWkmTi1Vdn4/0.jpg" alt="Check or Change Project ID" width="640" height="360" border="10" />
+  </a>
+</div>
   
 ### Initialize Earth Engine 
 The script initialize the use of Google Earth Engine with a project ID and workload tag. The user must assign a project ID to use Earth Engine. **The user will need to run this script every time they start the ArcPro.**  

@@ -1,11 +1,11 @@
 # Copyright 2025 Google LLC
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     https://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -91,8 +91,6 @@ class GEEInit:
     def getParameterInfo(self):
         """Define the tool parameters."""
 
-        from google.auth import default
-
         param0 = arcpy.Parameter(
             name="project_id",
             displayName="Specify the Google Cloud project ID for Earth Engine",
@@ -107,6 +105,8 @@ class GEEInit:
             # ee.Initialize()
             # project_id = ee.data.getProjectConfig()["name"].split("/")[1]
             # get project ID from Google cloud default credentials
+            from google.auth import default
+
             credentials, env_project_id = default()
             param0.value = credentials.quota_project_id
         except:
