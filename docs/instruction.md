@@ -100,6 +100,10 @@ The project ID and workload tag are optional inputs here. If the user inputs the
 
 Please note that if you have installed Google Cloud SDK shell and set up the application default credentials, you don't need to run this script. The Earth Engine has already been authenticated automatically.
 
+#### Parameters
+ 1. Google Cloud project ID (Optional)
+ 2. Wrokload tag (Optional)
+
 Here is the video guide for the Earth Engine authentication:
 
 <div align="center">
@@ -108,9 +112,7 @@ Here is the video guide for the Earth Engine authentication:
   </a>
 </div>
 
-#### Parameters
- 1. Google Cloud project ID (Optional)
- 2. Wrokload tag (Optional)
+
 
 
 ### Check or Change Project ID 
@@ -128,7 +130,7 @@ Please note that if you have installed Google Cloud SDK shell, you can also swit
  4. New workload tag (Optional)  
 
 
-Here is the video guide for the project ID and workload tag switching:
+Here is the video guide for checking or changing project ID and workload tag:
 
 <div align="center">
   <a href="https://www.youtube.com/watch?v=eWkmTi1Vdn4" target="_blank">
@@ -160,7 +162,7 @@ Here is the video guide for the Earth Engine initialization:
 
 This script adds the Earth Engine Feature Collection dataset to ArcPro as a base map by its asset ID and customizes the visualization parameters. **To avoid slow response, the feature collection size is limited to 100,000 elements.**
 
-Please note that the dataset is added as a Tiled Service Layer (TSL), which cannot be edited directly. The user will need to download the dataset for analysis in ArcPro. To browse all datasets, please visit this [link](https://developers.google.com/earth-engine/datasets/catalog).
+Please note that the dataset is added as a Tiled Map Service Layer, which cannot be edited directly. The user will need to download the dataset for analysis in ArcPro. To browse all datasets, please visit this [link](https://developers.google.com/earth-engine/datasets/catalog).
 
 ![Alt Text](images/AddFC2MapbyID.png)
 
@@ -168,12 +170,17 @@ Please note that the dataset is added as a Tiled Service Layer (TSL), which cann
  1. Asset ID
  2. Filter by dataset properties
  3. Filter by dates
- 4. Filter by point gemoetry in lat/lon coordinates
- 5. Filter by the centroid of the current map view
- 6. Filter by the extent of the current map view 
- 7. Color for visualization
- 8. Save the filtered dataset to serialized JSON file
+ 4. Choose filter-by-location type: point or area 
+ 5. Color for visualization
+ 6. Save the filtered dataset to serialized JSON file
 
+Here is the video guide for adding feature collection to map by asset ID:
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=p7xACz0OxMA" target="_blank">
+    <img src="https://img.youtube.com/vi/p7xACz0OxMA/0.jpg" alt="Add Feature Collection to Map by Asset ID" width="640" height="360" border="10" />
+  </a>
+</div>
 
 ### Add Feature Collection to Map by Serialized Object 
 
@@ -183,11 +190,21 @@ This script adds the Earth Engine Feature Collection dataset to ArcPro as a base
 
 ![Alt Text](images/AddFC2MapbyJSON.png)
 
-Please note that the dataset is added as a Tiled Service Layer (TSL), which cannot be edited. The user will need to download the dataset for analysis in ArcPro. To browse all datasets, please visit this [link](https://developers.google.com/earth-engine/datasets/catalog).
+Please note that the dataset is added as a Tiled Map Service Layer, which cannot be edited. The user will need to download the dataset for analysis in ArcPro. To browse all datasets, please visit this [link](https://developers.google.com/earth-engine/datasets/catalog).
 
 #### Parameters
 1. Serialized JSON file
 2. Color for visualization
+
+Here is the video guide for adding feature collection to map by serialized object:
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=sfgP5TzVqfo" target="_blank">
+    <img src="https://img.youtube.com/vi/sfgP5TzVqfo/0.jpg" alt="Add Feature Collection to Map by Serialized Object" width="640" height="360" border="10" />
+  </a>
+</div>
+
+
 
 ### Add Image to Map by Asset ID
 
