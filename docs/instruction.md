@@ -341,10 +341,9 @@ You can convert the file(s) to the following types of Earth Engine assets:
 
 ### Download Feature Collection by Asset ID
 
-![Alt Text](images/DownloadFCbyID.png)
-
 This script downloads the Earth Engine feature collection dataset to ArcPro feature class by its asset ID. The geometry types of the feature collection can be converted to the ArcPro geometry types: point, multipoint, polyline, polygon. Since ArcPro feature class does not allow multiple geometry types in the same file, the different geometry types will be saved into separate feature class files. 
  
+![Alt Text](images/DownloadFCbyID.png)
 
 #### Parameters
 
@@ -358,6 +357,13 @@ This script downloads the Earth Engine feature collection dataset to ArcPro feat
 8. Specify the output file name
 9. Check the box to load feature class to map after download
 
+Here is the video guide for downloading feature collection by asset ID:
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=YYx8juJS1kU" target="_blank">
+    <img src="https://img.youtube.com/vi/YYx8juJS1kU/0.jpg" alt="Download Feature Collection by Asset ID" width="640" height="360" border="10" />
+  </a>
+</div>
 
 ### Download Feature Collection by Serialized Object
 
@@ -373,6 +379,14 @@ The geometry types of the feature collection can be converted to the ArcPro geom
 2. Select the geometry type to download
 3. Specify the output file name
 4. Check the box to load feature class to map after download
+
+Here is the video guide for downloading feature collection by serialized object:
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=-31dgDoYqo0" target="_blank">
+    <img src="https://img.youtube.com/vi/-31dgDoYqo0/0.jpg" alt="Download Feature Collection by Serialized Object" width="640" height="360" border="10" />
+  </a>
+</div>
 
 ### Download Image by Asset ID
 
@@ -390,6 +404,13 @@ This script downloads the Earth Engine image dataset to GeoTIFF by its asset ID.
 6. Specify the output GeoTIFF name
 7. Check the box to load image to map after download
 
+Here is the video guide for downloading image by asset ID:
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=_bZxfkRwaIs" target="_blank">
+    <img src="https://img.youtube.com/vi/_bZxfkRwaIs/0.jpg" alt="Download Image by Asset ID" width="640" height="360" border="10" />
+  </a>
+</div>
 
 ### Download Image by Serialized Object
 
@@ -407,6 +428,13 @@ This script downloads the Earth Engine image dataset to GeoTIFF by its serialize
 6. Specify the output GeoTIFF name
 7. Check the box to load image to map after download
 
+Here is the video guide for downloading image by serialized object:
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=Kc9ttSzqu3M" target="_blank">
+    <img src="https://img.youtube.com/vi/Kc9ttSzqu3M/0.jpg" alt="Download Image by Serialized Object" width="640" height="360" border="10" />
+  </a>
+</div>
 
 ### Download Image Collection by Asset ID
 

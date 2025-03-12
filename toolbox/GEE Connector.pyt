@@ -91,6 +91,8 @@ class GEEInit:
     def getParameterInfo(self):
         """Define the tool parameters."""
 
+        from google.auth import default
+
         param0 = arcpy.Parameter(
             name="project_id",
             displayName="Specify the Google Cloud project ID for Earth Engine",
@@ -105,8 +107,6 @@ class GEEInit:
             # ee.Initialize()
             # project_id = ee.data.getProjectConfig()["name"].split("/")[1]
             # get project ID from Google cloud default credentials
-            from google.auth import default
-
             credentials, env_project_id = default()
             param0.value = credentials.quota_project_id
         except:
@@ -353,7 +353,7 @@ class AddImg2MapbyID:
 
         param1 = arcpy.Parameter(
             name="bands",
-            displayName="Specify three bands for RGB visualization",
+            displayName="Specify up to three bands for RGB visualization",
             datatype="GPString",
             direction="Input",
             multiValue=True,
@@ -558,7 +558,7 @@ class AddImg2MapbyObj:
 
         param1 = arcpy.Parameter(
             name="bands",
-            displayName="Specify three bands for RGB visualization",
+            displayName="Specify up to three bands for RGB visualization",
             datatype="GPString",
             direction="Input",
             multiValue=True,
@@ -775,7 +775,7 @@ class AddImgCol2MapbyID:
 
         param5 = arcpy.Parameter(
             name="bands",
-            displayName="Specify three bands for RGB visualization",
+            displayName="Specify up to three bands for RGB visualization",
             datatype="GPString",
             direction="Input",
             multiValue=True,
@@ -1091,7 +1091,7 @@ class AddImgCol2MapbyObj:
 
         param2 = arcpy.Parameter(
             name="bands",
-            displayName="Specify three bands for RGB visualization",
+            displayName="Specify up to three bands for RGB visualization",
             datatype="GPString",
             direction="Input",
             multiValue=True,
@@ -1488,6 +1488,15 @@ class AddFeatCol2MapbyID:
                     )
                     return
 
+        # start date is required when end date is provided
+        if parameters[2].valueAsText:
+            val_list = parameters[2].values
+            if not val_list[0][0]:
+                parameters[2].setErrorMessage(
+                    "Start date is required when end date is provided."
+                )
+                return
+
     def execute(self, parameters, messages):
         """
         The source code of the tool.
@@ -1562,8 +1571,12 @@ class AddFeatCol2MapbyID:
         # Filter by dates if specified
         if parameters[2].valueAsText:
             val_list = parameters[2].values
-            start_date = val_list[0][0]
-            end_date = val_list[0][1]
+            start_date = None
+            end_date = None
+            if val_list[0][0]:
+                start_date = val_list[0][0]
+            if val_list[0][1]:
+                end_date = val_list[0][1]
             fc = fc.filterDate(start_date, end_date)
 
         # Filter by bounds if specified
