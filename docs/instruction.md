@@ -257,7 +257,7 @@ Here is the video guide for adding image to map by serialized object:
 
 ### Add Image Collection to Map by Asset ID
 
-This script adds the Earth Engine Image Collection dataset to ArcPro as a base map by its asset tag and customizes the visualization parameters. **The user can only add one image to ArcPro per run.** Please note that the dataset is added as a Tiled Map Service Layer, which cannot be edited directly. The user will need to download the dataset for analysis in ArcPro. To browse all datasets, please visit this [link](https://developers.google.com/earth-engine/datasets/catalog).
+This script adds the Earth Engine Image Collection dataset to ArcPro as a base map by its asset ID and customizes the visualization parameters. **The user can only add one image to ArcPro per run.** Please note that the dataset is added as a Tiled Map Service Layer, which cannot be edited directly. The user will need to download the dataset for analysis in ArcPro. To browse all datasets, please visit this [link](https://developers.google.com/earth-engine/datasets/catalog).
 
 ![Alt Text](images/AddIC2MapbyID.png)
 
@@ -313,7 +313,9 @@ Here is the video guide for adding image collection to map by serialized object:
 
 ### Convert Cloud Storage File to Earth Engine Asset
 
-This script converts file(s) in Google Cloud Storage to Earth Engine asset. It is used to share dataset on the Earth Engine platform. The file(s) will be assigned with a user-specified asset tag. 
+**Note: This script requires Google Cloud SDK to be installed.**
+
+This script converts file(s) in Google Cloud Storage to Earth Engine asset. It is used to share dataset on the Earth Engine platform. The file(s) will be assigned with a user-specified asset ID. 
 
 ![Alt Text](images/GCS2Asset.png)
 
@@ -336,8 +338,15 @@ You can convert the file(s) to the following types of Earth Engine assets:
 3. Select the folder in the bucket (skip if you know the file gsutil URI)
 4. Select file(s) in the folder or specify gsutil URI
 5. Choose asset type (`image` or `table`)
-6. Specify the asset tag/ID
+6. Specify the asset ID
 
+Here is the video guide for converting cloud storage file to Earth Engine asset:
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=LFwhz0IMkMs" target="_blank">
+    <img src="https://img.youtube.com/vi/LFwhz0IMkMs/0.jpg" alt="Convert Cloud Storage File to Earth Engine Asset" width="640" height="360" border="10" />
+  </a>
+</div>
 
 ### Download Feature Collection by Asset ID
 
@@ -457,6 +466,13 @@ This script downloads the Earth Engine image collection dataset to GeoTIFF by it
  10. Specify the output folder
  11. Check the box to load images to map after download 
 
+Here is the video guide for downloading image collection by asset ID:
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=k4GTx5SpUls" target="_blank">
+    <img src="https://img.youtube.com/vi/k4GTx5SpUls/0.jpg" alt="Download Image Collection by Asset ID" width="640" height="360" border="10" />
+  </a>
+</div>
 
 ### Download Image Collection by Asset ID at Multiple Regions
 
@@ -497,27 +513,45 @@ This script downloads the Earth Engine image collection dataset to GeoTIFF by it
  7. Specify the output GeoTIFF name
  8. Check the box to load images to map after download 
 
+Here is the video guide for downloading image collection by serialized object:
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=aeVuUVgOIiM" target="_blank">
+    <img src="https://img.youtube.com/vi/aeVuUVgOIiM/0.jpg" alt="Download Image Collection by Serialized Object" width="640" height="360" border="10" />
+  </a>
+</div>
+
 ### Download Image Collection to GIF
 
 
 
 ### Save Earth Engine Asset to Serialized JSON File
 
-This script exports Earth Engine dataset from an asset tag to a serialized JSON file, allowing for quick access in the future without needing to recall the asset tag.
+This script exports Earth Engine dataset from an asset ID to a serialized JSON file, allowing for quick access in the future without needing to recall the asset ID.
 
 ![Alt Text](images/SaveAsset2JSON.png)
 
 
 #### Parameters
- 1. Asset tag
+ 1. Asset ID
  2. Asset type (`Feature Collection`, `Image` or `Image Collection`)
  3. Specify output JSON file name
 
-This script saves Google Earth Engine dataset object from asset tag to serialized JSON file. 
+This script saves Google Earth Engine dataset object from asset ID to serialized JSON file. 
+
+Here is the video guide for saving Earth Engine asset to serialized JSON file:
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=zQcRaNzq-JY" target="_blank">
+    <img src="https://img.youtube.com/vi/zQcRaNzq-JY/0.jpg" alt="Save Earth Engine Asset to Serialized JSON File" width="640" height="360" border="10" />
+  </a>
+</div>
 
 ### Upload File to Cloud Storage and Convert to Earth Engine Asset
 
-This script uploads file(s) from local storage to Google Cloud Storage and converts file(s) to Earth Engine asset. It is used to share dataset on Google Cloud and the Earth Engine platform. The file(s) will be assigned with a user-specified asset tag. 
+**Note: This script requires Google Cloud SDK to be installed.**
+
+This script uploads file(s) from local storage to Google Cloud Storage and converts file(s) to Earth Engine asset. It is used to share dataset on Google Cloud and the Earth Engine platform. The file(s) will be assigned with a user-specified asset ID. 
 
 ![Alt Text](images/Upload2GCS2Asset.png)
 
@@ -542,7 +576,15 @@ You can convert the file(s) to the following types of Earth Engine assets:
 4. Select file(s) from local storage
 5. Check the box to upload to Earth Engine (Optional)
 6. Choose asset type (`image` or `table`)
-7. Specify the asset tag/ID
+7. Specify the asset ID
+
+Here is the video guide for uploading file to cloud storage and converting to Earth Engine asset:
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=mxtBPxd36gI" target="_blank">
+    <img src="https://img.youtube.com/vi/mxtBPxd36gI/0.jpg" alt="Upload File to Cloud Storage and Convert to Earth Engine Asset" width="640" height="360" border="10" />
+  </a>
+</div>
 
 ## Data Processing Tools
 

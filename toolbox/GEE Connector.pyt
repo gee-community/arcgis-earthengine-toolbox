@@ -2824,13 +2824,13 @@ class DownloadImgColbyObj:
         """The source code of the tool."""
         # Multiple images could be selected
         json_path = parameters[0].valueAsText
-        img_names = parameters[2].valueAsText
-        band_str = parameters[3].valueAsText
-        scale = parameters[4].valueAsText
-        in_poly = parameters[5].valueAsText
-        use_extent = parameters[6].valueAsText
-        out_folder = parameters[7].valueAsText
-        load_tiff = parameters[8].valueAsText
+        img_names = parameters[1].valueAsText
+        band_str = parameters[2].valueAsText
+        scale = parameters[3].valueAsText
+        in_poly = parameters[4].valueAsText
+        use_extent = parameters[5].valueAsText
+        out_folder = parameters[6].valueAsText
+        load_tiff = parameters[7].valueAsText
 
         # load collection object
         collection = arcgee.data.load_ee_result(json_path)
