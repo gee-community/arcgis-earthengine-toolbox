@@ -1,4 +1,6 @@
-# ArcGEE Connector User Guide
+# ArcGEE Connector User Guide: Data Management
+These tools allow you to download Google Earth Engine feature collections, images and images collections from the [Earth Engine data catalog](https://developers.google.com/earth-engine/datasets), or Earth Engine assets within your Google Cloud Project. This toolbox also supports conversion of Google Cloud Storage files to an Earth Engine asset, or uploading files to Google Cloud Storage. 
+
 ## Data Management Tools
 
 ### Convert Cloud Storage File to Earth Engine Asset
