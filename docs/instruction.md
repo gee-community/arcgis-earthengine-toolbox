@@ -493,7 +493,13 @@ This script downloads the Earth Engine image collection dataset to GeoTIFF by it
 8. Specify the output folder
 9. Check the box to load images to map after download
 
+Here is the video guide for downloading image collection by asset ID at multiple regions:
 
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=GSn1RRPJwKI" target="_blank">
+    <img src="https://img.youtube.com/vi/GSn1RRPJwKI/0.jpg" alt="Download Image Collection by Asset ID at Multiple Regions" width="640" height="360" border="10" />
+  </a>
+</div>
 
 ### Download Image Collection by Serialized Object
 
@@ -520,10 +526,6 @@ Here is the video guide for downloading image collection by serialized object:
     <img src="https://img.youtube.com/vi/aeVuUVgOIiM/0.jpg" alt="Download Image Collection by Serialized Object" width="640" height="360" border="10" />
   </a>
 </div>
-
-### Download Image Collection to GIF
-
-
 
 ### Save Earth Engine Asset to Serialized JSON File
 
@@ -607,6 +609,14 @@ For a quick guide on filtering image collection, please visit [this link](https:
 3. Specify the filters and the corresponding arguments
 4. Specify the output JSON file name
 
+Here is the video guide for applying filters to collection dataset by asset ID:
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=KXi2LGbp--U" target="_blank">
+    <img src="https://img.youtube.com/vi/KXi2LGbp--U/0.jpg" alt="Apply Filters to Collection Dataset by Asset ID" width="640" height="360" border="10" />
+  </a>
+</div>
+
 
 ### Apply Filters to Collection Dataset by Serialized Object
 
@@ -626,6 +636,13 @@ For a quick guide on filtering image collection, please visit [this link](https:
 2. Specify the filters and the corresponding arguments
 3. Specify the output JSON file name
 
+Here is the video guide for applying filters to collection dataset by serialized object:
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=6SZdwaiiM-M" target="_blank">
+    <img src="https://img.youtube.com/vi/6SZdwaiiM-M/0.jpg" alt="Apply Filters to Collection Dataset by Serialized Object" width="640" height="360" border="10" />
+  </a>
+</div>
 
 ### Apply Map Functions to Collection Dataset by Asset ID
 

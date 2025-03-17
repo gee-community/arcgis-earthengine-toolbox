@@ -29,7 +29,6 @@ In the current version, GEE Connector provides a set of tools organized into fou
     - Download Image Collection by Asset ID
     - Download Image Collection by Asset ID at Multiple Regions
     - Download Image Collection by Serialized Object
-    - Download Image Collection to GIF
     - Save Earth Engine Asset to Serialized JSON File
     - Upload File(s) to Cloud Storage and Convert to Earth Engine Asset
  - Data Processing Tools

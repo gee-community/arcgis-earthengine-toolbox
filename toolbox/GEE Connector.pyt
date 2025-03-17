@@ -55,9 +55,8 @@ class Toolbox:
         tools.append(DownloadImgColbyIDMultiRegion)
         tools.append(DownloadFeatColbyID)
         tools.append(DownloadFeatColbyObj)
-        tools.append(DownloadImgCol2Gif)
+        # tools.append(DownloadImgCol2Gif)
         # currently not used, because the timelapse function causes too much data usage
-
         # tools.append(DownloadLandsatTimelapse2Gif)
         tools.append(Upload2GCS)
         tools.append(GCSFile2Asset)
@@ -1338,7 +1337,7 @@ class AddFeatCol2MapbyID:
             displayName="Select the type of filter-by-location",
             datatype="GPString",
             direction="Input",
-            parameterType="Required",
+            parameterType="Optional",
         )
 
         param3.filter.list = [
@@ -3158,24 +3157,6 @@ class DownloadImgColbyIDMultiRegion:
         # Get the scale for xarray dataset
         scale_ds = float(scale)
 
-        # Get the first image of the collection
-        image = collection.first()
-
-        # Get crs code for xarray metadata
-        # crs information could be missing, then use wkt from projection
-        try:
-            crs = image.select(0).projection().getInfo()["crs"]
-            arcpy.AddMessage("Image projection CRS is " + crs)
-        except:
-            # crs is not explictly defined
-            arcpy.AddMessage("Image projection CRS is unknown.")
-            wkt = image.select(0).projection().getInfo()["wkt"]
-            crs = rasterio.crs.CRS.from_wkt(wkt)
-
-        # Check if use projection or crs code
-        image = ee.ImageCollection(image)
-        use_projection = arcgee.data.whether_use_projection(image)
-
         out_tiff_list = []
         # Iterate each selected region
         icount = 1
@@ -3190,6 +3171,24 @@ class DownloadImgColbyIDMultiRegion:
                 collection_region = collection.filterBounds(centroid)
             elif bound_type == "Bounding Box of Polygon":
                 collection_region = collection.filterBounds(roi)
+            # CRS could change per region, so get the first image of the collection after filter by ROI
+            image = collection_region.first()
+
+            # Get crs code for xarray metadata
+            # crs information could be missing, then use wkt from projection
+            try:
+                crs = image.select(0).projection().getInfo()["crs"]
+                arcpy.AddMessage("Image projection CRS is " + crs)
+            except:
+                # crs is not explictly defined
+                arcpy.AddMessage("Image projection CRS is unknown.")
+                wkt = image.select(0).projection().getInfo()["wkt"]
+                crs = rasterio.crs.CRS.from_wkt(wkt)
+
+            # Check if use projection or crs code
+            image = ee.ImageCollection(image)
+            use_projection = arcgee.data.whether_use_projection(image)
+            arcpy.AddMessage("Use projection: " + str(use_projection))
 
             # select the max number of images
             if max_num:
@@ -5137,7 +5136,7 @@ class ApplyMapFunctionbyID:
 
         param1 = arcpy.Parameter(
             name="asset_id",
-            displayName="Specify the asset id of the dataset",
+            displayName="Specify the asset ID of the dataset",
             datatype="GPString",
             direction="Input",
             parameterType="Required",
