@@ -1,4 +1,5 @@
-# ArcGEE Connector User Guide
+# ArcGEE Connector User Guide: Data Processing
+These tools allow appling filters and map functions to collection datasets, apply reducers and run Python scripts.  
 
 ## Data Processing Tools
 
