@@ -73,8 +73,8 @@ The ArcGEE Connector Toolbox can be obtained through the following steps:
 
 ![Alt Text](images/DownloadToolbox.png)
 
-1. Download the repository from this [link](https://github.com/di-private/redlands-desktop-engine/tree/woolpert_dev) using either method:
-   - Clone the repository using git: `git clone https://github.com/di-private/redlands-desktop-engine.git`
+1. Download the repository from this [link](https://github.com/gee-community/arcgis-earthengine-toolbox) using either method:
+   - Clone the repository using git: `git clone https://github.com/gee-community/arcgis-earthengine-toolbox.git`
    - Or download as ZIP file and extract it to your desired location
 
    You can download the repository folder to your ArcPro project folder such as `C:\Users\<username>\Documents\ArcGIS\Projects\<project_name>\ArcGEE Connector Toolbox`. Meanwhile, you can also download the repository folder to any other location and connect it to ArcPro. 
