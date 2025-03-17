@@ -1,4 +1,6 @@
-# ArcGEE Connector User Guide
+# ArcGEE Connector User Guide: Authentication tools
+These tools help you get connected to your cloud project and Earth Engine.
+
 ## Authenticate Earth Engine
 
 This script authenticates the use of Google Earth Engine with provided Google account. **The user only needs to run this script once on the same computer.** 
