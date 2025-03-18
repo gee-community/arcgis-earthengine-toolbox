@@ -1,4 +1,4 @@
-# ArcGEE Connector User Guide: Authentication tools
+# ArcGIS Earth Engine Toolbox User Guide: Authentication tools
 These tools help you get connected to your cloud project and Earth Engine.
 
 ## Authenticate Earth Engine
