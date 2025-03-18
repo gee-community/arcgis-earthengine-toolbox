@@ -75,9 +75,9 @@ Here is the video guide for the Conda environment setup:
 </div>
 
 
-## Download ArcGEE Connector Toolbox
+## Download ArcGIS Earth Engine Toolbox
 
-The ArcGEE Connector Toolbox can be obtained through the following steps:
+The ArcGIS Earth Engine Toolbox can be obtained through the following steps:
 
 ![Alt Text](images/DownloadToolbox.png)
 
@@ -85,7 +85,7 @@ The ArcGEE Connector Toolbox can be obtained through the following steps:
    - Clone the repository using git: `git clone https://github.com/gee-community/arcgis-earthengine-toolbox.git`
    - Or download as ZIP file and extract it to your desired location
 
-   You can download the repository folder to your ArcPro project folder such as `C:\Users\<username>\Documents\ArcGIS\Projects\<project_name>\ArcGEE Connector Toolbox`. Meanwhile, you can also download the repository folder to any other location and connect it to ArcPro. 
+   You can download the repository folder to your ArcPro project folder such as `C:\Users\<username>\Documents\ArcGIS\Projects\<project_name>\ArcGIS Earth Engine Toolbox`. Meanwhile, you can also download the repository folder to any other location and connect it to ArcPro. 
 
 2. Add the toolbox to ArcPro:
    - Open ArcPro
@@ -100,13 +100,13 @@ The ArcGEE Connector Toolbox can be obtained through the following steps:
 
 ## Google Cloud SDK
 
-Google Cloud SDK is required to fully utilize the ArcGEE Connector Toolbox. Specifically, it is used to upload local data to Google Cloud Storage and convert the data to Earth Engine Image objects. 
+Google Cloud SDK is required to fully utilize the ArcGIS Earth Engine Toolbox. Specifically, it is used to upload local data to Google Cloud Storage and convert the data to Earth Engine Image objects. 
 
 To install the Google Cloud SDK, admin permissions are often required, especially on systems where the SDK needs to modify system files or be installed for all users. It's also possible to install the SDK without admin rights if you install it in a user-specific directory. 
 
 Admin rights are typically only required during installation. Most gcloud commands and operations can be performed without admin rights, provided the user has the correct permissions within Google Cloud.
 
-When Google Cloud SDK is installed, the Google Cloud default credentials may affect Google Earth Engine authentication through ArcGEE Connector Toolbox. Therefore, it is recommended to modify Google Cloud default credentials to be consistent with the target Google project for Earth Engine. To achieve this, follow the steps below.
+When Google Cloud SDK is installed, the Google Cloud default credentials may affect Google Earth Engine authentication through ArcGIS Earth Engine Toolbox. Therefore, it is recommended to modify Google Cloud default credentials to be consistent with the target Google project for Earth Engine. To achieve this, follow the steps below.
 
 ### Finding Your Google Cloud Project ID
 Before proceeding, you'll need your Google Cloud Project ID. To find it:
