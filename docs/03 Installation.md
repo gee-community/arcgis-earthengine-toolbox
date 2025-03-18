@@ -1,4 +1,4 @@
-# Installation
+# ArcGIS Earth Engine Toolbox User Guide: Installation
 
 There are three steps for installing arcgis-earthengine-toolbox: 
 - Setting up a Python environment for use with Earth Engine
@@ -124,29 +124,10 @@ The Google Cloud SDK shell (commonly referred to as the gcloud command-line inte
 
 1. In Windows OS, search for "Google Cloud SDK Shell", click to open. To run the Google Cloud SDK Shell as administrator, right-click on the Google Cloud SDK Shell, and select **Run as administrator**. 
 
-   **For the first time setup, skip Step 2 and Step 3, go to Step 4.**
+>[!NOTE]
+> **Step 2 is only for the first time setup**, skip Step 3 if you have already done this on your machine.
 
-2. Check the active Google account using:
-   ```
-   gcloud auth list
-   ```
-   Make sure the account aligns with the target Google project for Earth Engine. If you need to switch to another account, run:
-   ```
-   gcloud auth login
-   ```
-   A browser window will open asking you to choose the target Google account for Earth Engine.
-
-3. Check the active Google project using:
-   ```
-   gcloud config list
-   ```
-   Verify that the project ID matches your target Google project for Earth Engine. To switch to a different project, run:
-   ```
-   gcloud config set project YOUR_PROJECT_ID
-   ```
-   Replace `YOUR_PROJECT_ID` with the Project ID you found in the Google Cloud Console.
-
-4. For the first time setup, authenticate to create the `application_default_credentials.json` file using:
+2. For the first time setup, authenticate to create the `application_default_credentials.json` file using:
    ```
    gcloud auth application-default login
    ```
@@ -158,6 +139,27 @@ The Google Cloud SDK shell (commonly referred to as the gcloud command-line inte
    ```
    Replace `QUOTA_PROJECT_ID` with the Project ID you found in the Google Cloud Console.
 
-   **Note:** The `application_default_credentials.json` file is usually located in the `C:\Users\<username>\AppData\Roaming\gcloud` directory.
+>[!TIP]
+>The `application_default_credentials.json` file is usually located in the `C:\Users\<username>\AppData\Roaming\gcloud` directory. After this, when you run `ee.Initialize()`, it will automatically use the default project specified in the `application_default_credentials.json` file.
+   
+3.  Check the active Google account using:
+   ```
+   gcloud auth list
+   ```
+   Make sure the account aligns with the target Google project for Earth Engine. If you need to switch to another account, run:
+   ```
+   gcloud auth login
+   ```
+   A browser window will open asking you to choose the target Google account for Earth Engine.
 
-   After this, when you run `ee.Initialize()`, it will automatically use the default project specified in the `application_default_credentials.json` file.
+4. Check the active Google project using:
+   ```
+   gcloud config list
+   ```
+   Verify that the project ID matches your target Google project for Earth Engine. To switch to a different project, run:
+   ```
+   gcloud config set project YOUR_PROJECT_ID
+   ```
+   Replace `YOUR_PROJECT_ID` with the Project ID you found in the Google Cloud Console.
+
+
