@@ -663,6 +663,15 @@ For a quick guide on mapping over feature collection dataset, please visit [this
 4. Select the map functions to apply
 5. Specify the output JSON file name
 
+**Note: The python script that contains the map functions must be saved in the same folder as the GEE Connector Python Toolbox.**
+
+Here is the video guide for applying map functions to collection dataset by asset ID:
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=qKPIULsXd-s" target="_blank">
+    <img src="https://img.youtube.com/vi/qKPIULsXd-s/0.jpg" alt="Apply Map Functions to Collection Dataset by Asset ID" width="640" height="360" border="10" />
+  </a>
+</div>
 
 ### Apply Map Functions to Collection Dataset by Serialized Object
 
@@ -682,6 +691,15 @@ For a quick guide on mapping over feature collection dataset, please visit [this
 4. Select the map functions to apply
 5. Specify the output JSON file name
 
+**Note: The python script that contains the map functions must be saved in the same folder as the GEE Connector Python Toolbox.**
+
+Here is the video guide for applying map functions to collection dataset by serialized object:
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=ijjgf6c0EjU" target="_blank">
+    <img src="https://img.youtube.com/vi/ijjgf6c0EjU/0.jpg" alt="Apply Map Functions to Collection Dataset by Serialized Object" width="640" height="360" border="10" />
+  </a>
+</div>
 
 ### Apply Reducers to Earth Engine Dataset by Asset ID
 
