@@ -1,12 +1,12 @@
-# ArcGEE Connector User Guide Introduction
+# ArcGIS Earth Engine Toolbox User Guide: Introduction
 Welcome to the ArcGIS-EarthEngine Toolbox!
 This section will describe the basic concepts, and prequisites to use the ArcGIS-EarthEngine Connector toolbox within ArcGIS Pro. 
 
-This user guide provides instructions for using the ArcGEE Connector, a Python toolbox that allows users to interact with Google Earth Engine (GEE) from ArcGIS Pro. The toolbox provides a set of tools for managing Earth Engine assets, downloading and uploading data, and processing data using Earth Engine's API. Please see the individual toolbox descriptions in the documents pages for specifics on each tool.
+This user guide provides instructions for using the ArcGIS Earth Engine Toolbox, a Python toolbox that allows users to interact with Google Earth Engine (GEE) from ArcGIS Pro. The toolbox provides a set of tools for managing Earth Engine assets, downloading and uploading data, and processing data using Earth Engine's API. Please see the individual toolbox descriptions in the documents pages for specifics on each tool.
 
 ## Prerequisites
 
-Before using the ArcGEE Connector, ensure you have the following:
+Before using the ArcGIS Earth Engine Toolbox, ensure you have the following:
 
 1. ArcGIS Pro 3.2 or later installed on your computer.
 2. Google Earth Engine API enabled for your Google Cloud project.
@@ -81,4 +81,4 @@ A section displays any messages generated during execution, such as progress upd
 
 4. Environment Settings:
 
-Users can modify environment settings like processing extents, output coordinate systems, and cell sizes through an additional expandable menu. **Environment settings are unnecessary for the ArcGEE Connector.**
+Users can modify environment settings like processing extents, output coordinate systems, and cell sizes through an additional expandable menu. **Environment settings are unnecessary for the ArcGIS Earth Engine Toolbox.**
