@@ -13,7 +13,7 @@ Dependencies to use toolbox include:
 * Be a user of GEE. Pricing for use of GEE is described [here](https://cloud.google.com/earth-engine/pricing)
 
 ## Get started
-* If you're interested in learning how to use arcgis-earthengine-toolbox, please read our [main docs](https://github.com/gee-community/arcgis-earthengine-toolbox/tree/main/docs).
+* If you're interested in learning how to use arcgis-earthengine-toolbox, please read our [main docs](docs/index.md).
 * If you're interested in contributing to the arcgis-earthengine-toolbox, please read our [contributing guide](https://github.com/gee-community/arcgis-earthengine-toolbox/blob/main/CONTRIBUTING.md).
 
 ## Contributors
