@@ -142,7 +142,7 @@ The Google Cloud SDK shell (commonly referred to as the gcloud command-line inte
 >[!TIP]
 >The `application_default_credentials.json` file is usually located in the `C:\Users\<username>\AppData\Roaming\gcloud` directory. After this, when you run `ee.Initialize()`, it will automatically use the default project specified in the `application_default_credentials.json` file.
    
-3.  Check the active Google account using:
+3. Check the active Google account using:
    ```
    gcloud auth list
    ```
