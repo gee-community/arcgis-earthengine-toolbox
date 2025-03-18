@@ -1,4 +1,4 @@
-# ArcGEE Connector User Guide: Data Processing
+# ArcGIS Earth Engine Toolbox User Guide: Data Processing Tools
 These tools allow appling filters and map functions to collection datasets, apply reducers and run Python scripts.  
 
 ## Data Processing Tools
