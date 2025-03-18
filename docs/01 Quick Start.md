@@ -11,7 +11,7 @@ Before using the toolbox, ensure you have the following:
 3. Google Cloud SDK installed on your computer.
 4. ArcGIS Earth Engine toolbox downloaded from this repo and added to your ArcGIS Pro project. 
 
-Follow the instructions on the [installation page](docs/03 Installation.md) for a step-by-step guide.
+Follow the instructions on the [installation page](https://github.com/gee-community/arcgis-earthengine-toolbox/blob/alisul/march_docs/docs/03%20Installation.md) for a step-by-step guide.
 
 ## Authenticate Earth Engine from ArcGIS Pro
 
