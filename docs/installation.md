@@ -1,5 +1,13 @@
 # Installation
 
+There are three steps for installing arcgis-earthengine-toolbox: 
+- Setting up a Python environment for use with Earth Engine
+- Installing the toolbox
+- Setting up Google Cloud SDK for uploading local data and working with it in the toolbox"
+
+This page walks through these broad steps for installation and authentication with Earth Engine for use.
+
+
 ## Conda Environment Setup For Earth Engine API  
 
 Before starting the installation, ensure that you have the necessary account permissions to create a conda environment and install the required packages. **If your ArcPro was installed by an administrator, you will need administrator-level permissions to complete the installation.**  
