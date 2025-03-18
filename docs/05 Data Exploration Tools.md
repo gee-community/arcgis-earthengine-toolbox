@@ -1,4 +1,4 @@
-# ArcGEE Connector User Guide
+# ArcGIS Earth Engine Toolbox User Guide: Data Exploration Tools
 These tools allow you to visualize Google Earth Engine feature collections, images and images collections from the [Earth Engine data catalog](https://developers.google.com/earth-engine/datasets), or Earth Engine assets within your Google Cloud Project. If you are looking to download data or run analytics, please see the Data Management and Data Processing toolboxes. 
   
 ## Data Exploration Tools 
