@@ -9,7 +9,7 @@ This user guide provides instructions for using the ArcGIS Earth Engine Toolbox,
 Before using the ArcGIS Earth Engine Toolbox, ensure you have the following:
 
 1. ArcGIS Pro 3.2 or later installed on your computer.
-2. Google Earth Engine API enabled for your Google Cloud project.
+2. Google Earth Engine API enabled for your Google Cloud project. See [this page](https://console.cloud.google.com/earth-engine) for Google Cloud Project creation & registration with Earth Engine.
 3. Google Cloud SDK installed on your computer.
 
 For more detailed information see the [installation page](https://github.com/gee-community/arcgis-earthengine-toolbox/blob/alisul/march_docs/docs/03%20Installation.md) in the documentation.
@@ -25,6 +25,8 @@ For more detailed information see the [installation page](https://github.com/gee
 A Google Cloud project is a container for resources and services in Google Cloud. Each project has a unique ID and is associated with a billing account.
 
 To find your project ID, go to the [Google Cloud Console](https://console.cloud.google.com/), click on the project dropdown menu in the top left corner, and select "Project info". The project ID is displayed in the "Project ID" field.
+
+If you do not have a Google Cloud project, please see [this page](https://console.cloud.google.com/earth-engine) for a guided flow to create a project, or register an existing project with Earth Engine.
 
 ### Workload Tag
 
