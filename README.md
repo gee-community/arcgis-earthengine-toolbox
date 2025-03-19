@@ -1,7 +1,7 @@
 # arcgis-earthengine-toolbox
 An ArcGIS Pro toolbox for connection to Google Earth Engine
 
-**NOTICE: This is an community project and is not an officially supported Google project. You are welcome to use it, but we do not guarantee stability.**
+**DISCLAIMER: This is an community project and is not an officially supported Google project. You are welcome to use it, but we do not guarantee stability.**
 
 A set of open source Python scripts that wrap functionality of the Python GEE API, that can be added to ArcGIS Pro desktop application as a Python toolbox. These scripts would present simple GUIs to users of ArcGIS Pro that would help them to: 
 * Connect to GEE for data visualization and limited processing within the ArcGIS Pro application
