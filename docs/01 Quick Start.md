@@ -35,6 +35,16 @@ The Data Exploration tools provide multiple ways Earth Engine assests into your 
 1. Starting at the catalog's [main page](https://developers.google.com/earth-engine/datasets) search or navigate to the asset of interest. For this example, we are using the [ERA5-Land Monthly Aggregated](https://developers.google.com/earth-engine/datasets/catalog/ECMWF_ERA5_LAND_MONTHLY_AGGR) asset.
 
 2. Add the image collection asset id and other desired parameters to the [Add Image Collection to Map by Asset ID tool](https://github.com/gee-community/arcgis-earthengine-toolbox/blob/aSullivan-geo-doc-updates/docs/05%20Data%20Exploration%20Tools.md#add-image-collection-to-map-by-asset-id)
+  - Parameters used:
+    - asset ID: ECMWF/ERA5_LAND/MONTHLY_AGGR
+    - Starting date: 2023-01-01
+    - Ending date: 2023-02-01
+    - Band: temperature_2m--11131.9--m
+    - Minimum for visualization: 229
+    - Maximum for visualization: 304
+    - Color palette for visualization: #fcffa4,#f98e09,#bc3754,#57106e,#000004
+
 ![Example of using the Add image collection by asset id](images/QuickStart_ImageCollection_project.png)
+
 4. Click "run" at the bottom of the tool GUI, and the resulting layer will be displayed in the map of your project.
 ![Result from the tool displayed in the map](images/QuickStart_ImageCollection_Result.png)
