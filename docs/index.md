@@ -26,8 +26,8 @@ Please see the [Installation](03_installation.md) page to get started on set up 
     - Download Image by Asset ID
     - Download Image by Serialized Object 
     - Download Image Collection by Asset ID
+    - Download Image Collection by Asset ID at Multiple Regions
     - Download Image Collection by Serialized Object
-    - Download Image Collection to GIF
     - Save Earth Engine Asset to Serialized JSON File
     - Upload File(s) to Goolge Cloud Storage and Convert to Earth Engine Asset
  - [Data Processing Tools](07_data_processing_tools.md)

@@ -1,4 +1,6 @@
-# ArcGIS Earth Engine Toolbox User Guide: Installation
+
+# ArcGIS Earth Engine Toolbox (GEE Connector) User Guide: Installation
+
 There are three steps for installing arcgis-earthengine-toolbox: 
 - Setting up a Python environment for use with Earth Engine
 - Installing the toolbox
@@ -107,13 +109,21 @@ The ArcGIS Earth Engine Toolbox can be obtained through the following steps:
 
 ## Google Cloud SDK
 
-Google Cloud SDK is required to fully utilize the ArcGIS Earth Engine Toolbox. Specifically, it is used to upload local data to Google Cloud Storage and convert the data to Earth Engine Image objects. 
+
+Google Cloud SDK is required to fully utilize the ArcGIS Earth Engine Toolbox. Specifically, it is used to upload local data to Google Cloud Storage and convert the data to Earth Engine assets. 
+
+### Downloading Google Cloud SDK 
+
+Please check this [link](https://cloud.google.com/sdk/docs/install) for instructions of downloading the Google Cloud SDK.     
+
 
 To install the Google Cloud SDK, admin permissions are often required, especially on systems where the SDK needs to modify system files or be installed for all users. It's also possible to install the SDK without admin rights if you install it in a user-specific directory. 
 
 Admin rights are typically only required during installation. Most gcloud commands and operations can be performed without admin rights, provided the user has the correct permissions within Google Cloud.
 
-When Google Cloud SDK is installed, the Google Cloud default credentials may affect Google Earth Engine authentication through ArcGIS Earth Engine Toolbox. Therefore, it is recommended to modify Google Cloud default credentials to be consistent with the target Google project for Earth Engine. To achieve this, follow the steps below.
+
+**When Google Cloud SDK is installed, the Google Earth Engine authentication will use Google Cloud Application Default Credentials.** Therefore, the user needs to setup the Google Cloud Application Default Credentials before using the Earth Engine. To achieve this, follow the steps below.
+
 
 ### Finding Your Google Cloud Project ID
 Before proceeding, you'll need your Google Cloud Project ID. To find it:
@@ -127,7 +137,7 @@ Before proceeding, you'll need your Google Cloud Project ID. To find it:
 
 The Google Cloud SDK shell (commonly referred to as the gcloud command-line interface) operates in a terminal or command prompt environment and has a standard text-based interface. It doesn't have a graphical user interface but relies on commands and text outputs.
 
-![Alt Text](images/gcloud_shell.png)
+
 
 1. In Windows OS, search for "Google Cloud SDK Shell", click to open. To run the Google Cloud SDK Shell as administrator, right-click on the Google Cloud SDK Shell, and select **Run as administrator**. 
 
@@ -138,9 +148,11 @@ The Google Cloud SDK shell (commonly referred to as the gcloud command-line inte
    ```
    gcloud auth application-default login
    ```
-   A browser window will pop up asking you to choose the target Google account and project.
+
+   A browser window will pop up asking you to choose the target Google account.
    
-   For the existing setup, update the `application_default_credentials.json` file using:
+3. For the existing setup, update the project ID in the `application_default_credentials.json` file using:
+
    ```
    gcloud auth application-default set-quota-project QUOTA_PROJECT_ID
    ```
@@ -148,25 +160,14 @@ The Google Cloud SDK shell (commonly referred to as the gcloud command-line inte
 
 >[!TIP]
 >The `application_default_credentials.json` file is usually located in the `C:\Users\<username>\AppData\Roaming\gcloud` directory. After this, when you run `ee.Initialize()`, it will automatically use the default project specified in the `application_default_credentials.json` file.
-   
-3. Check the active Google account using:
-   ```
-   gcloud auth list
-   ```
-   Make sure the account aligns with the target Google project for Earth Engine. If you need to switch to another account, run:
-   ```
-   gcloud auth login
-   ```
-   A browser window will open asking you to choose the target Google account for Earth Engine.
 
-4. Check the active Google project using:
-   ```
-   gcloud config list
-   ```
-   Verify that the project ID matches your target Google project for Earth Engine. To switch to a different project, run:
-   ```
-   gcloud config set project YOUR_PROJECT_ID
-   ```
-   Replace `YOUR_PROJECT_ID` with the Project ID you found in the Google Cloud Console.
+
+Here is the video guide for the Google Cloud SDK application default login setup:
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=r4mVuRjXvio" target="_blank">
+    <img src="https://img.youtube.com/vi/r4mVuRjXvio/0.jpg" alt="Google Cloud SDK Application Default Login Video Guide" width="640" height="360" border="10" />
+  </a>
+</div>
 
 

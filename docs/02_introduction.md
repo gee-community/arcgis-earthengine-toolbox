@@ -1,4 +1,6 @@
-# ArcGIS Earth Engine Toolbox User Guide: Introduction
+
+# ArcGIS Earth Engine Toolbox (GEE Connector) User Guide: Introduction
+
 Welcome to the ArcGIS-EarthEngine Toolbox!
 This section will describe the basic concepts, and prequisites to use the ArcGIS-EarthEngine Connector toolbox within ArcGIS Pro. 
 

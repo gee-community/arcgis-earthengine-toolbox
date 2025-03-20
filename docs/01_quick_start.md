@@ -1,5 +1,7 @@
 
-# ArcGIS Earth Engine Toolbox User Guide: Quick Start
+
+# ArcGIS Earth Engine Toolbox (GEE Connector) User Guide: Quick Start
+
 Guide to get you up and running with the ArcGIS Earth Engine Toolbox
 
 ## Installation
