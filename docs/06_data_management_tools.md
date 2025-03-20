@@ -1,14 +1,18 @@
+
 # ArcGIS Earth Engine Toolbox (GEE Connector) User Guide: Data Management Tools
+
 These tools allow you to download Google Earth Engine feature collections, images and images collections from the [Earth Engine data catalog](https://developers.google.com/earth-engine/datasets), or Earth Engine assets within your Google Cloud Project. This toolbox also supports conversion of Google Cloud Storage files to an Earth Engine asset, or uploading files to Google Cloud Storage. 
 
 ## Data Management Tools
 
 ### Convert Cloud Storage File to Earth Engine Asset
 
+
 > [!NOTE]
 > This script is only available for users who have installed Google Cloud SDK.
 
 This script converts file(s) in Google Cloud Storage to Earth Engine asset. It is used to share dataset on the Earth Engine platform. The file(s) will be assigned with a user-specified asset ID. 
+
 
 ![Alt Text](images/GCS2Asset.png)
 
@@ -31,6 +35,7 @@ You can convert the file(s) to the following types of Earth Engine assets:
 3. Select the folder in the bucket (skip if you know the file gsutil URI)
 4. Select file(s) in the folder or specify gsutil URI
 5. Choose asset type (`image` or `table`)
+
 6. Specify the asset ID
 
 Here is the video guide for converting cloud storage file to Earth Engine asset:
@@ -40,6 +45,7 @@ Here is the video guide for converting cloud storage file to Earth Engine asset:
     <img src="https://img.youtube.com/vi/LFwhz0IMkMs/0.jpg" alt="Convert Cloud Storage File to Earth Engine Asset" width="640" height="360" border="10" />
   </a>
 </div>
+
 
 ### Download Feature Collection by Asset ID
 
@@ -60,6 +66,7 @@ This script downloads the Earth Engine feature collection dataset to ArcPro feat
 8. Specify the output file name
 9. Check the box to load feature class to map after download
 
+
 Here is the video guide for downloading feature collection by asset ID:
 
 <div align="center">
@@ -67,6 +74,7 @@ Here is the video guide for downloading feature collection by asset ID:
     <img src="https://img.youtube.com/vi/YYx8juJS1kU/0.jpg" alt="Download Feature Collection by Asset ID" width="640" height="360" border="10" />
   </a>
 </div>
+
 
 ### Download Feature Collection by Serialized Object
 
@@ -83,6 +91,7 @@ The geometry types of the feature collection can be converted to the ArcPro geom
 3. Specify the output file name
 4. Check the box to load feature class to map after download
 
+
 Here is the video guide for downloading feature collection by serialized object:
 
 <div align="center">
@@ -97,6 +106,7 @@ This script downloads the Earth Engine image dataset to GeoTIFF by its asset ID.
 
 ![Alt Text](images/DownloadImgbyID.png)
 
+
 #### Parameters
 
 1. Asset ID
@@ -107,6 +117,7 @@ This script downloads the Earth Engine image dataset to GeoTIFF by its asset ID.
 6. Specify the output GeoTIFF name
 7. Check the box to load image to map after download
 
+
 Here is the video guide for downloading image by asset ID:
 
 <div align="center">
@@ -114,6 +125,7 @@ Here is the video guide for downloading image by asset ID:
     <img src="https://img.youtube.com/vi/_bZxfkRwaIs/0.jpg" alt="Download Image by Asset ID" width="640" height="360" border="10" />
   </a>
 </div>
+
 
 ### Download Image by Serialized Object
 
@@ -131,6 +143,7 @@ This script downloads the Earth Engine image dataset to GeoTIFF by its serialize
 6. Specify the output GeoTIFF name
 7. Check the box to load image to map after download
 
+
 Here is the video guide for downloading image by serialized object:
 
 <div align="center">
@@ -138,6 +151,7 @@ Here is the video guide for downloading image by serialized object:
     <img src="https://img.youtube.com/vi/Kc9ttSzqu3M/0.jpg" alt="Download Image by Serialized Object" width="640" height="360" border="10" />
   </a>
 </div>
+
 
 
 ### Download Image Collection by Asset ID
@@ -161,6 +175,7 @@ This script downloads the Earth Engine image collection dataset to GeoTIFF by it
  10. Specify the output folder
  11. Check the box to load images to map after download 
 
+
 Here is the video guide for downloading image collection by asset ID:
 
 <div align="center">
@@ -168,6 +183,7 @@ Here is the video guide for downloading image collection by asset ID:
     <img src="https://img.youtube.com/vi/k4GTx5SpUls/0.jpg" alt="Download Image Collection by Asset ID" width="640" height="360" border="10" />
   </a>
 </div>
+
 
 ### Download Image Collection by Asset ID at Multiple Regions
 
@@ -188,6 +204,7 @@ This script downloads the Earth Engine image collection dataset to GeoTIFF by it
 8. Specify the output folder
 9. Check the box to load images to map after download
 
+
 Here is the video guide for downloading image collection by asset ID at multiple regions:
 
 <div align="center">
@@ -195,6 +212,7 @@ Here is the video guide for downloading image collection by asset ID at multiple
     <img src="https://img.youtube.com/vi/GSn1RRPJwKI/0.jpg" alt="Download Image Collection by Asset ID at Multiple Regions" width="640" height="360" border="10" />
   </a>
 </div>
+
 
 ### Download Image Collection by Serialized Object
 
@@ -214,6 +232,7 @@ This script downloads the Earth Engine image collection dataset to GeoTIFF by it
  7. Specify the output GeoTIFF name
  8. Check the box to load images to map after download 
 
+
 Here is the video guide for downloading image collection by serialized object:
 
 <div align="center">
@@ -226,10 +245,12 @@ Here is the video guide for downloading image collection by serialized object:
 
 This script exports Earth Engine dataset from an asset ID to a serialized JSON file, allowing for quick access in the future without needing to recall the asset ID.
 
+
 ![Alt Text](images/SaveAsset2JSON.png)
 
 
 #### Parameters
+
  1. Asset ID
  2. Asset type (`Feature Collection`, `Image` or `Image Collection`)
  3. Specify output JSON file name
@@ -248,6 +269,7 @@ Here is the video guide for saving Earth Engine asset to serialized JSON file:
 > This script is only available for users who have installed Google Cloud SDK.
 
 This script uploads file(s) from local storage to Google Cloud Storage and converts file(s) to Earth Engine asset. It is used to share dataset on Google Cloud and the Earth Engine platform. The file(s) will be assigned with a user-specified asset ID. 
+
 
 ![Alt Text](images/Upload2GCS2Asset.png)
 
@@ -272,6 +294,7 @@ You can convert the file(s) to the following types of Earth Engine assets:
 4. Select file(s) from local storage
 5. Check the box to upload to Earth Engine (Optional)
 6. Choose asset type (`image` or `table`)
+
 7. Specify the asset ID
 
 Here is the video guide for uploading file to cloud storage and converting to Earth Engine asset:
@@ -281,3 +304,4 @@ Here is the video guide for uploading file to cloud storage and converting to Ea
     <img src="https://img.youtube.com/vi/mxtBPxd36gI/0.jpg" alt="Upload File to Cloud Storage and Convert to Earth Engine Asset" width="640" height="360" border="10" />
   </a>
 </div>
+

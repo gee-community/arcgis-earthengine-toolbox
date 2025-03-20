@@ -22,6 +22,7 @@ For a quick guide on filtering image collection, please visit [this link](https:
 3. Specify the filters and the corresponding arguments
 4. Specify the output JSON file name
 
+
 Here is the video guide for applying filters to collection dataset by asset ID:
 
 <div align="center">
@@ -29,6 +30,7 @@ Here is the video guide for applying filters to collection dataset by asset ID:
     <img src="https://img.youtube.com/vi/KXi2LGbp--U/0.jpg" alt="Apply Filters to Collection Dataset by Asset ID" width="640" height="360" border="10" />
   </a>
 </div>
+
 
 ### Apply Filters to Collection Dataset by Serialized Object
 
@@ -48,6 +50,7 @@ For a quick guide on filtering image collection, please visit [this link](https:
 2. Specify the filters and the corresponding arguments
 3. Specify the output JSON file name
 
+
 Here is the video guide for applying filters to collection dataset by serialized object:
 
 <div align="center">
@@ -55,6 +58,7 @@ Here is the video guide for applying filters to collection dataset by serialized
     <img src="https://img.youtube.com/vi/6SZdwaiiM-M/0.jpg" alt="Apply Filters to Collection Dataset by Serialized Object" width="640" height="360" border="10" />
   </a>
 </div>
+
 
 ### Apply Map Functions to Collection Dataset by Asset ID
 
@@ -75,6 +79,7 @@ For a quick guide on mapping over feature collection dataset, please visit [this
 4. Select the map functions to apply
 5. Specify the output JSON file name
 
+
 >[!NOTE] 
 > The python script that contains the map functions must be saved in the same folder as the GEE Connector Python Toolbox.
 
@@ -85,6 +90,7 @@ Here is the video guide for applying map functions to collection dataset by asse
     <img src="https://img.youtube.com/vi/qKPIULsXd-s/0.jpg" alt="Apply Map Functions to Collection Dataset by Asset ID" width="640" height="360" border="10" />
   </a>
 </div>
+
 
 
 ### Apply Map Functions to Collection Dataset by Serialized Object
@@ -105,6 +111,7 @@ For a quick guide on mapping over feature collection dataset, please visit [this
 4. Select the map functions to apply
 5. Specify the output JSON file name
 
+
 >[!NOTE] 
 > The python script that contains the map functions must be saved in the same folder as the GEE Connector Python Toolbox.
 
@@ -115,6 +122,7 @@ Here is the video guide for applying map functions to collection dataset by seri
     <img src="https://img.youtube.com/vi/ijjgf6c0EjU/0.jpg" alt="Apply Map Functions to Collection Dataset by Serialized Object" width="640" height="360" border="10" />
   </a>
 </div>
+
 
 ### Apply Reducers to Earth Engine Dataset by Asset ID
 

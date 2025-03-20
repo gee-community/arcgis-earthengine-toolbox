@@ -1,10 +1,14 @@
+
 # ArcGIS Earth Engine Toolbox (GEE Connector) User Guide: Authentication tools
+
 These tools help you get connected to your cloud project and Earth Engine.
 
 ## Authenticate Earth Engine
 
+
 > [!NOTE]
 > If you have already installed Google Cloud SDK, you will need to set up the application default login for Earth Engine authentication. To do this, go to [Installation](03_installation.md) and follow the instructions. This script is for users who do not have Google Cloud SDK.
+
 
 This script authenticates the use of Google Earth Engine with provided Google account. 
 >[!TIP]
@@ -25,6 +29,7 @@ Please note that if you have installed Google Cloud SDK shell and set up the app
  1. Google Cloud project ID (Optional)
  2. Wrokload tag (Optional)
 
+
 Here is the video guide for the Earth Engine authentication:
 
 <div align="center">
@@ -32,6 +37,7 @@ Here is the video guide for the Earth Engine authentication:
     <img src="https://img.youtube.com/vi/Onke2gSq3wE/0.jpg" alt="Earth Engine Authentication" width="640" height="360" border="10" />
   </a>
 </div>
+
 
 ## Check or Change Project ID 
 
@@ -47,6 +53,7 @@ Please note that if you have installed Google Cloud SDK shell, you cannot switch
  3. New project ID (Optional)
  4. New workload tag (Optional)  
 
+
 Here is the video guide for checking or changing project ID and workload tag:
 
 <div align="center">
@@ -54,6 +61,7 @@ Here is the video guide for checking or changing project ID and workload tag:
     <img src="https://img.youtube.com/vi/eWkmTi1Vdn4/0.jpg" alt="Check or Change Project ID" width="640" height="360" border="10" />
   </a>
 </div>
+
   
 ## Initialize Earth Engine 
 The script initialize the use of Google Earth Engine with a project ID and workload tag. The user must assign a project ID to use Earth Engine. **The user will need to run this script every time they start the ArcPro.**  
@@ -64,6 +72,7 @@ The script initialize the use of Google Earth Engine with a project ID and workl
 ### Parameters 
  1. Google Cloud project ID 
  2. Workload tag (Optional)
+
 Here is the video guide for the Earth Engine initialization:
 
 <div align="center">
@@ -71,3 +80,4 @@ Here is the video guide for the Earth Engine initialization:
     <img src="https://img.youtube.com/vi/jg1FjUxZ8Tc/0.jpg" alt="Earth Engine Initialization" width="640" height="360" border="10" />
   </a>
 </div>
+
