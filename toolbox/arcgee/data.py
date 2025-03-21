@@ -27,7 +27,7 @@ import json
 # Import version from parent package
 # from arcgee import __version__
 
-__version__ = "0.0.1"
+__version__ = "0.1.1"
 
 
 def get_version_info():

@@ -15,8 +15,6 @@
 import arcgee.map as map
 import arcgee.data as data
 
-# ArcGEE version
-# __version__ = "0.0.1"
 __all__ = ["map", "data"]
 __author__ = "Google LLC"
 __license__ = "Apache 2.0"
