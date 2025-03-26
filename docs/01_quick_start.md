@@ -11,7 +11,7 @@ Before using the toolbox, ensure you have the following:
 1. ArcGIS Pro 3.2 or later installed on your computer with a license.
 2. Google Earth Engine API enabled for your Google Cloud project.
 3. Google Cloud SDK installed on your computer.
-4. ArcGIS Earth Engine toolbox downloaded from this repo and added to your ArcGIS Pro project. 
+4. ArcGIS Earth Engine toolbox downloaded from this repo and added to your ArcGIS Pro project.
 
 Follow the instructions on the [installation page](03_installation.md) for a step-by-step guide.
 
@@ -31,7 +31,7 @@ Earth Engine assets are geospatial data stored within the platform. You can acce
 * Organizational or private assets - your orgainzation use Earth Engine, assests can be shared across users. Learn more about [assets](https://developers.google.com/earth-engine/guides/manage_assets)
 
 ## Visualize data from the Earth Engine Catalog
-The Data Exploration tools provide multiple ways Earth Engine assests into your project to to visualize. Visualization of Earth Engine assets can be helpful to add context to an analysis. Assets brought into ArcGIS Pro with these tools are **read only**. 
+The Data Exploration tools provide multiple ways Earth Engine assests into your project to to visualize. Visualization of Earth Engine assets can be helpful to add context to an analysis. Assets brought into ArcGIS Pro with these tools are **read only**.
 
 ### Add an ImageCollection() to your ArcGIS project
 1. Starting at the catalog's [main page](https://developers.google.com/earth-engine/datasets) search or navigate to the asset of interest. For this example, we are using the [ERA5-Land Monthly Aggregated](https://developers.google.com/earth-engine/datasets/catalog/ECMWF_ERA5_LAND_MONTHLY_AGGR) asset.

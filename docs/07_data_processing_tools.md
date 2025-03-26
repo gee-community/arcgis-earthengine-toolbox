@@ -5,13 +5,13 @@ These tools allow applying filters and map functions to collection datasets, app
 
 ### Apply Filters to Collection Dataset by Asset ID
 
-This script applies filters to feature collection or image collection by asset ID, and saves the filtered dataset to serialized JSON object for future use. 
+This script applies filters to feature collection or image collection by asset ID, and saves the filtered dataset to serialized JSON object for future use.
 
-To browser all available earth engine filters, please visit [this link](https://developers.google.com/earth-engine/apidocs/ee-filter). 
+To browser all available earth engine filters, please visit [this link](https://developers.google.com/earth-engine/apidocs/ee-filter).
 
 For a quick guide on filtering feature collection, please visit [this link](https://developers.google.com/earth-engine/guides/feature_collection_filtering).
 
-For a quick guide on filtering image collection, please visit [this link](https://developers.google.com/earth-engine/guides/ic_filtering).  
+For a quick guide on filtering image collection, please visit [this link](https://developers.google.com/earth-engine/guides/ic_filtering).
 
 ![Alt Text](images/ApplyFilter2ColbyID.png)
 
@@ -34,13 +34,13 @@ Here is the video guide for applying filters to collection dataset by asset ID:
 
 ### Apply Filters to Collection Dataset by Serialized Object
 
-This script applies filters to feature collection or image collection by serialized JSON object, and saves the filtered dataset to a new serialized JSON object for future use. It is useful when you want to apply filters to the existing JSON object. 
+This script applies filters to feature collection or image collection by serialized JSON object, and saves the filtered dataset to a new serialized JSON object for future use. It is useful when you want to apply filters to the existing JSON object.
 
-To browser all available earth engine filters, please visit [this link](https://developers.google.com/earth-engine/apidocs/ee-filter). 
+To browser all available earth engine filters, please visit [this link](https://developers.google.com/earth-engine/apidocs/ee-filter).
 
 For a quick guide on filtering feature collection, please visit [this link](https://developers.google.com/earth-engine/guides/feature_collection_filtering).
 
-For a quick guide on filtering image collection, please visit [this link](https://developers.google.com/earth-engine/guides/ic_filtering). 
+For a quick guide on filtering image collection, please visit [this link](https://developers.google.com/earth-engine/guides/ic_filtering).
 
 ![Alt Text](images/ApplyFilter2ColbyJSON.png)
 
@@ -80,7 +80,7 @@ For a quick guide on mapping over feature collection dataset, please visit [this
 5. Specify the output JSON file name
 
 
->[!NOTE] 
+>[!NOTE]
 > The python script that contains the map functions must be saved in the same folder as the GEE Connector Python Toolbox.
 
 Here is the video guide for applying map functions to collection dataset by asset ID:
@@ -95,7 +95,7 @@ Here is the video guide for applying map functions to collection dataset by asse
 
 ### Apply Map Functions to Collection Dataset by Serialized Object
 
-This script applies user-define map functions to the feature collection or image collection dataset by the serialized JSON object and saves the processed dataset to a new serialized JSON object for future use. It is useful when you want to apply map functions to the existing JSON object. 
+This script applies user-define map functions to the feature collection or image collection dataset by the serialized JSON object and saves the processed dataset to a new serialized JSON object for future use. It is useful when you want to apply map functions to the existing JSON object.
 
 For a quick guide on mapping over image collection dataset, please visit [this link](https://developers.google.com/earth-engine/guides/ic_mapping).
 
@@ -112,7 +112,7 @@ For a quick guide on mapping over feature collection dataset, please visit [this
 5. Specify the output JSON file name
 
 
->[!NOTE] 
+>[!NOTE]
 > The python script that contains the map functions must be saved in the same folder as the GEE Connector Python Toolbox.
 
 Here is the video guide for applying map functions to collection dataset by serialized object:
@@ -173,7 +173,7 @@ For reducer overview, please visit [this link](https://developers.google.com/ear
 
 This script enables users to execute customized Python scripts within ArcPro. To ensure your script runs successfully, follow these tips:
 
-1.	Include the following line at the beginning of your script to import the Earth Engine API 
+1.	Include the following line at the beginning of your script to import the Earth Engine API
 ```
 import ee
 ```
@@ -181,10 +181,10 @@ import ee
 ```
 ee.Initialize(project='QUOTA_PROJECT_ID')
 ```
-3.	Set workload tag if needed, add the following line to your script, replacing WORKLOAD_TAG with your workload tag such as "arcgis-ee-connector"  
+3.	Set workload tag if needed, add the following line to your script, replacing WORKLOAD_TAG with your workload tag such as "arcgis-ee-connector"
 ```
 ee.data.setWorkloadTag(WORKLOAD_TAG)
-``` 
+```
 4.	To prevent the script window from closing immediately after execution, include this line at the end of your code:
 ```
 input("Press Enter to exit...")
