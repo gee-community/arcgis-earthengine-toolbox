@@ -1,11 +1,11 @@
 # Copyright 2025 Google LLC
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     https://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -55,9 +55,8 @@ class Toolbox:
         tools.append(DownloadImgColbyIDMultiRegion)
         tools.append(DownloadFeatColbyID)
         tools.append(DownloadFeatColbyObj)
-        tools.append(DownloadImgCol2Gif)
+        # tools.append(DownloadImgCol2Gif)
         # currently not used, because the timelapse function causes too much data usage
-
         # tools.append(DownloadLandsatTimelapse2Gif)
         tools.append(Upload2GCS)
         tools.append(GCSFile2Asset)
@@ -353,7 +352,7 @@ class AddImg2MapbyID:
 
         param1 = arcpy.Parameter(
             name="bands",
-            displayName="Specify three bands for RGB visualization",
+            displayName="Specify up to three bands for RGB visualization",
             datatype="GPString",
             direction="Input",
             multiValue=True,
@@ -558,7 +557,7 @@ class AddImg2MapbyObj:
 
         param1 = arcpy.Parameter(
             name="bands",
-            displayName="Specify three bands for RGB visualization",
+            displayName="Specify up to three bands for RGB visualization",
             datatype="GPString",
             direction="Input",
             multiValue=True,
@@ -775,7 +774,7 @@ class AddImgCol2MapbyID:
 
         param5 = arcpy.Parameter(
             name="bands",
-            displayName="Specify three bands for RGB visualization",
+            displayName="Specify up to three bands for RGB visualization",
             datatype="GPString",
             direction="Input",
             multiValue=True,
@@ -1091,7 +1090,7 @@ class AddImgCol2MapbyObj:
 
         param2 = arcpy.Parameter(
             name="bands",
-            displayName="Specify three bands for RGB visualization",
+            displayName="Specify up to three bands for RGB visualization",
             datatype="GPString",
             direction="Input",
             multiValue=True,
@@ -1338,7 +1337,7 @@ class AddFeatCol2MapbyID:
             displayName="Select the type of filter-by-location",
             datatype="GPString",
             direction="Input",
-            parameterType="Required",
+            parameterType="Optional",
         )
 
         param3.filter.list = [
@@ -1488,6 +1487,15 @@ class AddFeatCol2MapbyID:
                     )
                     return
 
+        # start date is required when end date is provided
+        if parameters[2].valueAsText:
+            val_list = parameters[2].values
+            if not val_list[0][0]:
+                parameters[2].setErrorMessage(
+                    "Start date is required when end date is provided."
+                )
+                return
+
     def execute(self, parameters, messages):
         """
         The source code of the tool.
@@ -1562,8 +1570,12 @@ class AddFeatCol2MapbyID:
         # Filter by dates if specified
         if parameters[2].valueAsText:
             val_list = parameters[2].values
-            start_date = val_list[0][0]
-            end_date = val_list[0][1]
+            start_date = None
+            end_date = None
+            if val_list[0][0]:
+                start_date = val_list[0][0]
+            if val_list[0][1]:
+                end_date = val_list[0][1]
             fc = fc.filterDate(start_date, end_date)
 
         # Filter by bounds if specified
@@ -2811,13 +2823,13 @@ class DownloadImgColbyObj:
         """The source code of the tool."""
         # Multiple images could be selected
         json_path = parameters[0].valueAsText
-        img_names = parameters[2].valueAsText
-        band_str = parameters[3].valueAsText
-        scale = parameters[4].valueAsText
-        in_poly = parameters[5].valueAsText
-        use_extent = parameters[6].valueAsText
-        out_folder = parameters[7].valueAsText
-        load_tiff = parameters[8].valueAsText
+        img_names = parameters[1].valueAsText
+        band_str = parameters[2].valueAsText
+        scale = parameters[3].valueAsText
+        in_poly = parameters[4].valueAsText
+        use_extent = parameters[5].valueAsText
+        out_folder = parameters[6].valueAsText
+        load_tiff = parameters[7].valueAsText
 
         # load collection object
         collection = arcgee.data.load_ee_result(json_path)
@@ -3145,24 +3157,6 @@ class DownloadImgColbyIDMultiRegion:
         # Get the scale for xarray dataset
         scale_ds = float(scale)
 
-        # Get the first image of the collection
-        image = collection.first()
-
-        # Get crs code for xarray metadata
-        # crs information could be missing, then use wkt from projection
-        try:
-            crs = image.select(0).projection().getInfo()["crs"]
-            arcpy.AddMessage("Image projection CRS is " + crs)
-        except:
-            # crs is not explictly defined
-            arcpy.AddMessage("Image projection CRS is unknown.")
-            wkt = image.select(0).projection().getInfo()["wkt"]
-            crs = rasterio.crs.CRS.from_wkt(wkt)
-
-        # Check if use projection or crs code
-        image = ee.ImageCollection(image)
-        use_projection = arcgee.data.whether_use_projection(image)
-
         out_tiff_list = []
         # Iterate each selected region
         icount = 1
@@ -3177,6 +3171,24 @@ class DownloadImgColbyIDMultiRegion:
                 collection_region = collection.filterBounds(centroid)
             elif bound_type == "Bounding Box of Polygon":
                 collection_region = collection.filterBounds(roi)
+            # CRS could change per region, so get the first image of the collection after filter by ROI
+            image = collection_region.first()
+
+            # Get crs code for xarray metadata
+            # crs information could be missing, then use wkt from projection
+            try:
+                crs = image.select(0).projection().getInfo()["crs"]
+                arcpy.AddMessage("Image projection CRS is " + crs)
+            except:
+                # crs is not explictly defined
+                arcpy.AddMessage("Image projection CRS is unknown.")
+                wkt = image.select(0).projection().getInfo()["wkt"]
+                crs = rasterio.crs.CRS.from_wkt(wkt)
+
+            # Check if use projection or crs code
+            image = ee.ImageCollection(image)
+            use_projection = arcgee.data.whether_use_projection(image)
+            arcpy.AddMessage("Use projection: " + str(use_projection))
 
             # select the max number of images
             if max_num:
@@ -5124,7 +5136,7 @@ class ApplyMapFunctionbyID:
 
         param1 = arcpy.Parameter(
             name="asset_id",
-            displayName="Specify the asset id of the dataset",
+            displayName="Specify the asset ID of the dataset",
             datatype="GPString",
             direction="Input",
             parameterType="Required",

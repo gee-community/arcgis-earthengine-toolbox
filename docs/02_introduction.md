@@ -1,4 +1,6 @@
-# ArcGIS Earth Engine Toolbox User Guide: Introduction
+
+# ArcGIS Earth Engine Toolbox (GEE Connector) User Guide: Introduction
+
 Welcome to the ArcGIS-EarthEngine Toolbox!
 This section will describe the basic concepts, and prequisites to use the ArcGIS-EarthEngine Connector toolbox within ArcGIS Pro. 
 
@@ -12,7 +14,7 @@ Before using the ArcGIS Earth Engine Toolbox, ensure you have the following:
 2. Google Earth Engine API enabled for your Google Cloud project. See [this page](https://console.cloud.google.com/earth-engine) for Google Cloud Project creation & registration with Earth Engine.
 3. Google Cloud SDK installed on your computer.
 
-For more detailed information see the [installation page](https://github.com/gee-community/arcgis-earthengine-toolbox/blob/alisul/march_docs/docs/03%20Installation.md) in the documentation.
+For more detailed information see the [installation page](03_installation.md) in the documentation.
 
 ## Key Concepts Overview
 

@@ -1,5 +1,7 @@
 
-# ArcGIS Earth Engine Toolbox User Guide: Quick Start
+
+# ArcGIS Earth Engine Toolbox (GEE Connector) User Guide: Quick Start
+
 Guide to get you up and running with the ArcGIS Earth Engine Toolbox
 
 ## Installation
@@ -11,13 +13,13 @@ Before using the toolbox, ensure you have the following:
 3. Google Cloud SDK installed on your computer.
 4. ArcGIS Earth Engine toolbox downloaded from this repo and added to your ArcGIS Pro project. 
 
-Follow the instructions on the [installation page](https://github.com/gee-community/arcgis-earthengine-toolbox/blob/alisul/march_docs/docs/03%20Installation.md) for a step-by-step guide.
+Follow the instructions on the [installation page](03_installation.md) for a step-by-step guide.
 
 ## Authenticate Earth Engine from ArcGIS Pro
 
 Once you have completed the installation, you will need to:
-1. [Authenticate Earth Engine](https://github.com/gee-community/arcgis-earthengine-toolbox/blob/alisul/march_docs/docs/04%20Authentication%20Tools.md#authenticate-earth-engine) - note this is only needed once per computer.
-2. [Initialize Earth Engine](https://github.com/gee-community/arcgis-earthengine-toolbox/blob/alisul/march_docs/docs/04%20Authentication%20Tools.md#initialize-earth-engine)
+1. [Authenticate Earth Engine](04_authentication_tools.md#authenticate-earth-engine) - note this is only needed once per computer.
+2. [Initialize Earth Engine](04_authentication_tools.md#initialize-earth-engine)
 > [!IMPORTANT]
 > Initalize Earth Engine will need to be run each time ArcGIS Pro is started. 
 
