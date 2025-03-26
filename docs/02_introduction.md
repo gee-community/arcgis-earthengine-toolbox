@@ -2,7 +2,7 @@
 # ArcGIS Earth Engine Toolbox (GEE Connector) User Guide: Introduction
 
 Welcome to the ArcGIS-EarthEngine Toolbox!
-This section will describe the basic concepts, and prequisites to use the ArcGIS-EarthEngine Connector toolbox within ArcGIS Pro. 
+This section will describe the basic concepts, and perquisites to use the ArcGIS-EarthEngine Connector toolbox within ArcGIS Pro.
 
 This user guide provides instructions for using the ArcGIS Earth Engine Toolbox, a Python toolbox that allows users to interact with Google Earth Engine (GEE) from ArcGIS Pro. The toolbox provides a set of tools for managing Earth Engine assets, downloading and uploading data, and processing data using Earth Engine's API. Please see the individual toolbox descriptions in the documents pages for specifics on each tool.
 

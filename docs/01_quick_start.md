@@ -21,7 +21,7 @@ Once you have completed the installation, you will need to:
 1. [Authenticate Earth Engine](04_authentication_tools.md#authenticate-earth-engine) - note this is only needed once per computer.
 2. [Initialize Earth Engine](04_authentication_tools.md#initialize-earth-engine)
 > [!IMPORTANT]
-> Initalize Earth Engine will need to be run each time ArcGIS Pro is started. 
+> Initialize Earth Engine will need to be run each time ArcGIS Pro is started.
 
 ## Where to find Earth Engine Assets to use with this toolbox
 Earth Engine assets are geospatial data stored within the platform. You can access datasets in catalogs, or upload your own data and store data produced from your Earth Engine analyses as assets.

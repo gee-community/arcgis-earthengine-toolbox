@@ -1191,7 +1191,7 @@ def image_to_geotiff(
         )
         # Use either X/Y or lat/lon depending on the availability
         if "X" in list(ds.variables.keys()):
-            arcpy.AddMessage("Use X/Y to define tranform")
+            arcpy.AddMessage("Use X/Y to define transform")
             transform = from_origin(
                 ds["X"].values[0], ds["Y"].values[-1], scale_ds, -scale_ds
             )
@@ -1213,7 +1213,7 @@ def image_to_geotiff(
             **({"geometry": roi} if roi is not None else {}),
         )
         if "X" in list(ds.variables.keys()):
-            arcpy.AddMessage("Use X/Y to define tranform")
+            arcpy.AddMessage("Use X/Y to define transform")
             transform = from_origin(
                 ds["X"].values[0], ds["Y"].values[0], scale_ds, -scale_ds
             )

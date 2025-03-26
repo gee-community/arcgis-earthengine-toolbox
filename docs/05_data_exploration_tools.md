@@ -118,7 +118,7 @@ This script adds the Earth Engine Image Collection dataset to ArcPro as a base m
 
  1. Asset ID
  2. Filter by dates
- 3. Filter by point gemoetry in lat/lon coordinates
+ 3. Filter by point geometry in lat/lon coordinates
  4. Filter by the centroid of the current map view
  5. Select image from the filtered list
  6. Select bands for visualization (up to 3)

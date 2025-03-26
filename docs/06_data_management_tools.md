@@ -60,7 +60,7 @@ This script downloads the Earth Engine feature collection dataset to ArcPro feat
 2. Filter by dataset properties
 3. Filter by dates
 4. Select the type of bounds to filter by
-5. Specify point gemoetry in lat/lon coordinates if selected above
+5. Specify point geometry in lat/lon coordinates if selected above
 6. Specify the polygon feature as region of interest if selected above
 7. Select the geometry type to download
 8. Specify the output file name
@@ -165,7 +165,7 @@ This script downloads the Earth Engine image collection dataset to GeoTIFF by it
 
  1. Asset ID
  2. Filter by dates
- 3. Filter by point gemoetry in lat/lon coordinates
+ 3. Filter by point geometry in lat/lon coordinates
  4. Filter by the centroid of the current map view
  5. Select images to download
  6. Select bands to download

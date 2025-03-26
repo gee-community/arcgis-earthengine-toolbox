@@ -27,7 +27,7 @@ Please note that if you have installed Google Cloud SDK shell and set up the app
 
 ### Parameters
  1. Google Cloud project ID (Optional)
- 2. Wrokload tag (Optional)
+ 2. Workload tag (Optional)
 
 
 Here is the video guide for the Earth Engine authentication:
