@@ -1,6 +1,6 @@
 # How to contribute
 
-Thanks for looking into contirbuting to the `arcgis-earthengine-toolbox`. There's many ways to contribute to the toolbox:
+Thanks for looking into contributing to the `arcgis-earthengine-toolbox`. There's many ways to contribute to the toolbox:
 
 * Filing new issues and providing feedback on existing issues
 * Improving our docs

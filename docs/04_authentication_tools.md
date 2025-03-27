@@ -10,9 +10,9 @@ These tools help you get connected to your cloud project and Earth Engine.
 > If you have already installed Google Cloud SDK, you will need to set up the application default login for Earth Engine authentication. To do this, go to [Installation](03_installation.md) and follow the instructions. This script is for users who do not have Google Cloud SDK.
 
 
-This script authenticates the use of Google Earth Engine with provided Google account. 
+This script authenticates the use of Google Earth Engine with provided Google account.
 >[!TIP]
->The user only needs to run this script once on the same computer. 
+>The user only needs to run this script once on the same computer.
 
 ![Alt Text](images/GEEAuth.png)
 
@@ -23,11 +23,11 @@ The project ID and workload tag are optional inputs here. If the user inputs the
 3.	grants you (or the user) the correct roles and permissions.
 
 
-Please note that if you have installed Google Cloud SDK shell and set up the application default credentials, this script will authenticate Earth Engine using the quota project ID in the `application_default_credentials.json` usually located at `C:\Users\user_name\AppData\Roaming\gcloud`. If you don't have Google Cloud SDK shell, the script will authenticate through the web browser. 
+Please note that if you have installed Google Cloud SDK shell and set up the application default credentials, this script will authenticate Earth Engine using the quota project ID in the `application_default_credentials.json` usually located at `C:\Users\user_name\AppData\Roaming\gcloud`. If you don't have Google Cloud SDK shell, the script will authenticate through the web browser.
 
 ### Parameters
  1. Google Cloud project ID (Optional)
- 2. Wrokload tag (Optional)
+ 2. Workload tag (Optional)
 
 
 Here is the video guide for the Earth Engine authentication:
@@ -39,9 +39,9 @@ Here is the video guide for the Earth Engine authentication:
 </div>
 
 
-## Check or Change Project ID 
+## Check or Change Project ID
 
-This script displays the current Google Cloud quota project ID and allows users to switch quota project ID and workload tag associated with Google Earth Engine if needed. 
+This script displays the current Google Cloud quota project ID and allows users to switch quota project ID and workload tag associated with Google Earth Engine if needed.
 
 ![Alt Text](images/CheckProjectID.png)
 
@@ -51,7 +51,7 @@ Please note that if you have installed Google Cloud SDK shell, you cannot switch
  1. Current project ID (automatically displays)
  2. Current workload tag (automatically displays)
  3. New project ID (Optional)
- 4. New workload tag (Optional)  
+ 4. New workload tag (Optional)
 
 
 Here is the video guide for checking or changing project ID and workload tag:
@@ -62,15 +62,15 @@ Here is the video guide for checking or changing project ID and workload tag:
   </a>
 </div>
 
-  
-## Initialize Earth Engine 
-The script initialize the use of Google Earth Engine with a project ID and workload tag. The user must assign a project ID to use Earth Engine. **The user will need to run this script every time they start the ArcPro.**  
+
+## Initialize Earth Engine
+The script initialize the use of Google Earth Engine with a project ID and workload tag. The user must assign a project ID to use Earth Engine. **The user will need to run this script every time they start the ArcPro.**
 
 ![Alt Text](images/GEEInit.png)
 
 
-### Parameters 
- 1. Google Cloud project ID 
+### Parameters
+ 1. Google Cloud project ID
  2. Workload tag (Optional)
 
 Here is the video guide for the Earth Engine initialization:

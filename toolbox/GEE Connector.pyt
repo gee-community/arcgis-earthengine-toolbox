@@ -456,7 +456,7 @@ class AddImg2MapbyID:
         # Define visualization parameters
         vis_params = {}
 
-        # Add bands to vis_params if specfied
+        # Add bands to vis_params if specified
         if band_str:
             # Remove ' in band string in case users add it
             if "'" in band_str:
@@ -647,7 +647,7 @@ class AddImg2MapbyObj:
         # Define visualization parameters
         vis_params = {}
 
-        # Add bands to vis_params if specfied
+        # Add bands to vis_params if specified
         if band_str:
             # Remove ' in band string in case users add it
             if "'" in band_str:
@@ -945,7 +945,7 @@ class AddImgCol2MapbyID:
         # Define visualization parameters
         vis_params = {}
 
-        # Add bands to vis_params if specfied
+        # Add bands to vis_params if specified
         if band_str:
             # Remove ' in band string in case users add it
             if "'" in band_str:
@@ -1206,7 +1206,7 @@ class AddImgCol2MapbyObj:
         # Define visualization parameters
         vis_params = {}
 
-        # Add bands to vis_params if specfied
+        # Add bands to vis_params if specified
         if band_str:
             # Remove ' in band string in case users add it
             if "'" in band_str:
@@ -2047,7 +2047,7 @@ class DownloadImgbyID:
             crs = image.select(0).projection().getInfo()["crs"]
             arcpy.AddMessage("Image projection CRS is " + crs)
         except:
-            # crs is not explictly defined
+            # crs is not explicitly defined
             arcpy.AddMessage("Image projection CRS is unknown. Use WKT instead.")
             wkt = image.select(0).projection().getInfo()["wkt"]
             crs = rasterio.crs.CRS.from_wkt(wkt)
@@ -2273,7 +2273,7 @@ class DownloadImgbyObj:
             crs = image.select(0).projection().getInfo()["crs"]
             arcpy.AddMessage("Image projection CRS is " + crs)
         except:
-            # crs is not explictly defined
+            # crs is not explicitly defined
             arcpy.AddMessage("Image projection CRS is unknown. Use WKT instead.")
             wkt = image.select(0).projection().getInfo()["wkt"]
             crs = rasterio.crs.CRS.from_wkt(wkt)
@@ -2585,7 +2585,7 @@ class DownloadImgColbyID:
             crs = image.select(0).projection().getInfo()["crs"]
             arcpy.AddMessage("Image projection CRS is " + crs)
         except:
-            # crs is not explictly defined
+            # crs is not explicitly defined
             arcpy.AddMessage("Image projection CRS is unknown.")
             wkt = image.select(0).projection().getInfo()["wkt"]
             crs = rasterio.crs.CRS.from_wkt(wkt)
@@ -2873,7 +2873,7 @@ class DownloadImgColbyObj:
             crs = image.select(0).projection().getInfo()["crs"]
             arcpy.AddMessage("Image projection CRS is " + crs)
         except:
-            # crs is not explictly defined
+            # crs is not explicitly defined
             arcpy.AddMessage("Image projection CRS is unknown.")
             wkt = image.select(0).projection().getInfo()["wkt"]
             crs = rasterio.crs.CRS.from_wkt(wkt)
@@ -3180,7 +3180,7 @@ class DownloadImgColbyIDMultiRegion:
                 crs = image.select(0).projection().getInfo()["crs"]
                 arcpy.AddMessage("Image projection CRS is " + crs)
             except:
-                # crs is not explictly defined
+                # crs is not explicitly defined
                 arcpy.AddMessage("Image projection CRS is unknown.")
                 wkt = image.select(0).projection().getInfo()["wkt"]
                 crs = rasterio.crs.CRS.from_wkt(wkt)
@@ -3996,7 +3996,7 @@ class DownloadImgCol2Gif:
         # Define animation function parameters
         videoArgs = {}
 
-        # Add bands to videoArgs if specfied
+        # Add bands to videoArgs if specified
         if band_str:
             # Remove ' in band string in case users add it
             if "'" in band_str:
@@ -4287,7 +4287,7 @@ class DownloadLandsatTimelapse2Gif:
         arcgee.data.validate_date(start_date)
         arcgee.data.validate_date(end_date)
 
-        # Add bands to videoArgs if specfied
+        # Add bands to videoArgs if specified
         if band_str:
             # Remove ' in band string in case users add it
             if "'" in band_str:
