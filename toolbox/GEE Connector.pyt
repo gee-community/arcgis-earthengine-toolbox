@@ -922,6 +922,11 @@ class AddImgCol2MapbyID:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+
+        # start date is required when end date is provided for filter by dates
+        if parameters[1].valueAsText:
+            arcgee.data.check_start_date(parameters[1])
+
         return
 
     def execute(self, parameters, messages):
@@ -1473,7 +1478,7 @@ class AddFeatCol2MapbyID:
         if parameters[0].valueAsText:
             arcgee.data.check_ee_datatype(parameters[0], "TABLE")
 
-        # Make sure property name is only used once
+        # Display warning if property name is used more than once
         prop_list = []
         if parameters[1].valueAsText:
             val_list = parameters[1].values
@@ -1482,19 +1487,14 @@ class AddFeatCol2MapbyID:
                 if prop_name not in prop_list:
                     prop_list.append(prop_name)
                 else:
-                    parameters[1].setErrorMessage(
-                        f"The property name '{prop_name}' is used more than once. Please use unique property names."
+                    parameters[1].setWarningMessage(
+                        f"The property name '{prop_name}' is used more than once. You can confirm and proceed."
                     )
                     return
 
-        # start date is required when end date is provided
+        # start date is required when end date is provided for filter by dates
         if parameters[2].valueAsText:
-            val_list = parameters[2].values
-            if not val_list[0][0]:
-                parameters[2].setErrorMessage(
-                    "Start date is required when end date is provided."
-                )
-                return
+            arcgee.data.check_start_date(parameters[2])
 
     def execute(self, parameters, messages):
         """
@@ -2531,6 +2531,11 @@ class DownloadImgColbyID:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+
+        # start date is required when end date is provided for filter by dates
+        if parameters[1].valueAsText:
+            arcgee.data.check_start_date(parameters[1])
+
         return
 
     def execute(self, parameters, messages):
@@ -3111,6 +3116,11 @@ class DownloadImgColbyIDMultiRegion:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+
+        # start date is required when end date is provided for filter by dates
+        if parameters[1].valueAsText:
+            arcgee.data.check_start_date(parameters[1])
+
         return
 
     def execute(self, parameters, messages):
@@ -3409,7 +3419,7 @@ class DownloadFeatColbyID:
         if parameters[0].valueAsText:
             arcgee.data.check_ee_datatype(parameters[0], "TABLE")
 
-        # Make sure property name is only used once
+        # Display warning if property name is used more than once
         prop_list = []
         if parameters[1].valueAsText:
             val_list = parameters[1].values
@@ -3418,10 +3428,13 @@ class DownloadFeatColbyID:
                 if prop_name not in prop_list:
                     prop_list.append(prop_name)
                 else:
-                    parameters[1].setErrorMessage(
-                        f"The property name '{prop_name}' is used more than once. Please use unique property names."
+                    parameters[1].setWarningMessage(
+                        f"The property name '{prop_name}' is used more than once. You can confirm and proceed."
                     )
                     return
+        # start date is required when end date is provided for filter by dates
+        if parameters[2].valueAsText:
+            arcgee.data.check_start_date(parameters[2])
 
     def execute(self, parameters, messages):
         """
