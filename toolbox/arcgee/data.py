@@ -1440,3 +1440,17 @@ def list_files_in_folder(storage_client, bucket_name, folder_name):
     files = [blob.name for blob in blobs if not blob.name.endswith("/")]
 
     return files
+
+
+# check if the start date is given when end date is provided for filter by dates
+def check_start_date(parameter):
+    """Check if the start date is given when end date is provided for filter by dates.
+
+    Args:
+        parameter (Parameter): The parameter to check
+    """
+    val_list = parameter.values
+    # display error message if start date is not provided when end date is provided
+    if not val_list[0][0]:
+        parameter.setErrorMessage("Start date is required when end date is provided.")
+        return
