@@ -3436,6 +3436,13 @@ class DownloadFeatColbyID:
         if parameters[2].valueAsText:
             arcgee.data.check_start_date(parameters[2])
 
+        # exclude shapefiles
+        out_path = parameters[7].valueAsText
+        if out_path and out_path.lower().endswith(".shp"):
+            parameters[7].setErrorMessage(
+                "Shapefiles (.shp) are not supported. Please save to a file geodatabase."
+            )
+
     def execute(self, parameters, messages):
         """
         The source code of the tool.
@@ -3634,6 +3641,12 @@ class DownloadFeatColbyObj:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+        # exclude shapefiles
+        out_path = parameters[2].valueAsText
+        if out_path and out_path.lower().endswith(".shp"):
+            parameters[2].setErrorMessage(
+                "Shapefiles (.shp) are not supported. Please save to a file geodatabase."
+            )
         return
 
     def execute(self, parameters, messages):

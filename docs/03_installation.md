@@ -19,6 +19,8 @@ Before starting the installation process, ensure you have the following:
 
 ## Conda Environment Setup For Earth Engine API
 
+
+
 Before starting the installation, ensure that you have the necessary account permissions to create a conda environment and install the required packages. **If your ArcPro was installed by an administrator, you will need administrator-level permissions to complete the installation.**
 
 For ArcPro version `3.x`, follow the steps below to set up the conda environment. If you have ArcPro version lower than `3.0`, it is suggested that you upgrade it to `3.x`. You can login to your ESRI account, and download the specific ArcPro version from the **Downloads** -> **All Products and Versions** -> **All Versions**.
@@ -82,6 +84,10 @@ Here is the video guide for the Conda environment setup:
     <img src="https://img.youtube.com/vi/wuC4rKjKZEQ/0.jpg" alt="Conda Environment Setup Video Guide" width="720" height="405" border="10" />
   </a>
 </div>
+
+**Note: In the future, if you upgrade your ArcPro to a newer version, for example, from `3.3` to `3.4`, you will need to delete the existing conda environment `gee` and repeat the steps above to create the compatible conda environment.**
+
+        conda env remove --name gee
 
 
 ## Download ArcGIS Earth Engine Toolbox
