@@ -26,10 +26,9 @@ import arcgee
 
 class Toolbox:
     def __init__(self):
-        """Define the toolbox (the name of the toolbox is the name of the
-        .pyt file)."""
-        self.label = "Toolbox"
-        self.alias = "toolbox"
+        """Define the toolbox: GEE_Connector (the name of the toolbox GEE_Connector.pyt file)."""
+        self.label = "GEE Connector"
+        self.alias = "GEE_Connector"
 
         # List of tool classes associated with this toolbox
         tools = []
@@ -55,9 +54,12 @@ class Toolbox:
         tools.append(DownloadImgColbyIDMultiRegion)
         tools.append(DownloadFeatColbyID)
         tools.append(DownloadFeatColbyObj)
-        # tools.append(DownloadImgCol2Gif)
+
+        # TODO: update the following tools
         # currently not used, because the timelapse function causes too much data usage
+        # tools.append(DownloadImgCol2Gif)
         # tools.append(DownloadLandsatTimelapse2Gif)
+
         tools.append(Upload2GCS)
         tools.append(GCSFile2Asset)
         tools.append(SaveAsset2JSON)
@@ -81,7 +83,7 @@ class Toolbox:
 class GEEInit:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Initialize Earth Engine"""
         self.label = "Initialize Earth Engine"
         self.description = ""
         self.category = "Authentication Tools"
@@ -100,11 +102,8 @@ class GEEInit:
             parameterType="Required",
         )
 
-        # Fetch the project ID from the default credentials
+        # Try to fetch the project ID from the default credentials
         try:
-            # get project ID from earthengine credentials
-            # ee.Initialize()
-            # project_id = ee.data.getProjectConfig()["name"].split("/")[1]
             # get project ID from Google cloud default credentials
             credentials, env_project_id = default()
             param0.value = credentials.quota_project_id
@@ -159,7 +158,7 @@ class GEEInit:
 class ChangeProjectID:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Check or Change Project ID"""
         self.label = "Check or Change Project ID"
         self.description = ""
         self.category = "Authentication Tools"
@@ -251,7 +250,7 @@ class ChangeProjectID:
 class GEEAuth:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Authenticate Earth Engine"""
         self.label = "Authenticate Earth Engine"
         self.description = ""
         self.category = "Authentication Tools"
@@ -334,7 +333,7 @@ class GEEAuth:
 class AddImg2MapbyID:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Add Image to Map by Asset ID"""
         self.label = "Add Image to Map by Asset ID"
         self.description = ""
         self.category = "Data Exploration Tools"
@@ -482,13 +481,11 @@ class AddImg2MapbyID:
 
         # Add color palette if specified
         if palette_str:
-            # arcpy.AddMessage(palette_str)
             # Remove ' in palette string in case users add it
             if "'" in palette_str:
                 palette_str = palette_str.replace("'", "")
             # Convert palette string to list if specified
             palette = palette_str.split(",")
-            # arcpy.AddMessage(palette)
             vis_params["palette"] = palette
 
         # Get image by label
@@ -537,7 +534,7 @@ class AddImg2MapbyID:
 class AddImg2MapbyObj:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Add Image to Map by Serialized Object"""
         self.label = "Add Image to Map by Serialized Object"
         self.description = ""
         self.category = "Data Exploration Tools"
@@ -673,13 +670,11 @@ class AddImg2MapbyObj:
 
         # Add color palette if specified
         if palette_str:
-            # arcpy.AddMessage(palette_str)
             # Remove ' in palette string in case users add it
             if "'" in palette_str:
                 palette_str = palette_str.replace("'", "")
             # Convert palette string to list if specified
             palette = palette_str.split(",")
-            # arcpy.AddMessage(palette)
             vis_params["palette"] = palette
 
         # Get image by label
@@ -719,7 +714,7 @@ class AddImg2MapbyObj:
 class AddImgCol2MapbyID:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Add Image Collection to Map by Asset ID"""
         self.label = "Add Image Collection to Map by Asset ID"
         self.description = ""
         self.category = "Data Exploration Tools"
@@ -932,10 +927,6 @@ class AddImgCol2MapbyID:
     def execute(self, parameters, messages):
         """The source code of the tool."""
         asset_id = parameters[0].valueAsText
-        # These three input parameters are only used in updateParameters above
-        # filter_dates = parameters[1].valueAsText
-        # filter_bounds = parameters[2].valueAsText
-        # use_extent = parameters[3].valueAsText
         img_name = parameters[4].valueAsText
         band_str = parameters[5].valueAsText
         min_val = parameters[6].valueAsText
@@ -976,13 +967,11 @@ class AddImgCol2MapbyID:
 
         # Add color palette if specified
         if palette_str:
-            # arcpy.AddMessage(palette_str)
             # Remove ' in palette string in case users add it
             if "'" in palette_str:
                 palette_str = palette_str.replace("'", "")
             # Convert palette string to list if specified
             palette = palette_str.split(",")
-            # arcpy.AddMessage(palette)
             vis_params["palette"] = palette
 
         # Get image by label
@@ -1066,7 +1055,7 @@ class AddImgCol2MapbyID:
 class AddImgCol2MapbyObj:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Add Image Collection to Map by Serialized Object"""
         self.label = "Add Image Collection to Map by Serialized Object"
         self.description = ""
         self.category = "Data Exploration Tools"
@@ -1237,13 +1226,11 @@ class AddImgCol2MapbyObj:
 
         # Add color palette if specified
         if palette_str:
-            # arcpy.AddMessage(palette_str)
             # Remove ' in palette string in case users add it
             if "'" in palette_str:
                 palette_str = palette_str.replace("'", "")
             # Convert palette string to list if specified
             palette = palette_str.split(",")
-            # arcpy.AddMessage(palette)
             vis_params["palette"] = palette
 
         # Get the map ID and token
@@ -1281,7 +1268,7 @@ class AddImgCol2MapbyObj:
 class AddFeatCol2MapbyID:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Add Feature Collection to Map by Asset ID"""
         self.label = "Add Feature Collection to Map by Asset ID"
         self.description = ""
         self.category = "Data Exploration Tools"
@@ -1335,7 +1322,6 @@ class AddFeatCol2MapbyID:
             parameterType="Optional",
         )
         param2.columns = [["GPString", "Starting Date"], ["GPString", "Ending Date"]]
-        # param2.value = [['2014-03-01','2014-05-01']]
 
         param3 = arcpy.Parameter(
             name="filter_bounds",
@@ -1387,6 +1373,7 @@ class AddFeatCol2MapbyID:
 
         param7.filter.list = ["json"]
 
+        # TODO: add more visualization parameters
         # param2 = arcpy.Parameter(
         #     name="point_shape",
         #     displayName="Specify the point shape for visualization",
@@ -1437,7 +1424,6 @@ class AddFeatCol2MapbyID:
         # param7.filter.list = [0, 1]
 
         params = [param0, param1, param2, param3, param4, param5, param6, param7]
-        # ,param2,param3,param4,param5,param6,param7]
         return params
 
     def isLicensed(self):
@@ -1506,6 +1492,7 @@ class AddFeatCol2MapbyID:
 
         asset_id = arcgee.data.clean_asset_id(asset_id)
 
+        # TODO: add more visualization parameters
         # point_shape= parameters[2].valueAsText
         # point_size = parameters[3].valueAsText
         # line_width = parameters[4].valueAsText
@@ -1518,6 +1505,8 @@ class AddFeatCol2MapbyID:
         # Add color to vis_params if specified
         if feat_color:
             vis_params["color"] = feat_color
+
+        # TODO: add more visualization parameters
         # # Add point shape and size if specified
         # if point_shape :
         #     vis_params['pointShape'] = point_shape
@@ -1658,7 +1647,7 @@ class AddFeatCol2MapbyID:
 class AddFeatCol2MapbyObj:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Add Feature Collection to Map by Serialized Object"""
         self.label = "Add Feature Collection to Map by Serialized Object"
         self.description = ""
         self.category = "Data Exploration Tools"
@@ -1700,6 +1689,7 @@ class AddFeatCol2MapbyObj:
             parameterType="Optional",
         )
 
+        # TODO: add more visualization parameters
         # param2 = arcpy.Parameter(
         #     name="point_shape",
         #     displayName="Specify the point shape for visualization",
@@ -1750,7 +1740,6 @@ class AddFeatCol2MapbyObj:
         # param7.filter.list = [0, 1]
 
         params = [param0, param1]
-        # ,param2,param3,param4,param5,param6,param7]
         return params
 
     def isLicensed(self):
@@ -1780,6 +1769,7 @@ class AddFeatCol2MapbyObj:
         fc = arcgee.data.load_ee_result(json_path)
         asset_id = fc.get("system:id").getInfo()
 
+        # TODO: add more visualization parameters
         # point_shape= parameters[2].valueAsText
         # point_size = parameters[3].valueAsText
         # line_width = parameters[4].valueAsText
@@ -1793,6 +1783,7 @@ class AddFeatCol2MapbyObj:
         if feat_color:
             vis_params["color"] = feat_color
 
+        # TODO: add more visualization parameters
         # # Add point shape and size if specified
         # if point_shape :
         #     vis_params['pointShape'] = point_shape
@@ -1859,7 +1850,7 @@ class AddFeatCol2MapbyObj:
 class DownloadImgbyID:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Download Image by Asset ID"""
         self.label = "Download Image by Asset ID"
         self.description = ""
         self.category = "Data Management Tools"
@@ -2086,7 +2077,7 @@ class DownloadImgbyID:
 class DownloadImgbyObj:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Download Image by Serialized Object"""
         self.label = "Download Image by Serialized Object"
         self.description = ""
         self.category = "Data Management Tools"
@@ -2312,7 +2303,7 @@ class DownloadImgbyObj:
 class DownloadImgColbyID:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Download Image Collection by Asset ID"""
         self.label = "Download Image Collection by Asset ID"
         self.description = ""
         self.category = "Data Management Tools"
@@ -2660,7 +2651,7 @@ class DownloadImgColbyID:
 class DownloadImgColbyObj:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Download Image Collection by Serialized Object"""
         self.label = "Download Image Collection by Serialized Object"
         self.description = ""
         self.category = "Data Management Tools"
@@ -2949,7 +2940,7 @@ class DownloadImgColbyObj:
 class DownloadImgColbyIDMultiRegion:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Download Image Collection by Asset ID at Multiple Regions"""
         self.label = "Download Image Collection by Asset ID at Multiple Regions"
         self.description = ""
         self.category = "Data Management Tools"
@@ -3259,7 +3250,7 @@ class DownloadImgColbyIDMultiRegion:
 class DownloadFeatColbyID:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Download Feature Collection by Asset ID"""
         self.label = "Download Feature Collection by Asset ID"
         self.description = ""
         self.category = "Data Management Tools"
@@ -3301,7 +3292,6 @@ class DownloadFeatColbyID:
             parameterType="Optional",
         )
         param2.columns = [["GPString", "Starting Date"], ["GPString", "Ending Date"]]
-        # param2.value = [['2014-03-01','2014-05-01']]
 
         param3 = arcpy.Parameter(
             name="filter_bounds",
@@ -3531,7 +3521,6 @@ class DownloadFeatColbyID:
         # Prepare the download URL
         params_dict = {}
         params_dict["filetype"] = "GeoJSON"
-        # params_dict["selectors"] = ["geometry"] + parameters[6].valueAsText.split(";")
         params_dict["filename"] = "temp_json"
         download_url = fc.getDownloadURL(**params_dict)
 
@@ -3575,7 +3564,7 @@ class DownloadFeatColbyID:
 class DownloadFeatColbyObj:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Download Feature Collection by Serialized Object"""
         self.label = "Download Feature Collection by Serialized Object"
         self.description = ""
         self.category = "Data Management Tools"
@@ -3668,7 +3657,6 @@ class DownloadFeatColbyObj:
         # Prepare the download URL
         params_dict = {}
         params_dict["filetype"] = "GeoJSON"
-        # params_dict["selectors"] = ["geometry"] + parameters[6].valueAsText.split(";")
         params_dict["filename"] = "temp_json"
         download_url = fc.getDownloadURL(**params_dict)
 
@@ -3712,7 +3700,7 @@ class DownloadFeatColbyObj:
 class DownloadImgCol2Gif:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Download Image Collection to GIF"""
         self.label = "Download Image Collection to GIF"
         self.description = ""
         self.category = "Data Management Tools"
@@ -4046,13 +4034,11 @@ class DownloadImgCol2Gif:
 
         # Add color palette if specified
         if palette_str:
-            # arcpy.AddMessage(palette_str)
             # Remove ' in palette string in case users add it
             if "'" in palette_str:
                 palette_str = palette_str.replace("'", "")
             # Convert palette string to list if specified
             palette = palette_str.split(",")
-            # arcpy.AddMessage(palette)
             videoArgs["palette"] = palette
 
         # Get the region of interests
@@ -4162,7 +4148,7 @@ class DownloadImgCol2Gif:
 class DownloadLandsatTimelapse2Gif:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Download Landsat Timelapse to GIF"""
         self.label = "Download Landsat Timelapse to GIF"
         self.description = ""
         self.category = "Data Management Tools"
@@ -4404,6 +4390,7 @@ class DownloadLandsatTimelapse2Gif:
 # Save GEE Asset to Serialized JSON File
 class SaveAsset2JSON:
     def __init__(self):
+        """Define the tool: Save Earth Engine Asset to Serialized JSON File"""
         self.label = "Save Earth Engine Asset to Serialized JSON File"
         self.description = ""
         self.category = "Data Management Tools"
@@ -4494,7 +4481,7 @@ class SaveAsset2JSON:
 class Upload2GCS:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Upload File to Cloud Storage and Convert to Earth Engine Asset"""
         self.label = "Upload File to Cloud Storage and Convert to Earth Engine Asset"
         self.description = ""
         self.category = "Data Management Tools"
@@ -4716,7 +4703,7 @@ class Upload2GCS:
 class GCSFile2Asset:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Convert Cloud Storage File to Earth Engine Asset"""
         self.label = "Convert Cloud Storage File to Earth Engine Asset"
         self.description = ""
         self.category = "Data Management Tools"
@@ -4923,7 +4910,7 @@ class GCSFile2Asset:
 class ApplyFilterbyID:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Apply Filters to Collection Dataset by Asset ID"""
         self.label = "Apply Filters to Collection Dataset by Asset ID"
         self.description = ""
         self.category = "Data Processing Tools"
@@ -5040,7 +5027,7 @@ class ApplyFilterbyID:
 class ApplyFilterbyObj:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Apply Filters to Collection Dataset by Serialized Object"""
         self.label = "Apply Filters to Collection Dataset by Serialized Object"
         self.description = ""
         self.category = "Data Processing Tools"
@@ -5143,7 +5130,7 @@ class ApplyFilterbyObj:
 class ApplyMapFunctionbyID:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Apply Map Functions to Collection Dataset by Asset ID"""
         self.label = "Apply Map Functions to Collection Dataset by Asset ID"
         self.description = ""
         self.category = "Data Processing Tools"
@@ -5281,7 +5268,7 @@ class ApplyMapFunctionbyID:
 class ApplyMapFunctionbyObj:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Apply Map Functions to Collection Dataset by Serialized Object"""
         self.label = "Apply Map Functions to Collection Dataset by Serialized Object"
         self.description = ""
         self.category = "Data Processing Tools"
@@ -5429,7 +5416,7 @@ class ApplyMapFunctionbyObj:
 class ApplyReducerbyID:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Apply Reducers to Earth Engine Dataset by Asset ID"""
         self.label = "Apply Reducers to Earth Engine Dataset by Asset ID"
         self.description = ""
         self.category = "Data Processing Tools"
@@ -5673,7 +5660,7 @@ class ApplyReducerbyID:
 class ApplyReducerbyObj:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Apply Reducers to Earth Engine Dataset by Serialized Object"""
         self.label = "Apply Reducers to Earth Engine Dataset by Serialized Object"
         self.description = ""
         self.category = "Data Processing Tools"
@@ -5890,7 +5877,7 @@ class ApplyReducerbyObj:
 class RunPythonScript:
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """Define the tool: Run User-Provided Python Script"""
         self.label = "Run User-Provided Python Script"
         self.description = ""
         self.category = "Data Processing Tools"
