@@ -1,2 +1,47 @@
 <?xml version="1.0"?>
-<metadata xml:lang="en"><Esri><CreaDate>20241215</CreaDate><CreaTime>00174800</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce><ModDate>20250122</ModDate><ModTime>22561100</ModTime><scaleRange><minScale>150000000</minScale><maxScale>5000</maxScale></scaleRange><ArcGISProfile>ItemDescription</ArcGISProfile></Esri><tool name="GEEInit" displayname="Initialize Earth Engine" toolboxalias="toolbox" xmlns=""><arcToolboxHelpPath>c:\program files\arcgis\pro\Resources\Help\gp</arcToolboxHelpPath><parameters><param name="project_id" displayname="Specify the Google Cloud project ID for Earth Engine" type="Required" direction="Input" datatype="String" expression="project_id"><dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Automatically showing the default Project ID. Provide the Google Cloud Project ID in string format, for example, project-earth-374600&lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN /&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference></param><param name="workload_tag" displayname="Specify the workload tag" type="Optional" direction="Input" datatype="String" expression="{workload_tag}"><dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Workload tags are labels for monitoring specific computations within Earth Engine. The user can monitor and track tagged computations in the Metrics Explorer using the Earth Engine Cloud Project &amp;gt; Project &amp;gt; Used EECUs metric, and grouping or filtering by workload_tag. Visit this link for more information: &lt;/SPAN&gt;&lt;A href="https://developers.google.com/earth-engine/guides/monitoring_usage" target="_blank" STYLE="text-decoration:underline;"&gt;&lt;SPAN&gt;https://developers.google.com/earth-engine/guides/monitoring_usage &lt;/SPAN&gt;&lt;/A&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN&gt;Workload tag must be 1 - 63 characters, beginning and ending with an alphanumeric character ([a-z0-9A-Z]) with dashes (-), underscores (_), dots (.), and alpha numerics between, or an empty string to reset the default back to none.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference></param></parameters><summary>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;The script initializes the use of Google Earth Engine with a project ID and workload tag. The user must assign a project ID to use Earth Engine. The user will need to run this script every time they restart the ArcPro.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</summary></tool><dataIdInfo><idCitation><resTitle>Initialize Earth Engine</resTitle></idCitation><searchKeys><keyword>authentication</keyword></searchKeys></dataIdInfo><distInfo><distributor><distorFormat><formatName>ArcToolbox Tool</formatName></distorFormat></distributor></distInfo><mdHrLv><ScopeCd value="005"/></mdHrLv><mdDateSt Sync="TRUE">20250122</mdDateSt></metadata>
+<metadata xml:lang="en">
+  <Esri>
+    <CreaDate>20241215</CreaDate>
+    <CreaTime>00174800</CreaTime>
+    <ArcGISFormat>1.0</ArcGISFormat>
+    <SyncOnce>TRUE</SyncOnce>
+    <ModDate>20250122</ModDate>
+    <ModTime>22561100</ModTime>
+    <scaleRange>
+      <minScale>150000000</minScale>
+      <maxScale>5000</maxScale>
+    </scaleRange>
+    <ArcGISProfile>ItemDescription</ArcGISProfile>
+  </Esri>
+  <tool xmlns="" name="GEEInit" displayname="Initialize Earth Engine" toolboxalias="toolbox">
+    <arcToolboxHelpPath>c:\program files\arcgis\pro\Resources\Help\gp</arcToolboxHelpPath>
+    <parameters>
+      <param name="project_id" displayname="Specify the Google Cloud project ID for Earth Engine" type="Required" direction="Input" datatype="String" expression="project_id">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Automatically showing the default Project ID. Provide the Google Cloud Project ID in string format, for example, project-earth-374600&lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN /&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="workload_tag" displayname="Specify the workload tag" type="Optional" direction="Input" datatype="String" expression="{workload_tag}">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Workload tags are labels for monitoring specific computations within Earth Engine. The user can monitor and track tagged computations in the Metrics Explorer using the Earth Engine Cloud Project &amp;gt; Project &amp;gt; Used EECUs metric, and grouping or filtering by workload_tag. Visit this link for more information: &lt;/SPAN&gt;&lt;A href="https://developers.google.com/earth-engine/guides/monitoring_usage" target="_blank" STYLE="text-decoration:underline;"&gt;&lt;SPAN&gt;https://developers.google.com/earth-engine/guides/monitoring_usage &lt;/SPAN&gt;&lt;/A&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN&gt;Workload tag must be 1 - 63 characters, beginning and ending with an alphanumeric character ([a-z0-9A-Z]) with dashes (-), underscores (_), dots (.), and alpha numerics between, or an empty string to reset the default back to none.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+    </parameters>
+    <summary>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;The script initializes the use of Google Earth Engine with a project ID and workload tag. The user must assign a project ID to use Earth Engine. The user will need to run this script every time they restart the ArcPro.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</summary>
+  </tool>
+  <dataIdInfo>
+    <idCitation>
+      <resTitle>Initialize Earth Engine</resTitle>
+    </idCitation>
+    <searchKeys>
+      <keyword>authentication</keyword>
+    </searchKeys>
+  </dataIdInfo>
+  <distInfo>
+    <distributor>
+      <distorFormat>
+        <formatName>ArcToolbox Tool</formatName>
+      </distorFormat>
+    </distributor>
+  </distInfo>
+  <mdHrLv>
+    <ScopeCd value="005"/>
+  </mdHrLv>
+  <mdDateSt Sync="TRUE">20250122</mdDateSt>
+</metadata>
