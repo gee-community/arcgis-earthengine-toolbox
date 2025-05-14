@@ -14,8 +14,3 @@
 
 import arcgee.map as map
 import arcgee.data as data
-
-__all__ = ["map", "data"]
-__author__ = "Google LLC"
-__license__ = "Apache 2.0"
-__copyright__ = "Copyright 2025 Google LLC"
