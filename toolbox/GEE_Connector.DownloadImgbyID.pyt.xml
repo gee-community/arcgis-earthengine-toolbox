@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+<metadata xml:lang="en">
+  <Esri>
+    <CreaDate>20241212</CreaDate>
+    <CreaTime>23241000</CreaTime>
+    <ArcGISFormat>1.0</ArcGISFormat>
+    <SyncOnce>TRUE</SyncOnce>
+    <ModDate>20250515</ModDate>
+    <ModTime>0335700</ModTime>
+    <scaleRange>
+      <minScale>150000000</minScale>
+      <maxScale>5000</maxScale>
+    </scaleRange>
+    <ArcGISProfile>ItemDescription</ArcGISProfile>
+  </Esri>
+  <tool xmlns="" name="DownloadImgbyID" displayname="Download Image by Asset ID" toolboxalias="GEE_Connector">
+    <arcToolboxHelpPath>c:\program files\arcgis\pro\Resources\Help\gp</arcToolboxHelpPath>
+    <parameters>
+      <param name="asset_id" displayname="Specify the image asset ID" type="Required" direction="Input" datatype="String" expression="asset_id">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;The asset ID could be found at the dataset information page. For example, &lt;/SPAN&gt;&lt;SPAN&gt;&#x201C;&lt;/SPAN&gt;&lt;SPAN&gt;ee.Image('AHN/AHN2_05M_INT')&lt;/SPAN&gt;&lt;SPAN&gt;&#x201D; &lt;/SPAN&gt;&lt;SPAN&gt;loads the Google Earth Engine Image &lt;/SPAN&gt;&lt;SPAN&gt;by asset ID "AHN/AHN2_05M_INT". &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN /&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="bands" displayname="Select the bands" type="Required" direction="Input" datatype="Multiple Value" expression="bands;bands...">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;The image dataset could contain multiple bands. Select the target bands to download. The user can select as many as needed. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="scale" displayname="Specify the scale" type="Required" direction="Input" datatype="Double" expression="scale">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Specify the scale of the downloaded GeoTIFF in meters. The default scale uses the maximum scale among the selected bands. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="in_poly" displayname="Choose a polygon as region of interest" type="Optional" direction="Input" datatype="Feature Layer" expression="{in_poly}">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Choose a polygon feature layer as the region of interest to download the GeoTIFF. The image will be clipped by the polygon extent. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="use_extent" displayname="Use the current map view extent as region of interest" type="Optional" direction="Input" datatype="Boolean" expression="{use_extent}">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Check this box if using the current map extent as the region of interest.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="out_tiff" displayname="Specify the output file name" type="Required" direction="Output" datatype="File" expression="out_tiff">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Specify the full path of the output GeoTIFF file.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="load_tiff" displayname="Load images to map after download" type="Optional" direction="Input" datatype="Boolean" expression="{load_tiff}">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Check this box if the user wants to load the output GeoTIFF file to the current map after download. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+    </parameters>
+    <summary>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;This script downloads the Earth Engine image dataset to GeoTIFF by its asset tag. It converts Earth Engine image object to xarray dataset using 'xee' and writes to local GeoTIFF file using 'rasterio'. This supports download of larger file sizes and is not constrained by file size limitation that impact other standard GEE functions like ee.Image.getDownloadURL() and ee.data.getPixels(). Larger files will take longer to download.    &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</summary>
+  </tool>
+  <dataIdInfo>
+    <idCitation>
+      <resTitle>Download Image by Asset ID</resTitle>
+    </idCitation>
+    <searchKeys>
+      <keyword>management</keyword>
+    </searchKeys>
+  </dataIdInfo>
+  <distInfo>
+    <distributor>
+      <distorFormat>
+        <formatName>ArcToolbox Tool</formatName>
+      </distorFormat>
+    </distributor>
+  </distInfo>
+  <mdHrLv>
+    <ScopeCd value="005"/>
+  </mdHrLv>
+  <mdDateSt Sync="TRUE">20250515</mdDateSt>
+</metadata>

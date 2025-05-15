@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<metadata xml:lang="en">
+  <Esri>
+    <CreaDate>20250123</CreaDate>
+    <CreaTime>00430400</CreaTime>
+    <ArcGISFormat>1.0</ArcGISFormat>
+    <SyncOnce>TRUE</SyncOnce>
+    <ModDate>20250123</ModDate>
+    <ModTime>23125000</ModTime>
+    <scaleRange>
+      <minScale>150000000</minScale>
+      <maxScale>5000</maxScale>
+    </scaleRange>
+    <ArcGISProfile>ItemDescription</ArcGISProfile>
+  </Esri>
+  <tool xmlns="" name="ApplyMapFunctionbyObj" displayname="Apply Map Functions to Collection Dataset by Serialized Object" toolboxalias="toolbox">
+    <arcToolboxHelpPath>c:\program files\arcgis\pro\Resources\Help\gp</arcToolboxHelpPath>
+    <parameters>
+      <param name="data_type" displayname="Choose the type of the dataset to be loaded" type="Required" direction="Input" datatype="String" expression="FeatureCollection | ImageCollection">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Select the type of the Earth Engine dataset between feature collection and image collection&lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN /&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="ee_obj" displayname="Select the JSON file of the serialized object" type="Required" direction="Input" datatype="File" expression="ee_obj">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;The serialized Google Earth Engine object in JSON format. Browse and select the target JSON file to load. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="map_file" displayname="Select the Python script that contains map functions" type="Required" direction="Input" datatype="File" expression="map_file">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Select the python script that stores the map functions. The python script is used as a module or library. The available map functions will be extracted and listed below. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="map_functions" displayname="Select the map functions to apply" type="Required" direction="Input" datatype="Multiple Value" expression="map_functions;map_functions...">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Select the map functions to apply to the dataset. You can select as many as needed. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="out_json" displayname="Specify the output JSON file to save the string format of the filtered dataset" type="Required" direction="Output" datatype="File" expression="out_json">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;P&gt;&lt;SPAN&gt;Save the processed dataset as a serialized JSON object for future use. When you use this JSON file again, the dataset will already have the map functions applied.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+    </parameters>
+    <summary>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;This script applies user-define map functions to the feature collection or image collection dataset by the serialized JSON object and saves the processed dataset to a new serialized JSON object for future use. It is useful when you want to apply map functions to the existing JSON object. &lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN&gt;For a quick guide on mapping over image collection dataset, please visit &lt;/SPAN&gt;&lt;A href="https://developers.google.com/earth-engine/guides/ic_mapping" STYLE="text-decoration:underline;"&gt;&lt;SPAN&gt;https://developers.google.com/earth-engine/guides/ic_mapping&lt;/SPAN&gt;&lt;/A&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN&gt;For a quick guide on mapping over feature collection dataset, please visit &lt;/SPAN&gt;&lt;A href="https://developers.google.com/earth-engine/guides/feature_collection_mapping" STYLE="text-decoration:underline;"&gt;&lt;SPAN&gt;https://developers.google.com/earth-engine/guides/feature_collection_mapping&lt;/SPAN&gt;&lt;/A&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</summary>
+  </tool>
+  <dataIdInfo>
+    <idCitation>
+      <resTitle>Apply Map Functions to Collection Dataset by Serialized Object</resTitle>
+    </idCitation>
+    <searchKeys>
+      <keyword>processing</keyword>
+    </searchKeys>
+  </dataIdInfo>
+  <distInfo>
+    <distributor>
+      <distorFormat>
+        <formatName>ArcToolbox Tool</formatName>
+      </distorFormat>
+    </distributor>
+  </distInfo>
+  <mdHrLv>
+    <ScopeCd value="005"/>
+  </mdHrLv>
+  <mdDateSt Sync="TRUE">20250123</mdDateSt>
+</metadata>

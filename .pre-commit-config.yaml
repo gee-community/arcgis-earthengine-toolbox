@@ -1,0 +1,8 @@
+repos:
+  - repo: local
+    hooks:
+      - id: pretty-xml
+        name: Pretty print XML files
+        entry: python .git-hooks/pretty_xml.py
+        language: system
+        files: \.xml$

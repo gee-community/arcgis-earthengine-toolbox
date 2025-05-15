@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<metadata xml:lang="en">
+  <Esri>
+    <CreaDate>20241211</CreaDate>
+    <CreaTime>23373800</CreaTime>
+    <ArcGISFormat>1.0</ArcGISFormat>
+    <SyncOnce>TRUE</SyncOnce>
+    <ModDate>20250314</ModDate>
+    <ModTime>2402200</ModTime>
+    <scaleRange>
+      <minScale>150000000</minScale>
+      <maxScale>5000</maxScale>
+    </scaleRange>
+    <ArcGISProfile>ItemDescription</ArcGISProfile>
+  </Esri>
+  <tool xmlns="" name="DownloadImgColbyID" displayname="Download Image Collection by Asset ID" toolboxalias="toolbox">
+    <arcToolboxHelpPath>c:\program files\arcgis\pro\Resources\Help\gp</arcToolboxHelpPath>
+    <parameters>
+      <param name="ic_id" displayname="Specify the image collection asset ID" type="Required" direction="Input" datatype="String" expression="ic_id">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;The asset ID could be found at the dataset information page. For example, &lt;/SPAN&gt;&lt;SPAN&gt;&#x201C;&lt;/SPAN&gt;&lt;SPAN&gt;ee.ImageCollection('AAFC/ACI')&lt;/SPAN&gt;&lt;SPAN&gt;&#x201D; &lt;/SPAN&gt;&lt;SPAN&gt;loads the Google Earth Engine Image &lt;/SPAN&gt;&lt;SPAN&gt;Collection &lt;/SPAN&gt;&lt;SPAN&gt;by asset ID "AAFC/ACI". &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="filter_dates" displayname="Filter by dates in YYYY-MM-DD" type="Optional" direction="Input" datatype="Value Table" expression="{Starting Date {Ending Date};Starting Date {Ending Date}...}">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;The user can filter the image collection by starting and ending dates. The typical formats of date strings are listed below. &lt;/SPAN&gt;&lt;/P&gt;&lt;OL&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt; Year only, '2020'&lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;Year and month, '2020-07'&lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;Year, month and date, '2020-07-01'&lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;Year, month, date, and time, '2020-07-05T06:34:46'&lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;/OL&gt;&lt;P&gt;&lt;SPAN&gt;For more information, please visit &lt;/SPAN&gt;&lt;A href="https://developers.google.com/earth-engine/apidocs/ee-imagecollection-filterdate" STYLE="text-decoration:underline;"&gt;&lt;SPAN&gt;https://developers.google.com/earth-engine/apidocs/ee-imagecollection-filterdate&lt;/SPAN&gt;&lt;/A&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="filter_bounds" displayname="Filter by location in coordinates" type="Optional" direction="Input" datatype="Value Table" expression="{Longitude {Latitude};Longitude {Latitude}...}">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Filter a collection by intersection with point geometry. Items in the collection with a footprint that fails to intersect the given geometry will be excluded.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="use_centroid" displayname="Use the center of the current map view extent" type="Optional" direction="Input" datatype="Boolean" expression="{use_centroid}">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Use the centroid of the current map view as the point geometry.&lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN /&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="img_list" displayname="Select images to download" type="Required" direction="Input" datatype="Multiple Value" expression="img_list;img_list...">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;The first 100 filtered images will be listed here. The user can select multiple images to download. &lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN /&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="bands" displayname="Select the bands" type="Required" direction="Input" datatype="Multiple Value" expression="bands;bands...">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;The image dataset could contain multiple bands. Select the target bands to download. The user can select as many as needed. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="scale" displayname="Specify the scale" type="Required" direction="Input" datatype="Double" expression="scale">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Specify the scale of the downloaded GeoTIFF in meters. The default scale uses the maximum scale among the selected bands. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="in_poly" displayname="Choose a polygon as region of interest" type="Optional" direction="Input" datatype="Feature Layer" expression="{in_poly}">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Choose a polygon feature layer as the region of interest to download the GeoTIFF. The image will be clipped by the polygon extent. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="use_extent" displayname="Use the current map view extent as region of interest" type="Optional" direction="Input" datatype="Boolean" expression="{use_extent}">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Check this box if using the current map extent as the region of interest.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="out_folder" displayname="Specify the output folder" type="Required" direction="Input" datatype="Folder" expression="out_folder">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Specify the full path of the output folder to store the GeoTIFF files. One image per GeoTIFF file. Each GeoTIFF file is automatically named with the image name. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="load_tiff" displayname="Load images to map after download" type="Optional" direction="Input" datatype="Boolean" expression="{load_tiff}">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Check this box if the user wants to load the output GeoTIFF file to the current map after download. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+    </parameters>
+    <summary>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;This script downloads the Earth Engine image collection dataset to GeoTIFF by its asset ID. It converts Earth Engine image collection object to xarray dataset using 'xee' and writes to local GeoTIFF file using 'rasterio'. Theoretically, there is no file size limitation compared to other functions such as ee.Image.getDownloadURL() and ee.data.getPixels(). Larger files will take longer to download.    &lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN /&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</summary>
+  </tool>
+  <dataIdInfo>
+    <idCitation>
+      <resTitle>Download Image Collection by Asset ID</resTitle>
+    </idCitation>
+    <searchKeys>
+      <keyword>management</keyword>
+    </searchKeys>
+  </dataIdInfo>
+  <distInfo>
+    <distributor>
+      <distorFormat>
+        <formatName>ArcToolbox Tool</formatName>
+      </distorFormat>
+    </distributor>
+  </distInfo>
+  <mdHrLv>
+    <ScopeCd value="005"/>
+  </mdHrLv>
+  <mdDateSt Sync="TRUE">20250314</mdDateSt>
+</metadata>
