@@ -5,15 +5,15 @@
     <CreaTime>00184200</CreaTime>
     <ArcGISFormat>1.0</ArcGISFormat>
     <SyncOnce>TRUE</SyncOnce>
-    <ModDate>20250122</ModDate>
-    <ModTime>22255200</ModTime>
+    <ModDate>20250515</ModDate>
+    <ModTime>0362400</ModTime>
     <scaleRange>
       <minScale>150000000</minScale>
       <maxScale>5000</maxScale>
     </scaleRange>
     <ArcGISProfile>ItemDescription</ArcGISProfile>
   </Esri>
-  <tool xmlns="" name="GCSFile2Asset" displayname="Convert Cloud Storage File to Earth Engine Asset" toolboxalias="toolbox">
+  <tool xmlns="" name="GCSFile2Asset" displayname="Convert Cloud Storage File to Earth Engine Asset" toolboxalias="GEE_Connector">
     <arcToolboxHelpPath>c:\program files\arcgis\pro\Resources\Help\gp</arcToolboxHelpPath>
     <parameters>
       <param name="project_id" displayname="Specify the Google Cloud project ID" type="Required" direction="Input" datatype="String" expression="project_id">
@@ -35,7 +35,7 @@
         <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;P&gt;&lt;SPAN&gt;Specify an asset tag for the file(s). The available options are given below:&lt;/SPAN&gt;&lt;/P&gt;&lt;OL&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;Select one file with asset type as image. The input value is the image asset tag. &lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;Select multiple files with asset type as image. The input value is the image collection asset tag. The image ID in the collection will be automatically assigned with the file name.&lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;Select one file with asset type as table. The input value is the feature collection asset tag. &lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;Select multiple files with asset type as table. The input value is the folder that contains multiple feature collections. The feature collection ID will be automatically assigned with the file name.     &lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;/OL&gt;&lt;/DIV&gt;</dialogReference>
       </param>
     </parameters>
-    <summary>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;This script converts file(s) in Google Cloud Storage to an Earth Engine asset. It is used to share dataset on the Earth Engine platform. The file(s) will be assigned with a user-specified asset tag. There are two options to locate the target files: &lt;/SPAN&gt;&lt;/P&gt;&lt;OL&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;If you know the gsutil URI of the target file, just specify the project ID and paste the URI to the file input. If you are dealing with a large bucket with lots of folders and files, it is recommended to use file URI directly. Otherwise, it will take time to locate the file. &lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;If not, specify the project ID and select the bucket, folder and target file one by one.&lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;/OL&gt;&lt;P&gt;&lt;SPAN&gt;You can convert the file(s) to the following types of Earth Engine assets:&lt;/SPAN&gt;&lt;/P&gt;&lt;OL&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;Image when you select one file in '.tif' format&lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;Image collection when you select multiple files in '.tif' format&lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;Feature collection when you select one file in '.shp', '.csv', '.zip' or '.tfrecord' format. &lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;Feature collections when you select multiple files in '.shp', '.csv', '.zip' or '.tfrecord' format. Each file will be converted to a feature collection, respectively. &lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN /&gt;&lt;/P&gt;&lt;/LI&gt;&lt;/OL&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</summary>
+    <summary>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;This script converts file(s) in Google Cloud Storage to an Earth Engine asset. It is used to share dataset on the Earth Engine platform. The file(s) will be assigned with a user-specified asset tag. There are two options to locate the target files: &lt;/SPAN&gt;&lt;/P&gt;&lt;OL&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;If the gsutil URI is known, specify the project ID and URI as the file output. If you are working with a large number of folders and files in your bucket, we recommend using the file URI directly.&lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;If not, specify the project ID and select the bucket, folder and target file one by one.&lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;/OL&gt;&lt;P&gt;&lt;SPAN&gt;You can convert the file(s) to the following types of Earth Engine assets:&lt;/SPAN&gt;&lt;/P&gt;&lt;OL&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;Image when you select one file in '.tif' format&lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;Image collection when you select multiple files in '.tif' format&lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;Feature collection when you select one file in '.shp', '.csv', '.zip' or '.tfrecord' format. &lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;Feature collections when you select multiple files in '.shp', '.csv', '.zip' or '.tfrecord' format. Each file will be converted to a feature collection, respectively. &lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN /&gt;&lt;/P&gt;&lt;/LI&gt;&lt;/OL&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</summary>
   </tool>
   <dataIdInfo>
     <idCitation>
@@ -55,5 +55,5 @@
   <mdHrLv>
     <ScopeCd value="005"/>
   </mdHrLv>
-  <mdDateSt Sync="TRUE">20250122</mdDateSt>
+  <mdDateSt Sync="TRUE">20250515</mdDateSt>
 </metadata>

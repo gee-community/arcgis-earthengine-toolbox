@@ -5,15 +5,15 @@
     <CreaTime>01323600</CreaTime>
     <ArcGISFormat>1.0</ArcGISFormat>
     <SyncOnce>TRUE</SyncOnce>
-    <ModDate>20250314</ModDate>
-    <ModTime>2405200</ModTime>
+    <ModDate>20250515</ModDate>
+    <ModTime>0315200</ModTime>
     <scaleRange>
       <minScale>150000000</minScale>
       <maxScale>5000</maxScale>
     </scaleRange>
     <ArcGISProfile>ItemDescription</ArcGISProfile>
   </Esri>
-  <tool xmlns="" name="DownloadImgColbyObj" displayname="Download Image Collection by Serialized Object" toolboxalias="toolbox">
+  <tool xmlns="" name="DownloadImgColbyObj" displayname="Download Image Collection by Serialized Object" toolboxalias="GEE_Connector">
     <arcToolboxHelpPath>c:\program files\arcgis\pro\Resources\Help\gp</arcToolboxHelpPath>
     <parameters>
       <param name="ee_obj" displayname="Select the JSON file of the serialized image collection object" type="Required" direction="Input" datatype="File" expression="ee_obj">
@@ -38,7 +38,7 @@
         <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Specify the full path of the output folder to store the GeoTIFF files. One image per GeoTIFF file. Each GeoTIFF file is automatically named with the image collection asset tag and the image id. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
       </param>
       <param name="load_tiff" displayname="Load images to map after download" type="Optional" direction="Input" datatype="Boolean" expression="{load_tiff}">
-        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Check this box if the user wants to load the output GeoTIFF file to the current map after download. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Check this box to load the output GeoTIFF file to the current map after download. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
       </param>
     </parameters>
     <summary>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;This script downloads the Earth Engine image collection dataset to GeoTIFF by its serialized JSON object. It converts Earth Engine image collection object to xarray dataset using 'xee' and writes to local GeoTIFF file using 'rasterio'. Theoretically, there is no file size limitation compared to other functions such as ee.Image.getDownloadURL() and ee.data.getPixels(). Larger files will take longer to download.    &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</summary>
@@ -61,5 +61,5 @@
   <mdHrLv>
     <ScopeCd value="005"/>
   </mdHrLv>
-  <mdDateSt Sync="TRUE">20250314</mdDateSt>
+  <mdDateSt Sync="TRUE">20250515</mdDateSt>
 </metadata>

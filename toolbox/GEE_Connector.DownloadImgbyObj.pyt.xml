@@ -5,22 +5,19 @@
     <CreaTime>00375900</CreaTime>
     <ArcGISFormat>1.0</ArcGISFormat>
     <SyncOnce>TRUE</SyncOnce>
-    <ModDate>20241217</ModDate>
-    <ModTime>1104600</ModTime>
+    <ModDate>20250515</ModDate>
+    <ModTime>0344500</ModTime>
     <scaleRange>
       <minScale>150000000</minScale>
       <maxScale>5000</maxScale>
     </scaleRange>
     <ArcGISProfile>ItemDescription</ArcGISProfile>
   </Esri>
-  <tool xmlns="" name="DownloadImgbyObj" displayname="Download Image by Serialized Object" toolboxalias="toolbox">
+  <tool xmlns="" name="DownloadImgbyObj" displayname="Download Image by Serialized Object" toolboxalias="GEE_Connector">
     <arcToolboxHelpPath>c:\program files\arcgis\pro\Resources\Help\gp</arcToolboxHelpPath>
     <parameters>
       <param name="ee_obj" displayname="Select the JSON file of the serialized image object" type="Required" direction="Input" datatype="File" expression="ee_obj">
         <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;The serialized Google Earth Engine object in JSON format. Browse and select the target JSON file to load. &lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN /&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
-      </param>
-      <param name="current_tag" displayname="The asset tag of the selected object is shown below" type="Optional" direction="Input" datatype="String" expression="{current_tag}">
-        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;The asset tag of the selected JSON object is displayed here. It is useful for users to double check the selected JSON file. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
       </param>
       <param name="bands" displayname="Select the bands" type="Required" direction="Input" datatype="Multiple Value" expression="bands;bands...">
         <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;The image dataset could contain multiple bands. Select the target bands to download. The user can select as many as needed. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
@@ -41,7 +38,7 @@
         <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Check this box if the user wants to load the output GeoTIFF file to the current map after download. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
       </param>
     </parameters>
-    <summary>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;This script downloads the Earth Engine image dataset to GeoTIFF by its serialized JSON object. It converts Earth Engine image object to xarray dataset using 'xee' and writes to local GeoTIFF file using 'rasterio'. Theoretically, there is no file size limitation compared to other functions such as ee.Image.getDownloadURL() and ee.data.getPixels(). Larger files will take longer to download.    &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</summary>
+    <summary>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;This script downloads the Earth Engine image dataset to GeoTIFF by its serialized JSON object. It converts Earth Engine image object to xarray dataset using 'xee' and writes to local GeoTIFF file using 'rasterio'. This supports download of larger file sizes and is not constrained by file size limitation that impact other standard GEE functions like ee.Image.getDownloadURL() and ee.data.getPixels(). Larger files will take longer to download.    &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</summary>
   </tool>
   <dataIdInfo>
     <idCitation>
@@ -61,5 +58,5 @@
   <mdHrLv>
     <ScopeCd value="005"/>
   </mdHrLv>
-  <mdDateSt Sync="TRUE">20241217</mdDateSt>
+  <mdDateSt Sync="TRUE">20250515</mdDateSt>
 </metadata>

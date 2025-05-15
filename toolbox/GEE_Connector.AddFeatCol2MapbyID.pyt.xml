@@ -5,15 +5,15 @@
     <CreaTime>13201200</CreaTime>
     <ArcGISFormat>1.0</ArcGISFormat>
     <SyncOnce>TRUE</SyncOnce>
-    <ModDate>20250224</ModDate>
-    <ModTime>0330700</ModTime>
+    <ModDate>20250515</ModDate>
+    <ModTime>0290300</ModTime>
     <scaleRange>
       <minScale>150000000</minScale>
       <maxScale>5000</maxScale>
     </scaleRange>
     <ArcGISProfile>ItemDescription</ArcGISProfile>
   </Esri>
-  <tool xmlns="" name="AddFeatCol2MapbyID" displayname="Add Feature Collection to Map by Asset ID" toolboxalias="toolbox">
+  <tool xmlns="" name="AddFeatCol2MapbyID" displayname="Add Feature Collection to Map by Asset ID" toolboxalias="GEE_Connector">
     <arcToolboxHelpPath>c:\program files\arcgis\pro\Resources\Help\gp</arcToolboxHelpPath>
     <parameters>
       <param name="asset_id" displayname="Specify the feature collection asset ID" type="Required" direction="Input" datatype="String" expression="asset_id">
@@ -25,7 +25,7 @@
       <param name="filter_dates" displayname="Filter by dates in YYYY-MM-DD" type="Optional" direction="Input" datatype="Value Table" expression="{Starting Date {Ending Date};Starting Date {Ending Date}...}">
         <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;The user can filter the image collection by starting and ending dates. The typical formats of date strings are listed below. &lt;/SPAN&gt;&lt;/P&gt;&lt;OL&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt; Year only, '2020'&lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;Year and month, '2020-07'&lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;Year, month and date, '2020-07-01'&lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;Year, month, date, and time, '2020-07-05T06:34:46'&lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;/OL&gt;&lt;P&gt;&lt;SPAN&gt;For more information, please visit &lt;/SPAN&gt;&lt;A href="https://developers.google.com/earth-engine/apidocs/ee-imagecollection-filterdate" STYLE="text-decoration:underline;"&gt;&lt;SPAN&gt;https://developers.google.com/earth-engine/apidocs/ee-imagecollection-filterdate&lt;/SPAN&gt;&lt;/A&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
       </param>
-      <param name="filter_bounds" displayname="Select the type of filter-by-location" type="Required" direction="Input" datatype="String" expression="Coordinates (Point) | Map Centroid (Point) | Polygon (Area) | Map Extent (Area)">
+      <param name="filter_bounds" displayname="Select the type of filter-by-location" type="Optional" direction="Input" datatype="String" expression="{Coordinates (Point) | Map Centroid (Point) | Polygon (Area) | Map Extent (Area)}">
         <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Filter a collection by intersection with point or polygon geometry. Items in the collection with a footprint that fails to intersect the given geometry will be excluded. &lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN /&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN /&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
       </param>
       <param name="use_coords" displayname="Filter by location in coordinates" type="Optional" direction="Input" datatype="Value Table" expression="{Longitude {Latitude};Longitude {Latitude}...}">
@@ -41,7 +41,7 @@
         <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Save the filtered image collection to a serialized JSON object for future use. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
       </param>
     </parameters>
-    <summary>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;This script adds the&lt;/SPAN&gt;&lt;SPAN&gt; &lt;/SPAN&gt;&lt;SPAN&gt;Google Earth Engine Feature Collection&lt;/SPAN&gt;&lt;SPAN&gt; to ArcPro as a base map by its asset tag and customizes the visualization parameters. &lt;/SPAN&gt;&lt;SPAN STYLE="font-weight:bold;"&gt;To avoid slow response, the feature collection size is limited to 100,000 elements. &lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN&gt;Please note that the dataset is added as a Tiled Map Service Layer, which cannot be edited&lt;/SPAN&gt;&lt;SPAN&gt; directly&lt;/SPAN&gt;&lt;SPAN&gt;. The user will need to download the dataset for analysis in ArcPro. To browse all datasets, please visit &lt;/SPAN&gt;&lt;A href="https://developers.google.com/earth-engine/datasets/catalog" STYLE="text-decoration:underline;"&gt;&lt;SPAN&gt;https://developers.google.com/earth-engine/datasets/catalog&lt;/SPAN&gt;&lt;/A&gt;&lt;SPAN&gt;.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</summary>
+    <summary>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;This script adds the&lt;/SPAN&gt;&lt;SPAN&gt; &lt;/SPAN&gt;&lt;SPAN&gt;Google Earth Engine Feature Collection&lt;/SPAN&gt;&lt;SPAN&gt; to ArcPro as a base map by its asset tag and customizes the visualization parameters. &lt;/SPAN&gt;&lt;SPAN STYLE="font-weight:bold;"&gt;To avoid slow response, the feature collection size is limited to 100,000 elements. &lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN&gt;Please note that the dataset is added as a Tiled Map Service Layer, which is view only and cannot be edited. The user will need to download the dataset for analysis in ArcPro. To browse all datasets, please visit &lt;/SPAN&gt;&lt;A href="https://developers.google.com/earth-engine/datasets/catalog" STYLE="text-decoration:underline;"&gt;&lt;SPAN&gt;https://developers.google.com/earth-engine/datasets/catalog&lt;/SPAN&gt;&lt;/A&gt;&lt;SPAN&gt;.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</summary>
   </tool>
   <dataIdInfo>
     <idCitation>
@@ -61,5 +61,5 @@
   <mdHrLv>
     <ScopeCd value="005"/>
   </mdHrLv>
-  <mdDateSt Sync="TRUE">20250224</mdDateSt>
+  <mdDateSt Sync="TRUE">20250515</mdDateSt>
 </metadata>

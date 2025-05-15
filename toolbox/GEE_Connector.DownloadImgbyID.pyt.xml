@@ -5,15 +5,15 @@
     <CreaTime>23241000</CreaTime>
     <ArcGISFormat>1.0</ArcGISFormat>
     <SyncOnce>TRUE</SyncOnce>
-    <ModDate>20250103</ModDate>
-    <ModTime>13424600</ModTime>
+    <ModDate>20250515</ModDate>
+    <ModTime>0335700</ModTime>
     <scaleRange>
       <minScale>150000000</minScale>
       <maxScale>5000</maxScale>
     </scaleRange>
     <ArcGISProfile>ItemDescription</ArcGISProfile>
   </Esri>
-  <tool xmlns="" name="DownloadImgbyTag" displayname="Download Image by Asset ID" toolboxalias="toolbox">
+  <tool xmlns="" name="DownloadImgbyID" displayname="Download Image by Asset ID" toolboxalias="GEE_Connector">
     <arcToolboxHelpPath>c:\program files\arcgis\pro\Resources\Help\gp</arcToolboxHelpPath>
     <parameters>
       <param name="asset_id" displayname="Specify the image asset ID" type="Required" direction="Input" datatype="String" expression="asset_id">
@@ -38,7 +38,7 @@
         <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Check this box if the user wants to load the output GeoTIFF file to the current map after download. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
       </param>
     </parameters>
-    <summary>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;This script downloads the Earth Engine image dataset to GeoTIFF by its asset tag. It converts Earth Engine image object to xarray dataset using 'xee' and writes to local GeoTIFF file using 'rasterio'. Theoretically, there is no file size limitation compared to other functions such as ee.Image.getDownloadURL() and ee.data.getPixels(). Larger files will take longer to download.    &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</summary>
+    <summary>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;This script downloads the Earth Engine image dataset to GeoTIFF by its asset tag. It converts Earth Engine image object to xarray dataset using 'xee' and writes to local GeoTIFF file using 'rasterio'. This supports download of larger file sizes and is not constrained by file size limitation that impact other standard GEE functions like ee.Image.getDownloadURL() and ee.data.getPixels(). Larger files will take longer to download.    &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</summary>
   </tool>
   <dataIdInfo>
     <idCitation>
@@ -58,5 +58,5 @@
   <mdHrLv>
     <ScopeCd value="005"/>
   </mdHrLv>
-  <mdDateSt Sync="TRUE">20250103</mdDateSt>
+  <mdDateSt Sync="TRUE">20250515</mdDateSt>
 </metadata>

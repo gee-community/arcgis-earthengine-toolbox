@@ -5,15 +5,15 @@
     <CreaTime>00552400</CreaTime>
     <ArcGISFormat>1.0</ArcGISFormat>
     <SyncOnce>TRUE</SyncOnce>
-    <ModDate>20250314</ModDate>
-    <ModTime>2392600</ModTime>
+    <ModDate>20250515</ModDate>
+    <ModTime>0301100</ModTime>
     <scaleRange>
       <minScale>150000000</minScale>
       <maxScale>5000</maxScale>
     </scaleRange>
     <ArcGISProfile>ItemDescription</ArcGISProfile>
   </Esri>
-  <tool xmlns="" name="AddImgCol2MapbyID" displayname="Add Image Collection to Map by Asset ID" toolboxalias="toolbox">
+  <tool xmlns="" name="AddImgCol2MapbyID" displayname="Add Image Collection to Map by Asset ID" toolboxalias="GEE_Connector">
     <arcToolboxHelpPath>c:\program files\arcgis\pro\Resources\Help\gp</arcToolboxHelpPath>
     <parameters>
       <param name="asset_id" displayname="Specify the image collection asset ID" type="Required" direction="Input" datatype="String" expression="asset_id">
@@ -50,7 +50,7 @@
         <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Save the filtered image collection to a serialized JSON object for future use. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
       </param>
     </parameters>
-    <summary>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;This script adds the Google Earth Engine Image Collection to ArcPro as a base map by its asset ID. Please note that the dataset is added as a Tiled Service Layer (TSL), which cannot be edited. The user will need to download the dataset for analysis in ArcPro. To browse all datasets, please visit &lt;/SPAN&gt;&lt;A href="https://developers.google.com/earth-engine/datasets/catalog" STYLE="text-decoration:underline;"&gt;&lt;SPAN&gt;https://developers.google.com/earth-engine/datasets/catalog&lt;/SPAN&gt;&lt;/A&gt;&lt;SPAN&gt;.&lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN /&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</summary>
+    <summary>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;This script adds the Google Earth Engine Image Collection to ArcPro as a base map by its asset ID. Please note that the dataset is added as a Tiled Service Layer (TSL), which is view only and cannot be edited. The user will need to download the dataset for analysis in ArcPro. To browse all datasets, please visit &lt;/SPAN&gt;&lt;A href="https://developers.google.com/earth-engine/datasets/catalog" STYLE="text-decoration:underline;"&gt;&lt;SPAN&gt;https://developers.google.com/earth-engine/datasets/catalog&lt;/SPAN&gt;&lt;/A&gt;&lt;SPAN&gt;.&lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN /&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</summary>
   </tool>
   <dataIdInfo>
     <idCitation>
@@ -70,5 +70,5 @@
   <mdHrLv>
     <ScopeCd value="005"/>
   </mdHrLv>
-  <mdDateSt Sync="TRUE">20250314</mdDateSt>
+  <mdDateSt Sync="TRUE">20250515</mdDateSt>
 </metadata>
