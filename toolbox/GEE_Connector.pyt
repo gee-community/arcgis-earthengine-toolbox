@@ -416,7 +416,7 @@ class AddImg2MapbyID:
         img_id = parameters[0].valueAsText
 
         # Update only when filter list is empty
-        if img_id and not parameters[1].filter.list:
+        if img_id:
             # clean asset id string to remove whitespace, quotes, and trailing slash
             img_id = arcgee.data.clean_asset_id(img_id)
             image = ee.Image(img_id)
@@ -609,17 +609,16 @@ class AddImg2MapbyObj:
         if json_path:
             image = arcgee.data.load_ee_result(json_path)
             # Update when band filter list is empty
-            if not parameters[1].filter.list:
-                band_names = image.bandNames()
-                band_list = band_names.getInfo()
-                # Add band resolution information to display
-                band_res_list = []
-                for iband in band_list:
-                    band_tmp = image.select(iband)
-                    proj = band_tmp.projection()
-                    res = proj.nominalScale().getInfo()
-                    band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
-                parameters[1].filter.list = band_res_list
+            band_names = image.bandNames()
+            band_list = band_names.getInfo()
+            # Add band resolution information to display
+            band_res_list = []
+            for iband in band_list:
+                band_tmp = image.select(iband)
+                proj = band_tmp.projection()
+                res = proj.nominalScale().getInfo()
+                band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
+            parameters[1].filter.list = band_res_list
 
         # Reset band filter list when asset id changes
         if not json_path:
@@ -892,7 +891,7 @@ class AddImgCol2MapbyID:
         # Check band list of the selected image
         img_name = parameters[4].valueAsText
         # Update only when filter list is empty
-        if img_name and not parameters[5].filter.list:
+        if img_name:
             img_id = asset_id + "/" + img_name
             image = ee.Image(img_id)
             band_names = image.bandNames()
@@ -1149,7 +1148,7 @@ class AddImgCol2MapbyObj:
             # Check band list of the selected image
             img_name = parameters[1].valueAsText
             # Update only when filter list is empty
-            if img_name and not parameters[2].filter.list:
+            if img_name:
                 # JSON object could have additional map functions, use collection
                 image = collection.filter(
                     ee.Filter.eq("system:index", img_name)
@@ -1373,6 +1372,15 @@ class AddFeatCol2MapbyID:
 
         param7.filter.list = ["json"]
 
+        # TODO: add reset parameters if script refreshing takes too long
+        # param8 = arcpy.Parameter(
+        #     name="reset_params",
+        #     displayName="Reset all input parameters",
+        #     datatype="GPBoolean",
+        #     direction="Input",
+        #     parameterType="Optional",
+        # )
+
         # TODO: add more visualization parameters
         # param2 = arcpy.Parameter(
         #     name="point_shape",
@@ -1423,7 +1431,17 @@ class AddFeatCol2MapbyID:
         # param7.filter.type = "Range"
         # param7.filter.list = [0, 1]
 
-        params = [param0, param1, param2, param3, param4, param5, param6, param7]
+        params = [
+            param0,
+            param1,
+            param2,
+            param3,
+            param4,
+            param5,
+            param6,
+            param7,
+            # param8,
+        ]
         return params
 
     def isLicensed(self):
@@ -1436,8 +1454,8 @@ class AddFeatCol2MapbyID:
         has been changed."""
 
         asset_id = parameters[0].valueAsText
-
-        if asset_id and not parameters[1].filters[0].list:
+        # Get property names from the feature collection
+        if asset_id:
             asset_id = arcgee.data.clean_asset_id(asset_id)
             fc = ee.FeatureCollection(asset_id)
             prop_names = fc.first().propertyNames().getInfo()
@@ -1454,6 +1472,20 @@ class AddFeatCol2MapbyID:
             parameters[4].enabled = True
         elif parameters[3].valueAsText == "Polygon (Area)":
             parameters[5].enabled = True
+
+        # TODO: add reset parameters if script refreshing takes too long
+        # # Reset parameters when reset_params is checked
+        # if parameters[8].value:
+        #     parameters[0].value = None
+        #     parameters[1].value = None
+        #     parameters[1].filters[0].list = []
+        #     parameters[2].value = None
+        #     parameters[3].value = None
+        #     parameters[4].value = None
+        #     parameters[5].value = None
+        #     parameters[6].value = None
+        #     parameters[7].value = None
+        #     parameters[8].value = False
 
         return
 
@@ -1943,7 +1975,7 @@ class DownloadImgbyID:
         img_id = parameters[0].valueAsText
 
         # Update only when filter list is empty
-        if img_id and not parameters[1].filter.list:
+        if img_id:
             img_id = arcgee.data.clean_asset_id(img_id)
             image = ee.Image(img_id)
             band_names = image.bandNames()
@@ -2171,18 +2203,16 @@ class DownloadImgbyObj:
         json_path = parameters[0].valueAsText
         if json_path:
             image = arcgee.data.load_ee_result(json_path)
-            # Update only when band filter list is empty
-            if not parameters[1].filter.list:
-                band_names = image.bandNames()
-                band_list = band_names.getInfo()
-                # Add band resolution information to display
-                band_res_list = []
-                for iband in band_list:
-                    band_tmp = image.select(iband)
-                    proj = band_tmp.projection()
-                    res = proj.nominalScale().getInfo()
-                    band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
-                parameters[1].filter.list = band_res_list
+            band_names = image.bandNames()
+            band_list = band_names.getInfo()
+            # Add band resolution information to display
+            band_res_list = []
+            for iband in band_list:
+                band_tmp = image.select(iband)
+                proj = band_tmp.projection()
+                res = proj.nominalScale().getInfo()
+                band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
+            parameters[1].filter.list = band_res_list
 
         # Reset band filter list when asset id changes
         if not json_path:
@@ -2481,7 +2511,7 @@ class DownloadImgColbyID:
         # Check the band list of the first selected image, assuming all selected images have the same bands
         img_names = parameters[4].valueAsText
         # Update only when filter list is empty
-        if img_names and not parameters[5].filter.list:
+        if img_names:
             # Get the first select image
             img_name = img_names.split(";")[0]
             img_id = asset_id + "/" + img_name
@@ -2764,7 +2794,7 @@ class DownloadImgColbyObj:
             # Check band list of the selected image
             img_names = parameters[1].valueAsText
             # Update only when filter list is empty
-            if img_names and not parameters[2].filter.list:
+            if img_names:
                 # Get the first select image
                 img_name = img_names.split(";")[0]
                 # JSON object could have additional map functions, use collection
@@ -3073,20 +3103,18 @@ class DownloadImgColbyIDMultiRegion:
             if start_date is not None and end_date is not None:
                 collection = collection.filterDate(start_date, end_date)
 
-            # Update only when band filter list is empty
-            if not parameters[5].filter.list:
-                # Get the first select image
-                image = collection.first()
-                band_names = image.bandNames()
-                band_list = band_names.getInfo()
-                # Add band resolution information to display
-                band_res_list = []
-                for iband in band_list:
-                    band_tmp = image.select(iband)
-                    proj = band_tmp.projection()
-                    res = proj.nominalScale().getInfo()
-                    band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
-                parameters[5].filter.list = band_res_list
+            # Get the first select image
+            image = collection.first()
+            band_names = image.bandNames()
+            band_list = band_names.getInfo()
+            # Add band resolution information to display
+            band_res_list = []
+            for iband in band_list:
+                band_tmp = image.select(iband)
+                proj = band_tmp.projection()
+                res = proj.nominalScale().getInfo()
+                band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
+            parameters[5].filter.list = band_res_list
 
             # Capture the suggested scale value based on selected bands
             band_str = parameters[5].valueAsText
@@ -3381,11 +3409,7 @@ class DownloadFeatColbyID:
             asset_id = arcgee.data.clean_asset_id(asset_id)
             fc = ee.FeatureCollection(asset_id)
             prop_names = fc.first().propertyNames().getInfo()
-            # Update only when filter list is empty
-            if not parameters[1].filters[0].list:
-                parameters[1].filters[0].list = sorted(prop_names)
-            if not parameters[6].filter.list:
-                parameters[6].filter.list = sorted(prop_names)
+            parameters[1].filters[0].list = sorted(prop_names)
 
         # Reset filter list when asset id is empty
         if not asset_id:
