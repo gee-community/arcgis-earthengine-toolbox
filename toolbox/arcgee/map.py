@@ -92,6 +92,12 @@ def get_map_view_extent(target_epsg=4326):
     ymin = camera.getExtent().YMin
     xmax = camera.getExtent().XMax
     ymax = camera.getExtent().YMax
+    # ArcPro 3.2 uses EPSG 3857 as default projection
+    # When the user zooms out of the global extent, the map extent coordinates can not be converted to ESPG 4326
+    # Need to clip the map extent coordinates to EPSG 3857 extent
+    if spatial_ref.PCSCode == 3857:
+        arcpy.AddMessage("Make sure the current extent is within EPSG 3857 extent ...")
+        xmin, ymin, xmax, ymax = clip_to_epsg3857_extent(xmin, ymin, xmax, ymax)
     # Check if projection code is the target EPSG code
     # projected
     poly_prj = spatial_ref.PCSCode
@@ -125,3 +131,17 @@ def project_to_new_sr(x, y, in_spatial_ref, out_spatial_ref):
     new_sr = arcpy.SpatialReference(out_spatial_ref)
     point_geom_wgs84 = point_geom.projectAs(new_sr)
     return point_geom_wgs84.centroid.X, point_geom_wgs84.centroid.Y
+
+
+def clip_to_epsg3857_extent(xmin, ymin, xmax, ymax):
+    # EPSG:3857 global valid extent in meters
+    MIN_VAL = -20037500
+    MAX_VAL = 20037500
+
+    # Clip each coordinate to the valid range
+    xmin_clipped = max(xmin, MIN_VAL)
+    ymin_clipped = max(ymin, MIN_VAL)
+    xmax_clipped = min(xmax, MAX_VAL)
+    ymax_clipped = min(ymax, MAX_VAL)
+
+    return (xmin_clipped, ymin_clipped, xmax_clipped, ymax_clipped)
