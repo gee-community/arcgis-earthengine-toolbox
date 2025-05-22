@@ -540,6 +540,9 @@ class AddImg2MapbyID:
             centroid_coords, bounds_coords = arcgee.data.get_object_centroid(img, 1)
             arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
         except:
+            arcpy.AddWarning(
+                "Automatic zoom to the image failed. Please zoom manually."
+            )
             pass
 
         # Save image object to serialized JSON file
@@ -707,6 +710,11 @@ class AddImg2MapbyObj:
         # Get image by label
         img = arcgee.data.load_ee_result(json_path)
         img_id = img.get("system:id").getInfo()
+        # The image object could lose image ID information after reducers are applied
+        # Use the json file name as image ID if image ID is not found
+        if not img_id:
+            file_name = os.path.basename(json_path)
+            img_id = file_name.split(".")[0]
         # Get the map ID and token
         map_id_dict = img.getMapId(vis_params)
 
@@ -728,6 +736,9 @@ class AddImg2MapbyObj:
             centroid_coords, bounds_coords = arcgee.data.get_object_centroid(img, 1)
             arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
         except:
+            arcpy.AddWarning(
+                "Automatic zoom to the image failed. Please zoom manually."
+            )
             pass
         return
 
@@ -1032,6 +1043,9 @@ class AddImgCol2MapbyID:
             centroid_coords, bounds_coords = arcgee.data.get_object_centroid(img, 1)
             arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
         except:
+            arcpy.AddWarning(
+                "Automatic zoom to the image failed. Please zoom manually."
+            )
             pass
 
         # Save filtered image collection to serialized JSON file
@@ -1228,7 +1242,11 @@ class AddImgCol2MapbyObj:
         collection = arcgee.data.load_ee_result(json_path)
         # Get image id for layer name
         asset_id = collection.get("system:id").getInfo()
-        img_id = asset_id + "/" + img_name
+        # Prepend asset id if it exists, otherwise use image name
+        if asset_id:
+            img_id = asset_id + "/" + img_name
+        else:
+            img_id = img_name
         # Get image by label
         img = ee.Image(img_id)
 
@@ -1289,6 +1307,9 @@ class AddImgCol2MapbyObj:
             centroid_coords, bounds_coords = arcgee.data.get_object_centroid(img, 1)
             arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
         except:
+            arcpy.AddWarning(
+                "Automatic zoom to the image failed. Please zoom manually."
+            )
             pass
 
         return
@@ -1697,6 +1718,9 @@ class AddFeatCol2MapbyID:
                 centroid_coords, bounds_coords = arcgee.data.get_object_centroid(fc, 1)
                 arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
             except:
+                arcpy.AddWarning(
+                    "Automatic zoom to the feature collection failed. Please zoom manually."
+                )
                 pass
 
             # Save object to serialized JSON file
@@ -1844,6 +1868,13 @@ class AddFeatCol2MapbyObj:
         # load collection object
         fc = arcgee.data.load_ee_result(json_path)
         asset_id = fc.get("system:id").getInfo()
+        # Get asset id for layer name
+        if asset_id:
+            feat_id = asset_id
+        else:
+            # Use the json file name as feature id if asset id is not found
+            file_name = os.path.basename(json_path)
+            feat_id = file_name.split(".")[0]
 
         # TODO: add more visualization parameters
         # point_shape= parameters[2].valueAsText
@@ -1897,13 +1928,16 @@ class AddFeatCol2MapbyObj:
             aprx = arcpy.mp.ArcGISProject("CURRENT")
             aprxMap = aprx.listMaps("Map")[0]
             tsl = aprxMap.addDataFromPath(map_url)
-            tsl.name = asset_id
+            tsl.name = feat_id
 
             # Zoom to feature collection centroid if provided by dataset
             try:
                 centroid_coords, bounds_coords = arcgee.data.get_object_centroid(fc, 1)
                 arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
             except:
+                arcpy.AddWarning(
+                    "Automatic zoom to the feature collection failed. Please zoom manually."
+                )
                 pass
 
         else:
@@ -5492,7 +5526,10 @@ class ApplyMapFunctionbyObj:
             raise ValueError(f"Unsupported data type: {data_type}")
 
         asset_id = ee_object.getInfo()["id"]
-        arcpy.AddMessage(f"Asset ID: {asset_id}")
+        if asset_id:
+            arcpy.AddMessage(f"Asset ID: {asset_id}")
+        else:
+            arcpy.AddWarning("The asset ID is missing.")
 
         # Apply the filters from the filter list to the Earth Engine object
         for func_str in function_list:
@@ -5976,7 +6013,6 @@ class ApplyReducerbyObj:
 
         # Save the serialized string as JSON to the specified output path
         if not out_json.endswith(".json"):
-
             out_json = out_json + ".json"
 
         # save to json
