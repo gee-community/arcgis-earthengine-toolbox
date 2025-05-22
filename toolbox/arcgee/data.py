@@ -23,11 +23,28 @@ import os
 import requests
 import numpy as np
 import json
+import re
+
 
 # Import version from parent package
 # from arcgee import __version__
 
 __version__ = "0.1.1"
+
+
+def is_valid_workload_tag(tag: str) -> bool:
+    if tag == "":
+        return True  # Empty string is allowed to reset the tag
+
+    # Must be 1–63 characters long and match the allowed pattern
+    pattern = r"^[a-zA-Z0-9](?:[a-zA-Z0-9_.-]{0,61}[a-zA-Z0-9])?$"
+    return bool(re.match(pattern, tag))
+
+
+def has_spaces_or_special_chars(filepath: str) -> bool:
+    filename = os.path.basename(filepath)
+    # Matches any character that is not a-z, A-Z, 0-9, underscore, dash, or dot
+    return bool(re.search(r"[^\w\-.]", filename))
 
 
 def get_version_info():

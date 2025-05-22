@@ -137,6 +137,13 @@ class GEEInit:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+        # Check if the workload tag contains spaces or special characters
+        workload_tag = parameters[1].valueAsText
+        if workload_tag:
+            if not arcgee.data.is_valid_workload_tag(workload_tag):
+                parameters[1].setErrorMessage(
+                    "The workload tag is invalid. Please read the instructions below and specify a valid workload tag."
+                )
         return
 
     def execute(self, parameters, messages):
@@ -225,6 +232,13 @@ class ChangeProjectID:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+        # Check if the workload tag contains spaces or special characters
+        workload_tag = parameters[3].valueAsText
+        if workload_tag:
+            if not arcgee.data.is_valid_workload_tag(workload_tag):
+                parameters[3].setErrorMessage(
+                    "The workload tag is invalid. Please read the instructions below and specify a valid workload tag."
+                )
         return
 
     def execute(self, parameters, messages):
@@ -290,6 +304,13 @@ class GEEAuth:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+        # Check if the workload tag contains spaces or special characters
+        workload_tag = parameters[1].valueAsText
+        if workload_tag:
+            if not arcgee.data.is_valid_workload_tag(workload_tag):
+                parameters[1].setErrorMessage(
+                    "The workload tag is invalid. Please read the instructions below and specify a valid workload tag."
+                )
         return
 
     def execute(self, parameters, messages):
@@ -440,6 +461,13 @@ class AddImg2MapbyID:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+
+        json_path = parameters[6].valueAsText
+        if json_path:
+            if arcgee.data.has_spaces_or_special_chars(json_path):
+                parameters[6].setErrorMessage(
+                    "The JSON file name contains spaces or special characters. Please specify a valid file name."
+                )
 
         return
 
@@ -920,6 +948,14 @@ class AddImgCol2MapbyID:
         # start date is required when end date is provided for filter by dates
         if parameters[1].valueAsText:
             arcgee.data.check_start_date(parameters[1])
+
+        # Check if the JSON file name contains spaces or special characters
+        json_path = parameters[10].valueAsText
+        if json_path:
+            if arcgee.data.has_spaces_or_special_chars(json_path):
+                parameters[10].setErrorMessage(
+                    "The JSON file name contains spaces or special characters. Please specify a valid file name."
+                )
 
         return
 
@@ -1513,6 +1549,14 @@ class AddFeatCol2MapbyID:
         # start date is required when end date is provided for filter by dates
         if parameters[2].valueAsText:
             arcgee.data.check_start_date(parameters[2])
+
+        # Check if the JSON file name contains spaces or special characters
+        json_path = parameters[7].valueAsText
+        if json_path:
+            if arcgee.data.has_spaces_or_special_chars(json_path):
+                parameters[7].setErrorMessage(
+                    "The JSON file name contains spaces or special characters. Please specify a valid file name."
+                )
 
     def execute(self, parameters, messages):
         """
@@ -4468,6 +4512,13 @@ class SaveAsset2JSON:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+        # Check if the JSON file name contains spaces or special characters
+        json_path = parameters[2].valueAsText
+        if json_path:
+            if arcgee.data.has_spaces_or_special_chars(json_path):
+                parameters[2].setErrorMessage(
+                    "The JSON file name contains spaces or special characters. Please specify a valid file name."
+                )
         return
 
     def execute(self, parameters, messages):
@@ -5000,6 +5051,13 @@ class ApplyFilterbyID:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+        # Check if the JSON file name contains spaces or special characters
+        json_path = parameters[3].valueAsText
+        if json_path:
+            if arcgee.data.has_spaces_or_special_chars(json_path):
+                parameters[3].setErrorMessage(
+                    "The JSON file name contains spaces or special characters. Please specify a valid file name."
+                )
         return
 
     def execute(self, parameters, messages):
@@ -5111,6 +5169,13 @@ class ApplyFilterbyObj:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+        # Check if the JSON file name contains spaces or special characters
+        json_path = parameters[2].valueAsText
+        if json_path:
+            if arcgee.data.has_spaces_or_special_chars(json_path):
+                parameters[2].setErrorMessage(
+                    "The JSON file name contains spaces or special characters. Please specify a valid file name."
+                )
         return
 
     def execute(self, parameters, messages):
@@ -5237,6 +5302,13 @@ class ApplyMapFunctionbyID:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+        # Check if the JSON file name contains spaces or special characters
+        json_path = parameters[4].valueAsText
+        if json_path:
+            if arcgee.data.has_spaces_or_special_chars(json_path):
+                parameters[4].setErrorMessage(
+                    "The JSON file name contains spaces or special characters. Please specify a valid file name."
+                )
         return
 
     def execute(self, parameters, messages):
@@ -5378,6 +5450,13 @@ class ApplyMapFunctionbyObj:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+        # Check if the JSON file name contains spaces or special characters
+        json_path = parameters[4].valueAsText
+        if json_path:
+            if arcgee.data.has_spaces_or_special_chars(json_path):
+                parameters[4].setErrorMessage(
+                    "The JSON file name contains spaces or special characters. Please specify a valid file name."
+                )
         return
 
     def execute(self, parameters, messages):
@@ -5572,6 +5651,13 @@ class ApplyReducerbyID:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+        # Check if the JSON file name contains spaces or special characters
+        json_path = parameters[7].valueAsText
+        if json_path:
+            if arcgee.data.has_spaces_or_special_chars(json_path):
+                parameters[7].setErrorMessage(
+                    "The JSON file name contains spaces or special characters. Please specify a valid file name."
+                )
         return
 
     def execute(self, parameters, messages):
@@ -5801,6 +5887,13 @@ class ApplyReducerbyObj:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+        # Check if the JSON file name contains spaces or special characters
+        json_path = parameters[6].valueAsText
+        if json_path:
+            if arcgee.data.has_spaces_or_special_chars(json_path):
+                parameters[6].setErrorMessage(
+                    "The JSON file name contains spaces or special characters. Please specify a valid file name."
+                )
         return
 
     def execute(self, parameters, messages):
