@@ -1050,6 +1050,26 @@ def init_and_set_tags(project=None, workload_tag=None):
     return
 
 
+# Get ROI from the object extent
+def get_roi_from_object(obj):
+    """Get the ROI from the object extent.
+
+    Args:
+        obj (ee.Image or ee.FeatureCollection): Earth Engine object
+
+    Returns:
+        ee.Geometry.BBox: ROI from the object extent
+    """
+    arcpy.AddMessage("Try to get ROI from the object extent ...")
+    # get extend of the object
+    centroid_coords, bounds_coords = get_object_centroid(obj, 1)
+    x_min, y_min, x_max, y_max = convert_coords_to_bbox(bounds_coords)
+    arcpy.AddMessage([x_min, y_min, x_max, y_max])
+    roi_used = ee.Geometry.BBox(x_min, y_min, x_max, y_max)
+
+    return roi_used
+
+
 # Get centroid and extent coordinates of input image or feature collection
 def get_object_centroid(obj, error_margin):
     """Get the centroid and extent coordinates of an Earth Engine object.
@@ -1326,12 +1346,15 @@ def gcs_file_to_ee_asset(asset_type, asset_id, bucket_uri):
     ]
 
     # Run the command
-    process = subprocess.run(
-        command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-
-    # Output the result
-    arcpy.AddMessage(process.stdout.decode("utf-8"))
+    try:
+        process = subprocess.run(
+            command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        arcpy.AddMessage(process.stdout.decode("utf-8"))
+    except subprocess.CalledProcessError as e:
+        arcpy.AddError(e.stderr.decode("utf-8"))
+    except PermissionError as e:
+        arcpy.AddError(f"Permission error: {e}")
 
 
 # Create an Earth Engine image collection
