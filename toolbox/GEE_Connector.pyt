@@ -137,6 +137,13 @@ class GEEInit:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+        # Check if the workload tag contains spaces or special characters
+        workload_tag = parameters[1].valueAsText
+        if workload_tag:
+            if not arcgee.data.is_valid_workload_tag(workload_tag):
+                parameters[1].setErrorMessage(
+                    "The workload tag is invalid. Please read the instructions below and specify a valid workload tag."
+                )
         return
 
     def execute(self, parameters, messages):
@@ -225,6 +232,13 @@ class ChangeProjectID:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+        # Check if the workload tag contains spaces or special characters
+        workload_tag = parameters[3].valueAsText
+        if workload_tag:
+            if not arcgee.data.is_valid_workload_tag(workload_tag):
+                parameters[3].setErrorMessage(
+                    "The workload tag is invalid. Please read the instructions below and specify a valid workload tag."
+                )
         return
 
     def execute(self, parameters, messages):
@@ -290,6 +304,13 @@ class GEEAuth:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+        # Check if the workload tag contains spaces or special characters
+        workload_tag = parameters[1].valueAsText
+        if workload_tag:
+            if not arcgee.data.is_valid_workload_tag(workload_tag):
+                parameters[1].setErrorMessage(
+                    "The workload tag is invalid. Please read the instructions below and specify a valid workload tag."
+                )
         return
 
     def execute(self, parameters, messages):
@@ -384,11 +405,13 @@ class AddImg2MapbyID:
 
         param5 = arcpy.Parameter(
             name="palette",
-            displayName="Specify color palette in CSS-style color strings for visualization",
+            displayName="Choose a color palette for visualization",
             datatype="GPString",
             direction="Input",
             parameterType="Optional",
         )
+
+        param5.filter.list = arcgee.map.list_color_ramp()
 
         param6 = arcpy.Parameter(
             name="out_json",
@@ -416,7 +439,7 @@ class AddImg2MapbyID:
         img_id = parameters[0].valueAsText
 
         # Update only when filter list is empty
-        if img_id and not parameters[1].filter.list:
+        if img_id:
             # clean asset id string to remove whitespace, quotes, and trailing slash
             img_id = arcgee.data.clean_asset_id(img_id)
             image = ee.Image(img_id)
@@ -435,11 +458,26 @@ class AddImg2MapbyID:
         if not img_id:
             parameters[1].filter.list = []
 
+        # Switch off the color palette when more than 1 band is selected
+        if parameters[1].valueAsText:
+            bands = parameters[1].valueAsText.split(";")
+            if len(bands) > 1:
+                parameters[5].enabled = False
+            else:
+                parameters[5].enabled = True
+
         return
 
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+
+        json_path = parameters[6].valueAsText
+        if json_path:
+            if arcgee.data.has_spaces_or_special_chars(json_path):
+                parameters[6].setErrorMessage(
+                    "The JSON file name contains spaces or special characters. Please specify a valid file name."
+                )
 
         return
 
@@ -481,12 +519,7 @@ class AddImg2MapbyID:
 
         # Add color palette if specified
         if palette_str:
-            # Remove ' in palette string in case users add it
-            if "'" in palette_str:
-                palette_str = palette_str.replace("'", "")
-            # Convert palette string to list if specified
-            palette = palette_str.split(",")
-            vis_params["palette"] = palette
+            vis_params["palette"] = arcgee.map.get_color_ramp(palette_str)
 
         # Get image by label
         img_id = arcgee.data.clean_asset_id(img_id)
@@ -512,6 +545,9 @@ class AddImg2MapbyID:
             centroid_coords, bounds_coords = arcgee.data.get_object_centroid(img, 1)
             arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
         except:
+            arcpy.AddWarning(
+                "Automatic zoom to the image failed. Please zoom manually."
+            )
             pass
 
         # Save image object to serialized JSON file
@@ -587,11 +623,13 @@ class AddImg2MapbyObj:
 
         param5 = arcpy.Parameter(
             name="palette",
-            displayName="Specify color palette in CSS-style color strings for visualization",
+            displayName="Choose a color palette for visualization",
             datatype="GPString",
             direction="Input",
             parameterType="Optional",
         )
+
+        param5.filter.list = arcgee.map.list_color_ramp()
 
         params = [param0, param1, param2, param3, param4, param5]
         return params
@@ -609,22 +647,28 @@ class AddImg2MapbyObj:
         if json_path:
             image = arcgee.data.load_ee_result(json_path)
             # Update when band filter list is empty
-            if not parameters[1].filter.list:
-                band_names = image.bandNames()
-                band_list = band_names.getInfo()
-                # Add band resolution information to display
-                band_res_list = []
-                for iband in band_list:
-                    band_tmp = image.select(iband)
-                    proj = band_tmp.projection()
-                    res = proj.nominalScale().getInfo()
-                    band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
-                parameters[1].filter.list = band_res_list
+            band_names = image.bandNames()
+            band_list = band_names.getInfo()
+            # Add band resolution information to display
+            band_res_list = []
+            for iband in band_list:
+                band_tmp = image.select(iband)
+                proj = band_tmp.projection()
+                res = proj.nominalScale().getInfo()
+                band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
+            parameters[1].filter.list = band_res_list
 
         # Reset band filter list when asset id changes
         if not json_path:
             parameters[1].filter.list = []
 
+        # Switch off the color palette when more than 1 band is selected
+        if parameters[1].valueAsText:
+            bands = parameters[1].valueAsText.split(";")
+            if len(bands) > 1:
+                parameters[5].enabled = False
+            else:
+                parameters[5].enabled = True
         return
 
     def updateMessages(self, parameters):
@@ -670,16 +714,16 @@ class AddImg2MapbyObj:
 
         # Add color palette if specified
         if palette_str:
-            # Remove ' in palette string in case users add it
-            if "'" in palette_str:
-                palette_str = palette_str.replace("'", "")
-            # Convert palette string to list if specified
-            palette = palette_str.split(",")
-            vis_params["palette"] = palette
+            vis_params["palette"] = arcgee.map.get_color_ramp(palette_str)
 
         # Get image by label
         img = arcgee.data.load_ee_result(json_path)
         img_id = img.get("system:id").getInfo()
+        # The image object could lose image ID information after reducers are applied
+        # Use the json file name as image ID if image ID is not found
+        if not img_id:
+            file_name = os.path.basename(json_path)
+            img_id = file_name.split(".")[0]
         # Get the map ID and token
         map_id_dict = img.getMapId(vis_params)
 
@@ -701,6 +745,9 @@ class AddImg2MapbyObj:
             centroid_coords, bounds_coords = arcgee.data.get_object_centroid(img, 1)
             arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
         except:
+            arcpy.AddWarning(
+                "Automatic zoom to the image failed. Please zoom manually."
+            )
             pass
         return
 
@@ -807,6 +854,7 @@ class AddImgCol2MapbyID:
             direction="Input",
             parameterType="Optional",
         )
+        param9.filter.list = arcgee.map.list_color_ramp()
 
         param10 = arcpy.Parameter(
             name="out_json",
@@ -892,7 +940,7 @@ class AddImgCol2MapbyID:
         # Check band list of the selected image
         img_name = parameters[4].valueAsText
         # Update only when filter list is empty
-        if img_name and not parameters[5].filter.list:
+        if img_name:
             img_id = asset_id + "/" + img_name
             image = ee.Image(img_id)
             band_names = image.bandNames()
@@ -912,6 +960,14 @@ class AddImgCol2MapbyID:
             if not img_name:
                 parameters[5].filter.list = []
 
+        # Switch off the color palette when more than 1 band is selected
+        if parameters[5].valueAsText:
+            bands = parameters[5].valueAsText.split(";")
+            if len(bands) > 1:
+                parameters[9].enabled = False
+            else:
+                parameters[9].enabled = True
+
         return
 
     def updateMessages(self, parameters):
@@ -921,6 +977,14 @@ class AddImgCol2MapbyID:
         # start date is required when end date is provided for filter by dates
         if parameters[1].valueAsText:
             arcgee.data.check_start_date(parameters[1])
+
+        # Check if the JSON file name contains spaces or special characters
+        json_path = parameters[10].valueAsText
+        if json_path:
+            if arcgee.data.has_spaces_or_special_chars(json_path):
+                parameters[10].setErrorMessage(
+                    "The JSON file name contains spaces or special characters. Please specify a valid file name."
+                )
 
         return
 
@@ -967,12 +1031,7 @@ class AddImgCol2MapbyID:
 
         # Add color palette if specified
         if palette_str:
-            # Remove ' in palette string in case users add it
-            if "'" in palette_str:
-                palette_str = palette_str.replace("'", "")
-            # Convert palette string to list if specified
-            palette = palette_str.split(",")
-            vis_params["palette"] = palette
+            vis_params["palette"] = arcgee.map.get_color_ramp(palette_str)
 
         # Get image by label
         img = ee.Image(img_id)
@@ -997,6 +1056,9 @@ class AddImgCol2MapbyID:
             centroid_coords, bounds_coords = arcgee.data.get_object_centroid(img, 1)
             arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
         except:
+            arcpy.AddWarning(
+                "Automatic zoom to the image failed. Please zoom manually."
+            )
             pass
 
         # Save filtered image collection to serialized JSON file
@@ -1123,6 +1185,8 @@ class AddImgCol2MapbyObj:
             parameterType="Optional",
         )
 
+        param6.filter.list = arcgee.map.list_color_ramp()
+
         params = [param0, param1, param2, param3, param4, param5, param6]
         return params
 
@@ -1149,7 +1213,7 @@ class AddImgCol2MapbyObj:
             # Check band list of the selected image
             img_name = parameters[1].valueAsText
             # Update only when filter list is empty
-            if img_name and not parameters[2].filter.list:
+            if img_name:
                 # JSON object could have additional map functions, use collection
                 image = collection.filter(
                     ee.Filter.eq("system:index", img_name)
@@ -1172,6 +1236,13 @@ class AddImgCol2MapbyObj:
             if not parameters[1].valueAsText:
                 parameters[2].filter.list = []
 
+        # Switch off the color palette when more than 1 band is selected
+        if parameters[2].valueAsText:
+            bands = parameters[2].valueAsText.split(";")
+            if len(bands) > 1:
+                parameters[6].enabled = False
+            else:
+                parameters[6].enabled = True
         return
 
     def updateMessages(self, parameters):
@@ -1193,7 +1264,11 @@ class AddImgCol2MapbyObj:
         collection = arcgee.data.load_ee_result(json_path)
         # Get image id for layer name
         asset_id = collection.get("system:id").getInfo()
-        img_id = asset_id + "/" + img_name
+        # Prepend asset id if it exists, otherwise use image name
+        if asset_id:
+            img_id = asset_id + "/" + img_name
+        else:
+            img_id = img_name
         # Get image by label
         img = ee.Image(img_id)
 
@@ -1226,12 +1301,7 @@ class AddImgCol2MapbyObj:
 
         # Add color palette if specified
         if palette_str:
-            # Remove ' in palette string in case users add it
-            if "'" in palette_str:
-                palette_str = palette_str.replace("'", "")
-            # Convert palette string to list if specified
-            palette = palette_str.split(",")
-            vis_params["palette"] = palette
+            vis_params["palette"] = arcgee.map.get_color_ramp(palette_str)
 
         # Get the map ID and token
         map_id_dict = img.getMapId(vis_params)
@@ -1254,6 +1324,9 @@ class AddImgCol2MapbyObj:
             centroid_coords, bounds_coords = arcgee.data.get_object_centroid(img, 1)
             arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
         except:
+            arcpy.AddWarning(
+                "Automatic zoom to the image failed. Please zoom manually."
+            )
             pass
 
         return
@@ -1373,6 +1446,15 @@ class AddFeatCol2MapbyID:
 
         param7.filter.list = ["json"]
 
+        # TODO: add reset parameters if script refreshing takes too long
+        # param8 = arcpy.Parameter(
+        #     name="reset_params",
+        #     displayName="Reset all input parameters",
+        #     datatype="GPBoolean",
+        #     direction="Input",
+        #     parameterType="Optional",
+        # )
+
         # TODO: add more visualization parameters
         # param2 = arcpy.Parameter(
         #     name="point_shape",
@@ -1423,7 +1505,17 @@ class AddFeatCol2MapbyID:
         # param7.filter.type = "Range"
         # param7.filter.list = [0, 1]
 
-        params = [param0, param1, param2, param3, param4, param5, param6, param7]
+        params = [
+            param0,
+            param1,
+            param2,
+            param3,
+            param4,
+            param5,
+            param6,
+            param7,
+            # param8,
+        ]
         return params
 
     def isLicensed(self):
@@ -1436,8 +1528,8 @@ class AddFeatCol2MapbyID:
         has been changed."""
 
         asset_id = parameters[0].valueAsText
-
-        if asset_id and not parameters[1].filters[0].list:
+        # Get property names from the feature collection
+        if asset_id:
             asset_id = arcgee.data.clean_asset_id(asset_id)
             fc = ee.FeatureCollection(asset_id)
             prop_names = fc.first().propertyNames().getInfo()
@@ -1454,6 +1546,20 @@ class AddFeatCol2MapbyID:
             parameters[4].enabled = True
         elif parameters[3].valueAsText == "Polygon (Area)":
             parameters[5].enabled = True
+
+        # TODO: add reset parameters if script refreshing takes too long
+        # # Reset parameters when reset_params is checked
+        # if parameters[8].value:
+        #     parameters[0].value = None
+        #     parameters[1].value = None
+        #     parameters[1].filters[0].list = []
+        #     parameters[2].value = None
+        #     parameters[3].value = None
+        #     parameters[4].value = None
+        #     parameters[5].value = None
+        #     parameters[6].value = None
+        #     parameters[7].value = None
+        #     parameters[8].value = False
 
         return
 
@@ -1481,6 +1587,14 @@ class AddFeatCol2MapbyID:
         # start date is required when end date is provided for filter by dates
         if parameters[2].valueAsText:
             arcgee.data.check_start_date(parameters[2])
+
+        # Check if the JSON file name contains spaces or special characters
+        json_path = parameters[7].valueAsText
+        if json_path:
+            if arcgee.data.has_spaces_or_special_chars(json_path):
+                parameters[7].setErrorMessage(
+                    "The JSON file name contains spaces or special characters. Please specify a valid file name."
+                )
 
     def execute(self, parameters, messages):
         """
@@ -1621,6 +1735,9 @@ class AddFeatCol2MapbyID:
                 centroid_coords, bounds_coords = arcgee.data.get_object_centroid(fc, 1)
                 arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
             except:
+                arcpy.AddWarning(
+                    "Automatic zoom to the feature collection failed. Please zoom manually."
+                )
                 pass
 
             # Save object to serialized JSON file
@@ -1768,6 +1885,13 @@ class AddFeatCol2MapbyObj:
         # load collection object
         fc = arcgee.data.load_ee_result(json_path)
         asset_id = fc.get("system:id").getInfo()
+        # Get asset id for layer name
+        if asset_id:
+            feat_id = asset_id
+        else:
+            # Use the json file name as feature id if asset id is not found
+            file_name = os.path.basename(json_path)
+            feat_id = file_name.split(".")[0]
 
         # TODO: add more visualization parameters
         # point_shape= parameters[2].valueAsText
@@ -1821,13 +1945,16 @@ class AddFeatCol2MapbyObj:
             aprx = arcpy.mp.ArcGISProject("CURRENT")
             aprxMap = aprx.listMaps("Map")[0]
             tsl = aprxMap.addDataFromPath(map_url)
-            tsl.name = asset_id
+            tsl.name = feat_id
 
             # Zoom to feature collection centroid if provided by dataset
             try:
                 centroid_coords, bounds_coords = arcgee.data.get_object_centroid(fc, 1)
                 arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
             except:
+                arcpy.AddWarning(
+                    "Automatic zoom to the feature collection failed. Please zoom manually."
+                )
                 pass
 
         else:
@@ -1943,7 +2070,7 @@ class DownloadImgbyID:
         img_id = parameters[0].valueAsText
 
         # Update only when filter list is empty
-        if img_id and not parameters[1].filter.list:
+        if img_id:
             img_id = arcgee.data.clean_asset_id(img_id)
             image = ee.Image(img_id)
             band_names = image.bandNames()
@@ -2050,6 +2177,14 @@ class DownloadImgbyID:
         image = ee.ImageCollection(ee.Image(img_id))
         # Filter image by selected bands
         image = image.select(bands_only)
+        # Get ROI from the object extent if not provided
+        if roi is None:
+            try:
+                roi = arcgee.data.get_roi_from_object(image)
+            except:
+                arcpy.AddWarning(
+                    "No ROI provided, download entire image ... This may cause memory issues!"
+                )
 
         # check if use projection
         use_projection = arcgee.data.whether_use_projection(image)
@@ -2171,18 +2306,16 @@ class DownloadImgbyObj:
         json_path = parameters[0].valueAsText
         if json_path:
             image = arcgee.data.load_ee_result(json_path)
-            # Update only when band filter list is empty
-            if not parameters[1].filter.list:
-                band_names = image.bandNames()
-                band_list = band_names.getInfo()
-                # Add band resolution information to display
-                band_res_list = []
-                for iband in band_list:
-                    band_tmp = image.select(iband)
-                    proj = band_tmp.projection()
-                    res = proj.nominalScale().getInfo()
-                    band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
-                parameters[1].filter.list = band_res_list
+            band_names = image.bandNames()
+            band_list = band_names.getInfo()
+            # Add band resolution information to display
+            band_res_list = []
+            for iband in band_list:
+                band_tmp = image.select(iband)
+                proj = band_tmp.projection()
+                res = proj.nominalScale().getInfo()
+                band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
+            parameters[1].filter.list = band_res_list
 
         # Reset band filter list when asset id changes
         if not json_path:
@@ -2276,6 +2409,13 @@ class DownloadImgbyObj:
         image = ee.ImageCollection(ee.Image(img_id))
         # Filter image by selected bands
         image = image.select(bands_only)
+        if roi is None:
+            try:
+                roi = arcgee.data.get_roi_from_object(image)
+            except:
+                arcpy.AddWarning(
+                    "No ROI provided, download entire image ... This may cause memory issues!"
+                )
 
         # check if use projection
         use_projection = arcgee.data.whether_use_projection(image)
@@ -2481,7 +2621,7 @@ class DownloadImgColbyID:
         # Check the band list of the first selected image, assuming all selected images have the same bands
         img_names = parameters[4].valueAsText
         # Update only when filter list is empty
-        if img_names and not parameters[5].filter.list:
+        if img_names:
             # Get the first select image
             img_name = img_names.split(";")[0]
             img_id = asset_id + "/" + img_name
@@ -2607,28 +2747,15 @@ class DownloadImgColbyID:
             image = image.select(bands_only)
             if roi is None:
                 try:
-                    arcpy.AddMessage("Try to get ROI from the object ...")
-                    # get extend of the object
-                    centroid_coords, bounds_coords = arcgee.data.get_object_centroid(
-                        image, 1
-                    )
-                    x_min, y_min, x_max, y_max = arcgee.data.convert_coords_to_bbox(
-                        bounds_coords
-                    )
-                    arcpy.AddMessage([x_min, y_min, x_max, y_max])
-                    roi_used = ee.Geometry.BBox(x_min, y_min, x_max, y_max)
+                    roi = arcgee.data.get_roi_from_object(image)
                 except:
                     arcpy.AddWarning(
                         "No ROI provided, download entire image ... This may cause memory issues!"
                     )
-                    roi_used = None
-
-            else:
-                roi_used = roi
 
             # download image as geotiff
             arcgee.data.image_to_geotiff(
-                image, bands_only, crs, scale_ds, roi_used, use_projection, out_tiff
+                image, bands_only, crs, scale_ds, roi, use_projection, out_tiff
             )
 
         # Add out tiff to map layer
@@ -2764,7 +2891,7 @@ class DownloadImgColbyObj:
             # Check band list of the selected image
             img_names = parameters[1].valueAsText
             # Update only when filter list is empty
-            if img_names and not parameters[2].filter.list:
+            if img_names:
                 # Get the first select image
                 img_name = img_names.split(";")[0]
                 # JSON object could have additional map functions, use collection
@@ -2896,28 +3023,15 @@ class DownloadImgColbyObj:
 
             if roi is None:
                 try:
-                    arcpy.AddMessage("Try to get ROI from the object ...")
-                    # get extend of the object
-                    centroid_coords, bounds_coords = arcgee.data.get_object_centroid(
-                        image, 1
-                    )
-                    x_min, y_min, x_max, y_max = arcgee.data.convert_coords_to_bbox(
-                        bounds_coords
-                    )
-                    arcpy.AddMessage([x_min, y_min, x_max, y_max])
-                    roi_used = ee.Geometry.BBox(x_min, y_min, x_max, y_max)
+                    roi = arcgee.data.get_roi_from_object(image)
                 except:
                     arcpy.AddWarning(
                         "No ROI provided, download entire image ... This may cause memory issues!"
                     )
-                    roi_used = None
-
-            else:
-                roi_used = roi
 
             # download image as geotiff
             arcgee.data.image_to_geotiff(
-                image, bands_only, crs, scale_ds, roi_used, use_projection, out_tiff
+                image, bands_only, crs, scale_ds, roi, use_projection, out_tiff
             )
 
         # Add out tiff to map layer
@@ -3073,20 +3187,18 @@ class DownloadImgColbyIDMultiRegion:
             if start_date is not None and end_date is not None:
                 collection = collection.filterDate(start_date, end_date)
 
-            # Update only when band filter list is empty
-            if not parameters[5].filter.list:
-                # Get the first select image
-                image = collection.first()
-                band_names = image.bandNames()
-                band_list = band_names.getInfo()
-                # Add band resolution information to display
-                band_res_list = []
-                for iband in band_list:
-                    band_tmp = image.select(iband)
-                    proj = band_tmp.projection()
-                    res = proj.nominalScale().getInfo()
-                    band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
-                parameters[5].filter.list = band_res_list
+            # Get the first select image
+            image = collection.first()
+            band_names = image.bandNames()
+            band_list = band_names.getInfo()
+            # Add band resolution information to display
+            band_res_list = []
+            for iband in band_list:
+                band_tmp = image.select(iband)
+                proj = band_tmp.projection()
+                res = proj.nominalScale().getInfo()
+                band_res_list.append(iband + "--" + str(round(res, 1)) + "--m")
+            parameters[5].filter.list = band_res_list
 
             # Capture the suggested scale value based on selected bands
             band_str = parameters[5].valueAsText
@@ -3381,11 +3493,7 @@ class DownloadFeatColbyID:
             asset_id = arcgee.data.clean_asset_id(asset_id)
             fc = ee.FeatureCollection(asset_id)
             prop_names = fc.first().propertyNames().getInfo()
-            # Update only when filter list is empty
-            if not parameters[1].filters[0].list:
-                parameters[1].filters[0].list = sorted(prop_names)
-            if not parameters[6].filter.list:
-                parameters[6].filter.list = sorted(prop_names)
+            parameters[1].filters[0].list = sorted(prop_names)
 
         # Reset filter list when asset id is empty
         if not asset_id:
@@ -4444,6 +4552,13 @@ class SaveAsset2JSON:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+        # Check if the JSON file name contains spaces or special characters
+        json_path = parameters[2].valueAsText
+        if json_path:
+            if arcgee.data.has_spaces_or_special_chars(json_path):
+                parameters[2].setErrorMessage(
+                    "The JSON file name contains spaces or special characters. Please specify a valid file name."
+                )
         return
 
     def execute(self, parameters, messages):
@@ -4976,6 +5091,13 @@ class ApplyFilterbyID:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+        # Check if the JSON file name contains spaces or special characters
+        json_path = parameters[3].valueAsText
+        if json_path:
+            if arcgee.data.has_spaces_or_special_chars(json_path):
+                parameters[3].setErrorMessage(
+                    "The JSON file name contains spaces or special characters. Please specify a valid file name."
+                )
         return
 
     def execute(self, parameters, messages):
@@ -5087,6 +5209,13 @@ class ApplyFilterbyObj:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+        # Check if the JSON file name contains spaces or special characters
+        json_path = parameters[2].valueAsText
+        if json_path:
+            if arcgee.data.has_spaces_or_special_chars(json_path):
+                parameters[2].setErrorMessage(
+                    "The JSON file name contains spaces or special characters. Please specify a valid file name."
+                )
         return
 
     def execute(self, parameters, messages):
@@ -5213,6 +5342,13 @@ class ApplyMapFunctionbyID:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+        # Check if the JSON file name contains spaces or special characters
+        json_path = parameters[4].valueAsText
+        if json_path:
+            if arcgee.data.has_spaces_or_special_chars(json_path):
+                parameters[4].setErrorMessage(
+                    "The JSON file name contains spaces or special characters. Please specify a valid file name."
+                )
         return
 
     def execute(self, parameters, messages):
@@ -5354,6 +5490,13 @@ class ApplyMapFunctionbyObj:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+        # Check if the JSON file name contains spaces or special characters
+        json_path = parameters[4].valueAsText
+        if json_path:
+            if arcgee.data.has_spaces_or_special_chars(json_path):
+                parameters[4].setErrorMessage(
+                    "The JSON file name contains spaces or special characters. Please specify a valid file name."
+                )
         return
 
     def execute(self, parameters, messages):
@@ -5389,7 +5532,10 @@ class ApplyMapFunctionbyObj:
             raise ValueError(f"Unsupported data type: {data_type}")
 
         asset_id = ee_object.getInfo()["id"]
-        arcpy.AddMessage(f"Asset ID: {asset_id}")
+        if asset_id:
+            arcpy.AddMessage(f"Asset ID: {asset_id}")
+        else:
+            arcpy.AddWarning("The asset ID is missing.")
 
         # Apply the filters from the filter list to the Earth Engine object
         for func_str in function_list:
@@ -5548,6 +5694,13 @@ class ApplyReducerbyID:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+        # Check if the JSON file name contains spaces or special characters
+        json_path = parameters[7].valueAsText
+        if json_path:
+            if arcgee.data.has_spaces_or_special_chars(json_path):
+                parameters[7].setErrorMessage(
+                    "The JSON file name contains spaces or special characters. Please specify a valid file name."
+                )
         return
 
     def execute(self, parameters, messages):
@@ -5777,6 +5930,13 @@ class ApplyReducerbyObj:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+        # Check if the JSON file name contains spaces or special characters
+        json_path = parameters[6].valueAsText
+        if json_path:
+            if arcgee.data.has_spaces_or_special_chars(json_path):
+                parameters[6].setErrorMessage(
+                    "The JSON file name contains spaces or special characters. Please specify a valid file name."
+                )
         return
 
     def execute(self, parameters, messages):
@@ -5859,7 +6019,6 @@ class ApplyReducerbyObj:
 
         # Save the serialized string as JSON to the specified output path
         if not out_json.endswith(".json"):
-
             out_json = out_json + ".json"
 
         # save to json
