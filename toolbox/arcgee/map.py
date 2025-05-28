@@ -16,6 +16,182 @@ import arcpy
 import ee
 
 
+def list_color_ramp():
+    """
+    List all supported color ramps.
+    """
+    return [
+        "viridis",
+        "magma",
+        "plasma",
+        "cividis",
+        "blues",
+        "greens",
+        "reds",
+        "purples",
+        "orange_red",
+        "spectral",
+        "turbo",
+    ]
+
+
+def get_color_ramp(ramp_name):
+    """
+    Return a list of hex color codes based on the color ramp name.
+
+    Supported ramps:
+        - viridis
+        - magma
+        - plasma
+        - cividis
+        - blues
+        - greens
+        - reds
+        - purples
+        - orange_red
+        - spectral
+        - turbo
+
+    Args:
+        ramp_name (str): Name of the color ramp (case-insensitive).
+
+    Returns:
+        list of str: Hex color codes.
+    """
+    ramps = {
+        "viridis": [
+            "#440154",
+            "#482777",
+            "#3e4989",
+            "#31688e",
+            "#26828e",
+            "#1f9e89",
+            "#35b779",
+            "#6ece58",
+            "#b5de2b",
+            "#fde725",
+        ],
+        "magma": [
+            "#000004",
+            "#1b0c41",
+            "#4f0c6b",
+            "#781c6d",
+            "#a52c60",
+            "#cf4446",
+            "#ed6925",
+            "#fb9b06",
+            "#f7d13d",
+            "#fcfdbf",
+        ],
+        "plasma": [
+            "#0d0887",
+            "#41049d",
+            "#6a00a8",
+            "#8f0da4",
+            "#b12a90",
+            "#cc4778",
+            "#e16462",
+            "#f1834b",
+            "#fca636",
+            "#f0f921",
+        ],
+        "cividis": [
+            "#00204c",
+            "#133e7f",
+            "#1f5d94",
+            "#2d7b9e",
+            "#3e98a2",
+            "#56b3a4",
+            "#78cda1",
+            "#a3e59a",
+            "#d5f891",
+            "#ffffe0",
+        ],
+        "blues": [
+            "#f7fbff",
+            "#deebf7",
+            "#c6dbef",
+            "#9ecae1",
+            "#6baed6",
+            "#4292c6",
+            "#2171b5",
+            "#08519c",
+            "#08306b",
+        ],
+        "greens": [
+            "#f7fcf5",
+            "#e5f5e0",
+            "#c7e9c0",
+            "#a1d99b",
+            "#74c476",
+            "#41ab5d",
+            "#238b45",
+            "#006d2c",
+            "#00441b",
+        ],
+        "reds": [
+            "#fff5f0",
+            "#fee0d2",
+            "#fcbba1",
+            "#fc9272",
+            "#fb6a4a",
+            "#ef3b2c",
+            "#cb181d",
+            "#a50f15",
+            "#67000d",
+        ],
+        "purples": [
+            "#fcfbfd",
+            "#efedf5",
+            "#dadaeb",
+            "#bcbddc",
+            "#9e9ac8",
+            "#807dba",
+            "#6a51a3",
+            "#54278f",
+            "#3f007d",
+        ],
+        "orange_red": [
+            "#fff5eb",
+            "#fee6ce",
+            "#fdd0a2",
+            "#fdae6b",
+            "#fd8d3c",
+            "#f16913",
+            "#d94801",
+            "#a63603",
+            "#7f2704",
+        ],
+        "spectral": [
+            "#9e0142",
+            "#d53e4f",
+            "#f46d43",
+            "#fdae61",
+            "#fee08b",
+            "#e6f598",
+            "#abdda4",
+            "#66c2a5",
+            "#3288bd",
+            "#5e4fa2",
+        ],
+        "turbo": [
+            "#30123b",
+            "#4440a2",
+            "#3580c1",
+            "#1fb9b2",
+            "#55da69",
+            "#a5eb2a",
+            "#ffe713",
+            "#f8a911",
+            "#e75a22",
+            "#b2112d",
+        ],
+    }
+
+    ramp_name = ramp_name.strip().lower()
+    return ramps.get(ramp_name, [])
+
+
 def add_layer(ee_object, vis_params=None, name=None):
 
     # check if Earth Engine object is a ImageCollection
