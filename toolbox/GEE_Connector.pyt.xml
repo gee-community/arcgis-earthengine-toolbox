@@ -5,16 +5,16 @@
     <CreaTime>15490700</CreaTime>
     <ArcGISFormat>1.0</ArcGISFormat>
     <SyncOnce>TRUE</SyncOnce>
-    <ModDate>20250513</ModDate>
-    <ModTime>232422</ModTime>
+    <ModDate>20250609</ModDate>
+    <ModTime>215620</ModTime>
   </Esri>
-  <toolbox name="GEE Connector" alias="toolbox">
+  <toolbox name="GEE_Connector" alias="GEE_Connector">
     <arcToolboxHelpPath>c:\program files\arcgis\pro\Resources\Help\gp</arcToolboxHelpPath>
     <toolsets/>
   </toolbox>
   <dataIdInfo>
     <idCitation>
-      <resTitle>GEE Connector</resTitle>
+      <resTitle>GEE_Connector</resTitle>
     </idCitation>
   </dataIdInfo>
   <distInfo>
