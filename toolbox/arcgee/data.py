@@ -23,11 +23,28 @@ import os
 import requests
 import numpy as np
 import json
+import re
+
 
 # Import version from parent package
 # from arcgee import __version__
 
 __version__ = "0.1.1"
+
+
+def is_valid_workload_tag(tag: str) -> bool:
+    if tag == "":
+        return True  # Empty string is allowed to reset the tag
+
+    # Must be 1–63 characters long and match the allowed pattern
+    pattern = r"^[a-zA-Z0-9](?:[a-zA-Z0-9_.-]{0,61}[a-zA-Z0-9])?$"
+    return bool(re.match(pattern, tag))
+
+
+def has_spaces_or_special_chars(filepath: str) -> bool:
+    filename = os.path.basename(filepath)
+    # Matches any character that is not a-z, A-Z, 0-9, underscore, dash, or dot
+    return bool(re.search(r"[^\w\-.]", filename))
 
 
 def get_version_info():
@@ -1033,6 +1050,26 @@ def init_and_set_tags(project=None, workload_tag=None):
     return
 
 
+# Get ROI from the object extent
+def get_roi_from_object(obj):
+    """Get the ROI from the object extent.
+
+    Args:
+        obj (ee.Image or ee.FeatureCollection): Earth Engine object
+
+    Returns:
+        ee.Geometry.BBox: ROI from the object extent
+    """
+    arcpy.AddMessage("Try to get ROI from the object extent ...")
+    # get extend of the object
+    centroid_coords, bounds_coords = get_object_centroid(obj, 1)
+    x_min, y_min, x_max, y_max = convert_coords_to_bbox(bounds_coords)
+    arcpy.AddMessage([x_min, y_min, x_max, y_max])
+    roi_used = ee.Geometry.BBox(x_min, y_min, x_max, y_max)
+
+    return roi_used
+
+
 # Get centroid and extent coordinates of input image or feature collection
 def get_object_centroid(obj, error_margin):
     """Get the centroid and extent coordinates of an Earth Engine object.
@@ -1309,12 +1346,15 @@ def gcs_file_to_ee_asset(asset_type, asset_id, bucket_uri):
     ]
 
     # Run the command
-    process = subprocess.run(
-        command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-
-    # Output the result
-    arcpy.AddMessage(process.stdout.decode("utf-8"))
+    try:
+        process = subprocess.run(
+            command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        arcpy.AddMessage(process.stdout.decode("utf-8"))
+    except subprocess.CalledProcessError as e:
+        arcpy.AddError(e.stderr.decode("utf-8"))
+    except PermissionError as e:
+        arcpy.AddError(f"Permission error: {e}")
 
 
 # Create an Earth Engine image collection

@@ -5,8 +5,8 @@
     <CreaTime>13201200</CreaTime>
     <ArcGISFormat>1.0</ArcGISFormat>
     <SyncOnce>TRUE</SyncOnce>
-    <ModDate>20250515</ModDate>
-    <ModTime>0290300</ModTime>
+    <ModDate>20250516</ModDate>
+    <ModTime>0160800</ModTime>
     <scaleRange>
       <minScale>150000000</minScale>
       <maxScale>5000</maxScale>
@@ -40,6 +40,9 @@
       <param name="out_json" displayname="Save the filtered feature collection to serialized JSON file" type="Optional" direction="Output" datatype="File" expression="{out_json}">
         <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Save the filtered image collection to a serialized JSON object for future use. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
       </param>
+      <param name="reset_params" displayname="Reset all input parameters" type="Optional" direction="Input" datatype="Boolean" expression="{reset_params}">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Check this box to clear all input parameters and start over.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
     </parameters>
     <summary>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;This script adds the&lt;/SPAN&gt;&lt;SPAN&gt; &lt;/SPAN&gt;&lt;SPAN&gt;Google Earth Engine Feature Collection&lt;/SPAN&gt;&lt;SPAN&gt; to ArcPro as a base map by its asset tag and customizes the visualization parameters. &lt;/SPAN&gt;&lt;SPAN STYLE="font-weight:bold;"&gt;To avoid slow response, the feature collection size is limited to 100,000 elements. &lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN&gt;Please note that the dataset is added as a Tiled Map Service Layer, which is view only and cannot be edited. The user will need to download the dataset for analysis in ArcPro. To browse all datasets, please visit &lt;/SPAN&gt;&lt;A href="https://developers.google.com/earth-engine/datasets/catalog" STYLE="text-decoration:underline;"&gt;&lt;SPAN&gt;https://developers.google.com/earth-engine/datasets/catalog&lt;/SPAN&gt;&lt;/A&gt;&lt;SPAN&gt;.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</summary>
   </tool>
@@ -61,5 +64,5 @@
   <mdHrLv>
     <ScopeCd value="005"/>
   </mdHrLv>
-  <mdDateSt Sync="TRUE">20250515</mdDateSt>
+  <mdDateSt Sync="TRUE">20250516</mdDateSt>
 </metadata>
