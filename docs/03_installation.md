@@ -56,11 +56,11 @@ Once you run the Python Command Prompt,
 
 6. Install `earthengine-api` and `xee` from `conda-forge` channel. Please note that these two packages are unavailable in `esri` channel. It is recommended to use `conda install` instead of `mamba install`, because `mamba install` may not work properly with `earthengine-api` and `xee`.
 
-        conda install earthengine-api xee -c conda-forge
+        conda install earthengine-api xee --channel conda-forge
 
-7. Install specific version of `rasterio` from `esri` channel. The default installation version of `rasterio=1.3.10` may be incompatible with ArcPro pre-installed `gdal`.
+7. Install the specific version of `rasterio` from [the `esri` conda channel](https://anaconda.org/Esri/repo). The current default installation version of `rasterio=1.3.10` may be incompatible with ArcPro pre-installed `gdal`. (**Note: `rasterio` is only required for the image and image collection download scripts; other scripts do not depend on it.**)
 
-        conda install rasterio=1.3.9 -c esri
+        conda install rasterio=1.3.9 --channel esri
 
 8. Activate package `gee` within ArcPro
 
@@ -114,7 +114,7 @@ Google Cloud SDK is required to fully utilize the ArcGIS Earth Engine Toolbox. S
 
 ### Downloading Google Cloud SDK
 
-Please check this [link](https://cloud.google.com/sdk/docs/install) for instructions of downloading the Google Cloud SDK.
+Please check this [link](https://cloud.google.com/sdk/docs/install) for instructions of downloading and installing the Google Cloud SDK.
 
 To install the Google Cloud SDK, admin permissions are often required, especially on systems where the SDK needs to modify system files or be installed for all users. It's also possible to install the SDK without admin rights if you install it in a user-specific directory.
 
@@ -135,6 +135,8 @@ Before proceeding, you'll need your Google Cloud Project ID. To find it:
 ### Configuring Google Cloud SDK
 
 The Google Cloud SDK shell (commonly referred to as the gcloud command-line interface) operates in a terminal or command prompt environment and has a standard text-based interface. It doesn't have a graphical user interface but relies on commands and text outputs.
+
+**A video guide for the Google Cloud SDK application default login setup is available following the steps below.**
 
 1. In Windows OS, search for "Google Cloud SDK Shell", click to open. To run the Google Cloud SDK Shell as administrator, right-click on the Google Cloud SDK Shell, and select **Run as administrator**.
 
