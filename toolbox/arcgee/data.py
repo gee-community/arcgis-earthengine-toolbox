@@ -12,22 +12,43 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-import ee
-import ujson
-import arcpy
-import google.auth
-import xarray
+# built-in modules
 import datetime
-import os
-import requests
-import numpy as np
 import json
+import os
+import re
+from pathlib import Path
+
+# third-party modules
+import numpy as np
+import requests
+import ujson
+import xarray
+import google.auth
+
+import arcpy
+import ee
+
 
 # Import version from parent package
 # from arcgee import __version__
 
 __version__ = "0.1.1"
+
+
+def is_valid_workload_tag(tag: str) -> bool:
+    if not tag:
+        return True  # Empty string is allowed to reset the tag.
+
+    # Must be 1–63 characters long and match the allowed pattern.
+    pattern = r"^[a-zA-Z0-9](?:[a-zA-Z0-9_.-]{0,61}[a-zA-Z0-9])?$"
+    return bool(re.match(pattern, tag))
+
+
+def has_spaces_or_special_chars(filepath: str) -> bool:
+    filename = Path(filepath).name
+    # Matches any character that is not a-z, A-Z, 0-9, underscore, dash, or dot.
+    return bool(re.search(r"[^a-zA-Z0-9_.-]", filename))
 
 
 def get_version_info():
