@@ -145,6 +145,14 @@ class GEEInit:
                     "The workload tag is invalid. Please read the "
                     "instructions below and specify a valid workload tag."
                 )
+        # Check if the workload tag contains spaces or special characters.
+        workload_tag = parameters[1].valueAsText
+        if workload_tag:
+            if not arcgee.data.is_valid_workload_tag(workload_tag):
+                parameters[1].setErrorMessage(
+                    "The workload tag is invalid. Please read the "
+                    "instructions below and specify a valid workload tag."
+                )
         return
 
     def execute(self, parameters, messages):
@@ -241,6 +249,14 @@ class ChangeProjectID:
                     "The workload tag is invalid. Please read the "
                     "instructions below and specify a valid workload tag."
                 )
+        # Check if the workload tag contains spaces or special characters.
+        workload_tag = parameters[3].valueAsText
+        if workload_tag:
+            if not arcgee.data.is_valid_workload_tag(workload_tag):
+                parameters[3].setErrorMessage(
+                    "The workload tag is invalid. Please read the "
+                    "instructions below and specify a valid workload tag."
+                )
         return
 
     def execute(self, parameters, messages):
@@ -306,6 +322,14 @@ class GEEAuth:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
+        # Check if the workload tag contains spaces or special characters.
+        workload_tag = parameters[1].valueAsText
+        if workload_tag:
+            if not arcgee.data.is_valid_workload_tag(workload_tag):
+                parameters[1].setErrorMessage(
+                    "The workload tag is invalid. Please read the "
+                    "instructions below and specify a valid workload tag."
+                )
         # Check if the workload tag contains spaces or special characters.
         workload_tag = parameters[1].valueAsText
         if workload_tag:
