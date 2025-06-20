@@ -5,15 +5,15 @@
     <CreaTime>00211500</CreaTime>
     <ArcGISFormat>1.0</ArcGISFormat>
     <SyncOnce>TRUE</SyncOnce>
-    <ModDate>20241219</ModDate>
-    <ModTime>1155300</ModTime>
+    <ModDate>20250522</ModDate>
+    <ModTime>12084000</ModTime>
     <scaleRange>
       <minScale>150000000</minScale>
       <maxScale>5000</maxScale>
     </scaleRange>
     <ArcGISProfile>ItemDescription</ArcGISProfile>
   </Esri>
-  <tool xmlns="" name="ChangeProjectID" displayname="Check or Change Project ID" toolboxalias="toolbox">
+  <tool xmlns="" name="ChangeProjectID" displayname="Check or Change Project ID" toolboxalias="GEE_Connector">
     <arcToolboxHelpPath>c:\program files\arcgis\pro\Resources\Help\gp</arcToolboxHelpPath>
     <parameters>
       <param name="current_id" displayname="Current project ID is shown below" type="Optional" direction="Input" datatype="String" expression="{current_id}">
@@ -26,7 +26,7 @@
         <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Input the new project ID here. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
       </param>
       <param name="new_tag" displayname="Specify the new workload tag" type="Optional" direction="Input" datatype="String" expression="{new_tag}">
-        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Input the new workload tag if any.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Input the new workload tag if any.&lt;/SPAN&gt;&lt;/P&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Workload tag must be 1 - 63 characters, beginning and ending with an alphanumeric character ([a-z0-9A-Z]) with dashes (-), underscores (_), dots (.), and alpha numerics between, or an empty string to reset the default back to none.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;P&gt;&lt;SPAN /&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
       </param>
     </parameters>
     <summary>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;This script displays the current Google Cloud quota project ID and workload tag, and allows users to switch quota project ID and workload tag associated with Google Earth Engine.&lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN&gt;Please note that if you have installed Google Cloud SDK shell, you cannot switch quota project ID using this script. Instead, open the Google Cloud SDK shell, copy and paste the following command `gcloud auth application-default set-quota-project QUOTA_PROJECT_ID`, replace the `QUOTA_PROJECT_ID` with your target project ID. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</summary>
@@ -49,5 +49,5 @@
   <mdHrLv>
     <ScopeCd value="005"/>
   </mdHrLv>
-  <mdDateSt Sync="TRUE">20241219</mdDateSt>
+  <mdDateSt Sync="TRUE">20250522</mdDateSt>
 </metadata>
