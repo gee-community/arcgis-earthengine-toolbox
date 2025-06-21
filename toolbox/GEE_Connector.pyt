@@ -2161,6 +2161,15 @@ class DownloadImgbyID:
         image = ee.ImageCollection(ee.Image(img_id))
         # Filter image by selected bands
         image = image.select(bands_only)
+        # Get ROI from the object extent if not provided
+        if roi is None:
+            try:
+                roi = arcgee.data.get_roi_from_object(image)
+            except Exception as e:
+                arcpy.AddWarning(
+                    f"Error getting ROI from object: {e}. "
+                    "No ROI provided, downloading the entire image may cause memory issues!"
+                )
 
         # check if use projection
         use_projection = arcgee.data.whether_use_projection(image)
@@ -2384,6 +2393,14 @@ class DownloadImgbyObj:
         image = ee.ImageCollection(ee.Image(img_id))
         # Filter image by selected bands
         image = image.select(bands_only)
+        if roi is None:
+            try:
+                roi = arcgee.data.get_roi_from_object(image)
+            except Exception as e:
+                arcpy.AddWarning(
+                    f"Error getting ROI from object: {e}. "
+                    "No ROI provided, downloading the entire image may cause memory issues!"
+                )
 
         # check if use projection
         use_projection = arcgee.data.whether_use_projection(image)
@@ -2714,28 +2731,16 @@ class DownloadImgColbyID:
             image = image.select(bands_only)
             if roi is None:
                 try:
-                    arcpy.AddMessage("Try to get ROI from the object ...")
-                    # get extend of the object
-                    centroid_coords, bounds_coords = arcgee.data.get_object_centroid(
-                        image, 1
-                    )
-                    x_min, y_min, x_max, y_max = arcgee.data.convert_coords_to_bbox(
-                        bounds_coords
-                    )
-                    arcpy.AddMessage([x_min, y_min, x_max, y_max])
-                    roi_used = ee.Geometry.BBox(x_min, y_min, x_max, y_max)
-                except:
+                    roi = arcgee.data.get_roi_from_object(image)
+                except Exception as e:
                     arcpy.AddWarning(
-                        "No ROI provided, download entire image ... This may cause memory issues!"
+                        f"Error getting ROI from object: {e}. "
+                        "No ROI provided, downloading the entire image may cause memory issues!"
                     )
-                    roi_used = None
-
-            else:
-                roi_used = roi
 
             # download image as geotiff
             arcgee.data.image_to_geotiff(
-                image, bands_only, crs, scale_ds, roi_used, use_projection, out_tiff
+                image, bands_only, crs, scale_ds, roi, use_projection, out_tiff
             )
 
         # Add out tiff to map layer
@@ -3002,28 +3007,16 @@ class DownloadImgColbyObj:
 
             if roi is None:
                 try:
-                    arcpy.AddMessage("Try to get ROI from the object ...")
-                    # get extend of the object
-                    centroid_coords, bounds_coords = arcgee.data.get_object_centroid(
-                        image, 1
-                    )
-                    x_min, y_min, x_max, y_max = arcgee.data.convert_coords_to_bbox(
-                        bounds_coords
-                    )
-                    arcpy.AddMessage([x_min, y_min, x_max, y_max])
-                    roi_used = ee.Geometry.BBox(x_min, y_min, x_max, y_max)
-                except:
+                    roi = arcgee.data.get_roi_from_object(image)
+                except Exception as e:
                     arcpy.AddWarning(
-                        "No ROI provided, download entire image ... This may cause memory issues!"
+                        f"Error getting ROI from object: {e}. "
+                        "No ROI provided, downloading the entire image may cause memory issues!"
                     )
-                    roi_used = None
-
-            else:
-                roi_used = roi
 
             # download image as geotiff
             arcgee.data.image_to_geotiff(
-                image, bands_only, crs, scale_ds, roi_used, use_projection, out_tiff
+                image, bands_only, crs, scale_ds, roi, use_projection, out_tiff
             )
 
         # Add out tiff to map layer
