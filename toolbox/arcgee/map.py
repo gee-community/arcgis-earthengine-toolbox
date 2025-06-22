@@ -14,6 +14,34 @@
 
 import arcpy
 import ee
+import matplotlib.colors as mcolors
+import matplotlib.cm as cm
+
+
+def list_color_ramps() -> list[str]:
+    """Return a list all supported color ramps."""
+    return [
+        "viridis",
+        "magma",
+        "plasma",
+        "cividis",
+        "Blues",
+        "Greens",
+        "Reds",
+        "Purples",
+        "Oranges",
+        "Spectral",
+        "turbo",
+    ]
+
+
+def get_color_ramp(name: str, n: int = 10) -> list[str]:
+    """Return a list of hex color codes from a matplotlib colormap name."""
+    try:
+        cmap = cm.get_cmap(name, n)
+        return [mcolors.to_hex(cmap(i)) for i in range(cmap.N)]
+    except ValueError:
+        raise ValueError(f"Colormap '{name}' is not recognized by Matplotlib.")
 
 
 def add_layer(ee_object, vis_params=None, name=None):
