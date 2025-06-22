@@ -408,11 +408,12 @@ class AddImg2MapbyID:
 
         param5 = arcpy.Parameter(
             name="palette",
-            displayName="Specify color palette in CSS-style color strings for visualization",
+            displayName="Choose a color palette for visualization",
             datatype="GPString",
             direction="Input",
             parameterType="Optional",
         )
+        param5.filter.list = arcgee.map.list_color_ramps()
 
         param6 = arcpy.Parameter(
             name="out_json",
@@ -458,6 +459,11 @@ class AddImg2MapbyID:
         # Reset band filter list when asset ID changes
         if not img_id:
             parameters[1].filter.list = []
+
+        # Switch off the color palette when more than 1 band is selected.
+        if parameters[1].valueAsText:
+            bands = parameters[1].valueAsText.split(";")
+            parameters[5].enabled = len(bands) == 1
 
         return
 
@@ -513,12 +519,7 @@ class AddImg2MapbyID:
 
         # Add color palette if specified
         if palette_str:
-            # Remove ' in palette string in case users add it
-            if "'" in palette_str:
-                palette_str = palette_str.replace("'", "")
-            # Convert palette string to list if specified
-            palette = palette_str.split(",")
-            vis_params["palette"] = palette
+            vis_params["palette"] = arcgee.map.get_color_ramp(palette_str)
 
         # Get image by label
         img_id = arcgee.data.clean_asset_id(img_id)
@@ -622,11 +623,12 @@ class AddImg2MapbyObj:
 
         param5 = arcpy.Parameter(
             name="palette",
-            displayName="Specify color palette in CSS-style color strings for visualization",
+            displayName="Choose a color palette for visualization",
             datatype="GPString",
             direction="Input",
             parameterType="Optional",
         )
+        param5.filter.list = arcgee.map.list_color_ramps()
 
         params = [param0, param1, param2, param3, param4, param5]
         return params
@@ -657,6 +659,11 @@ class AddImg2MapbyObj:
         # Reset band filter list when asset id changes
         if not json_path:
             parameters[1].filter.list = []
+
+        # Switch off the color palette when more than 1 band is selected.
+        if parameters[1].valueAsText:
+            bands = parameters[1].valueAsText.split(";")
+            parameters[5].enabled = len(bands) == 1
 
         return
 
@@ -703,12 +710,7 @@ class AddImg2MapbyObj:
 
         # Add color palette if specified
         if palette_str:
-            # Remove ' in palette string in case users add it
-            if "'" in palette_str:
-                palette_str = palette_str.replace("'", "")
-            # Convert palette string to list if specified
-            palette = palette_str.split(",")
-            vis_params["palette"] = palette
+            vis_params["palette"] = arcgee.map.get_color_ramp(palette_str)
 
         # Get image by label
         img = arcgee.data.load_ee_result(json_path)
@@ -843,11 +845,12 @@ class AddImgCol2MapbyID:
 
         param9 = arcpy.Parameter(
             name="palette",
-            displayName="Specify color palette in CSS-style color strings for visualization",
+            displayName="Choose a color palette for visualization",
             datatype="GPString",
             direction="Input",
             parameterType="Optional",
         )
+        param9.filter.list = arcgee.map.list_color_ramps()
 
         param10 = arcpy.Parameter(
             name="out_json",
@@ -952,6 +955,11 @@ class AddImgCol2MapbyID:
             if not img_name:
                 parameters[5].filter.list = []
 
+        # Switch off the color palette when more than 1 band is selected.
+        if parameters[5].valueAsText:
+            bands = parameters[5].valueAsText.split(";")
+            parameters[9].enabled = len(bands) == 1
+
         return
 
     def updateMessages(self, parameters):
@@ -1015,12 +1023,7 @@ class AddImgCol2MapbyID:
 
         # Add color palette if specified
         if palette_str:
-            # Remove ' in palette string in case users add it
-            if "'" in palette_str:
-                palette_str = palette_str.replace("'", "")
-            # Convert palette string to list if specified
-            palette = palette_str.split(",")
-            vis_params["palette"] = palette
+            vis_params["palette"] = arcgee.map.get_color_ramp(palette_str)
 
         # Get image by label
         img = ee.Image(img_id)
@@ -1168,11 +1171,12 @@ class AddImgCol2MapbyObj:
 
         param6 = arcpy.Parameter(
             name="palette",
-            displayName="Specify color palette in CSS-style color strings for visualization",
+            displayName="Choose a color palette for visualization",
             datatype="GPString",
             direction="Input",
             parameterType="Optional",
         )
+        param6.filter.list = arcgee.map.list_color_ramps()
 
         params = [param0, param1, param2, param3, param4, param5, param6]
         return params
@@ -1221,6 +1225,11 @@ class AddImgCol2MapbyObj:
             # Reset band filter list
             if not parameters[1].valueAsText:
                 parameters[2].filter.list = []
+
+        # Switch off the color palette when more than 1 band is selected.
+        if parameters[2].valueAsText:
+            bands = parameters[2].valueAsText.split(";")
+            parameters[6].enabled = len(bands) == 1
 
         return
 
@@ -1281,12 +1290,7 @@ class AddImgCol2MapbyObj:
 
         # Add color palette if specified
         if palette_str:
-            # Remove ' in palette string in case users add it
-            if "'" in palette_str:
-                palette_str = palette_str.replace("'", "")
-            # Convert palette string to list if specified
-            palette = palette_str.split(",")
-            vis_params["palette"] = palette
+            vis_params["palette"] = arcgee.map.get_color_ramp(palette_str)
 
         # Get the map ID and token
         map_id_dict = img.getMapId(vis_params)

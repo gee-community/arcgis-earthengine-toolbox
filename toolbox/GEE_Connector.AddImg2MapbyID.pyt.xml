@@ -5,40 +5,40 @@
     <CreaTime>01043500</CreaTime>
     <ArcGISFormat>1.0</ArcGISFormat>
     <SyncOnce>TRUE</SyncOnce>
-    <ModDate>20250117</ModDate>
-    <ModTime>23402000</ModTime>
+    <ModDate>20250528</ModDate>
+    <ModTime>0165500</ModTime>
     <scaleRange>
       <minScale>150000000</minScale>
       <maxScale>5000</maxScale>
     </scaleRange>
     <ArcGISProfile>ItemDescription</ArcGISProfile>
   </Esri>
-  <tool xmlns="" name="AddImg2MapbyID" displayname="Add Image to Map by Asset ID" toolboxalias="toolbox">
+  <tool xmlns="" name="AddImg2MapbyID" displayname="Add Image to Map by Asset ID" toolboxalias="GEE_Connector">
     <arcToolboxHelpPath>c:\program files\arcgis\pro\Resources\Help\gp</arcToolboxHelpPath>
     <parameters>
       <param name="asset_id" displayname="Specify the image asset ID" type="Required" direction="Input" datatype="String" expression="asset_id">
         <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;The asset ID could be found at the dataset information page. For example, ee.Image('AHN/AHN2_05M_INT') &lt;/SPAN&gt;&lt;SPAN&gt;loads the Google Earth Engine Image &lt;/SPAN&gt;&lt;SPAN&gt;by asset ID AHN/AHN2_05M_INT. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
       </param>
-      <param name="bands" displayname="Specify three bands for RGB visualization" type="Optional" direction="Input" datatype="Multiple Value" expression="{bands;bands...}">
-        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;The image dataset could contain multiple bands. However, the visualization only assigns the first three bands to produce RGB representation. For more information, please visit &lt;/SPAN&gt;&lt;A href="https://developers.google.com/earth-engine/guides/image_visualization" STYLE="text-decoration:underline;"&gt;&lt;SPAN&gt;https://developers.google.com/earth-engine/guides/image_visualization    &lt;/SPAN&gt;&lt;/A&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      <param name="bands" displayname="Specify up to three bands for RGB visualization" type="Optional" direction="Input" datatype="Multiple Value" expression="{bands;bands...}">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Choose up to 3 bands for visualization. You can choose &lt;/SPAN&gt;&lt;/P&gt;&lt;OL&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;One single band for visualization with color ramps&lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;Two bands for visualization with red and blue&lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;LI&gt;&lt;P&gt;&lt;SPAN&gt;Three bands for visualization with red, green and blue&lt;/SPAN&gt;&lt;/P&gt;&lt;/LI&gt;&lt;/OL&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
       </param>
       <param name="min_val" displayname="Specify the minimum value for visualization" type="Optional" direction="Input" datatype="Double" expression="{min_val}">
-        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;The value(s) to map to 0. Specify a number or comma-separated list of three numbers, one for each band. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Specify the pixel value(s) to map to 0 (black).&lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN&gt;Values are scaled to the 8-bit display range (0&#x2013;255). For example, if band 1 ranges from 5 to 3000, setting min to 5 maps it to 0 (black), and max to 3000 maps it to 255 (white).&lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN&gt;Use a single number for one band, or a comma-separated list for three bands (e.g., 0 or 0, 0, 0).&lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN /&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
       </param>
       <param name="max_val" displayname="Specify the maximum value for visualization" type="Optional" direction="Input" datatype="Double" expression="{max_val}">
-        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;The value(s) to map to 255. Specify a number or comma-separated list of three numbers, one for each band. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Specify the pixel value(s) to map to 255 (white).&lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN&gt;Values are scaled to the 8-bit display range (0&#x2013;255). For example, if band 1 ranges from 5 to 3000, setting min to 5 maps it to 0 (black), and max to 3000 maps it to 255 (white).&lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN&gt;Use a single number for one band, or a comma-separated list for three bands (e.g., 30 or 30, 30, 30).&lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN /&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
       </param>
       <param name="gamma" displayname="Specify gamma correction factors" type="Optional" direction="Input" datatype="String" expression="{gamma}">
-        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;The value(s) by which to multiply each pixel value. Specify a number or comma-separated list of three numbers, one for each band, for example,  0.95, 1.1, 1&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Gamma correction adjusts perceived brightness. Use it to enhance contrast in specific tone ranges after mapping pixel values to 0&#x2013;255. Gamma Values &amp;lt;1 lighten shadows; &amp;gt;1 darken highlights.&lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN&gt;Use a single number for one band, or a comma-separated list for three bands (e.g., 1 or 0.9, 1, 1.2).&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
       </param>
-      <param name="palette" displayname="Specify color palette in CSS-style color strings for visualization" type="Optional" direction="Input" datatype="String" expression="{palette}">
-        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;List of CSS-style color strings (single-band images only). Specify comma-separated list of hex strings, for example, '00A600','63C600','E6E600'&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      <param name="palette" displayname="Choose a color palette for visualization" type="Optional" direction="Input" datatype="String" expression="{viridis | magma | plasma | cividis | blues | greens | reds | purples | orange_red | spectral | turbo}">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;For single-band images only.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
       </param>
       <param name="out_json" displayname="Save the image object to serialized JSON file" type="Optional" direction="Output" datatype="File" expression="{out_json}">
         <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Save the image to a serialized JSON object for future use.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
       </param>
     </parameters>
-    <summary>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;This script adds the Google Earth Engine Image to ArcPro as a base map by its asset ID and tag and customizes the visualization parameters. Please note that the dataset is added as a Tiled Service Layer (TSL), which cannot be edited. The user will need to download the dataset for analysis in ArcPro. To browse all datasets, please visit &lt;/SPAN&gt;&lt;A href="https://developers.google.com/earth-engine/datasets/catalog" STYLE="text-decoration:underline;"&gt;&lt;SPAN&gt;https://developers.google.com/earth-engine/datasets/catalog&lt;/SPAN&gt;&lt;/A&gt;&lt;SPAN&gt;.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</summary>
+    <summary>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;This script adds the Google Earth Engine Image to ArcPro as a base map by its asset ID and customizes the visualization parameters. Please note that the dataset is added as a Tiled Map Service Layer, which is view- only and cannot be edited. The user will need to download the dataset for analysis in ArcPro. &lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN&gt;To browse all datasets, please visit &lt;/SPAN&gt;&lt;A href="https://developers.google.com/earth-engine/datasets/catalog" STYLE="text-decoration:underline;"&gt;&lt;SPAN&gt;https://developers.google.com/earth-engine/datasets/catalog&lt;/SPAN&gt;&lt;/A&gt;&lt;SPAN&gt;.&lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN&gt;For image visualization guides, please visit &lt;/SPAN&gt;&lt;A href="https://developers.google.com/earth-engine/guides/image_visualization" STYLE="text-decoration:underline;"&gt;&lt;SPAN&gt;https://developers.google.com/earth-engine/guides/image_visualization    &lt;/SPAN&gt;&lt;/A&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</summary>
   </tool>
   <dataIdInfo>
     <idCitation>
@@ -58,5 +58,5 @@
   <mdHrLv>
     <ScopeCd value="005"/>
   </mdHrLv>
-  <mdDateSt Sync="TRUE">20250117</mdDateSt>
+  <mdDateSt Sync="TRUE">20250528</mdDateSt>
 </metadata>
