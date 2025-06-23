@@ -12,14 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import arcpy
-import ee
 import os
 import json
+import pathlib
+
+import arcpy
+import ee
 import requests
 from google.cloud import storage
+
 import arcgee
-from pathlib import Path
 
 """ Toolbox """
 
@@ -718,7 +720,7 @@ class AddImg2MapbyObj:
         # The image object could lose image ID information after reducers are applied.
         # Use the JSON file name as image ID if image ID is not found.
         if not img_id:
-            img_id = Path(json_path).stem
+            img_id = pathlib.Path(json_path).stem
 
         # Get the map ID and token.
         map_id_dict = img.getMapId(vis_params)
@@ -1879,7 +1881,7 @@ class AddFeatCol2MapbyObj:
             feat_id = asset_id
         else:
             # Use the json file name as feature id if asset id is not found.
-            feat_id = Path(json_path).stem
+            feat_id = pathlib.Path(json_path).stem
 
         # TODO: add more visualization parameters
         # point_shape= parameters[2].valueAsText
@@ -2165,13 +2167,13 @@ class DownloadImgbyID:
         # Filter image by selected bands.
         image = image.select(bands_only)
         # Get ROI from the object extent if not provided.
-        if roi is None:
+        if not roi:
             try:
                 roi = arcgee.data.get_roi_from_object(image)
             except Exception as e:
                 arcpy.AddWarning(
                     f"Error getting ROI from object: {e}. "
-                    "No ROI provided, downloading the entire image may cause memory issues!"
+                    "No ROI provided. Downloading the entire image may cause memory issues!"
                 )
 
         # Check if use projection.
@@ -2396,13 +2398,13 @@ class DownloadImgbyObj:
         image = ee.ImageCollection(ee.Image(img_id))
         # Filter image by selected bands.
         image = image.select(bands_only)
-        if roi is None:
+        if not roi:
             try:
                 roi = arcgee.data.get_roi_from_object(image)
             except Exception as e:
                 arcpy.AddWarning(
                     f"Error getting ROI from object: {e}. "
-                    "No ROI provided, downloading the entire image may cause memory issues!"
+                    "No ROI provided. Downloading the entire image may cause memory issues!"
                 )
 
         # Check if use projection.
@@ -2731,13 +2733,13 @@ class DownloadImgColbyID:
             image = ee.ImageCollection(ee.Image(img_id))
             # Filter image by selected bands.
             image = image.select(bands_only)
-            if roi is None:
+            if not roi:
                 try:
                     roi = arcgee.data.get_roi_from_object(image)
                 except Exception as e:
                     arcpy.AddWarning(
                         f"Error getting ROI from object: {e}. "
-                        "No ROI provided, downloading the entire image may cause memory issues!"
+                        "No ROI provided. Downloading the entire image may cause memory issues!"
                     )
 
             # Download image as geotiff.
@@ -3007,13 +3009,13 @@ class DownloadImgColbyObj:
             # Filter image by selected bands.
             image = image.select(bands_only)
 
-            if roi is None:
+            if not roi:
                 try:
                     roi = arcgee.data.get_roi_from_object(image)
                 except Exception as e:
                     arcpy.AddWarning(
                         f"Error getting ROI from object: {e}. "
-                        "No ROI provided, downloading the entire image may cause memory issues!"
+                        "No ROI provided. Downloading the entire image may cause memory issues!"
                     )
 
             # Download image as geotiff.

@@ -1068,9 +1068,8 @@ def get_roi_from_object(obj: "ee.Image | ee.FeatureCollection") -> "ee.Geometry.
     centroid_coords, bounds_coords = get_object_centroid(obj, 1)
     x_min, y_min, x_max, y_max = convert_coords_to_bbox(bounds_coords)
     arcpy.AddMessage([x_min, y_min, x_max, y_max])
-    roi = ee.Geometry.BBox(x_min, y_min, x_max, y_max)
 
-    return roi
+    return ee.Geometry.BBox(x_min, y_min, x_max, y_max)
 
 
 # Get centroid and extent coordinates of input image or feature collection.
@@ -1350,8 +1349,10 @@ def gcs_file_to_ee_asset(asset_type, asset_id, bucket_uri):
 
     # Run the command.
     try:
-        output = subprocess.check_output(command, stderr=subprocess.STDOUT)
-        arcpy.AddMessage(output.decode("utf-8"))
+        process = subprocess.run(
+            command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        arcpy.AddMessage(process.stdout.decode("utf-8"))
     except subprocess.CalledProcessError as e:
         arcpy.AddError(e.stderr.decode("utf-8"))
     # ArcGIS Pro imposes certain restrictions on running subprocesses.
