@@ -46,7 +46,7 @@ def get_color_ramp(name: str, n: int = 10) -> list[str]:
 
 def add_layer(ee_object, vis_params=None, name=None):
 
-    # Check if Earth Engine object is an Image Collection
+    # Check if Earth Engine object is an Image Collection.
     # If so, then create a mosaic before adding to the map.
     if isinstance(ee_object, ee.ImageCollection):
         ee_object = ee_object.mosaic()
@@ -62,7 +62,7 @@ def add_layer(ee_object, vis_params=None, name=None):
     return
 
 
-# Zoom project map view to point
+# Zoom project map view to point.
 def zoom_to_point(aprx, point_coords, extent_coords):
     """Zoom the map view to a point with buffer based on extent.
 
@@ -100,7 +100,7 @@ def zoom_to_point(aprx, point_coords, extent_coords):
     return
 
 
-# Get map view extent
+# Get map view extent.
 def get_map_view_extent(target_epsg=4326):
     """Get the current map view extent coordinates in WGS 84.
     Args:
@@ -109,12 +109,12 @@ def get_map_view_extent(target_epsg=4326):
         tuple: (xmin, ymin, xmax, ymax) coordinates in WGS 84.
     """
     aprx = arcpy.mp.ArcGISProject("CURRENT")
-    # Get the active map view
+    # Get the active map view.
     view = aprx.activeView
-    # Get the current camera object, which includes the map view extent
+    # Get the current camera object, which includes the map view extent.
     camera = view.camera
 
-    # Extract the projection and the boundary coordinates (extent)
+    # Extract the projection and the boundary coordinates (extent).
     spatial_ref = camera.getExtent().spatialReference
     xmin = camera.getExtent().XMin
     ymin = camera.getExtent().YMin
@@ -124,28 +124,28 @@ def get_map_view_extent(target_epsg=4326):
     # Refer to https://epsg.io/3857 for more details.
     # When the user zooms out of the global extent to the blank,
     # the map extent coordinates (values are out of range)
-    # can not be converted to ESPG 4326 (latitude and longitude)
-    # Need to clip the map extent coordinates to valid EPSG 3857 extent
+    # can not be converted to ESPG 4326 (latitude and longitude).
+    # Need to clip the map extent coordinates to valid EPSG 3857 extent.
     if spatial_ref.PCSCode == 3857:
         arcpy.AddMessage("The current projection is EPSG 3857.")
         xmin, ymin, xmax, ymax = clip_to_epsg3857_extent(xmin, ymin, xmax, ymax)
         arcpy.AddMessage("The map extent has been clipped to valid EPSG 3857 extent.")
-    # Check if projection code is the target EPSG code
+    # Check if projection code is the target EPSG code.
     # projected
     poly_prj = spatial_ref.PCSCode
     if poly_prj == 0:
         # geographic
         poly_prj = spatial_ref.GCSCode
-    # Always using latitude and longtiude for ee.Geometry, ee will automatically transform
+    # Always using latitude and longtiude for ee.Geometry, ee will automatically transform.
     if str(poly_prj) not in "EPSG:" + str(target_epsg):
-        # Convert the extent corners to target EPSG
+        # Convert the extent corners to target EPSG.
         xmin, ymin = project_to_new_sr(xmin, ymin, spatial_ref, target_epsg)
         xmax, ymax = project_to_new_sr(xmax, ymax, spatial_ref, target_epsg)
 
     return xmin, ymin, xmax, ymax
 
 
-# Project a point to a different spatial reference
+# Project a point to a different spatial reference.
 def project_to_new_sr(x, y, in_spatial_ref, out_spatial_ref):
     """Project a point from input spatial reference to output spatial reference.
 
@@ -179,7 +179,7 @@ def clip_to_epsg3857_extent(
     Returns:
         The extent clipped to EPSG 3857's valid extent as (xmin, ymin, xmax, ymax).
     """
-    # EPSG 3857 global valid extent in meters
+    # EPSG 3857 global valid extent in meters.
     MIN_VAL = -20037500
     MAX_VAL = 20037500
 
