@@ -30,7 +30,7 @@ class Toolbox:
         self.label = "GEE Connector"
         self.alias = "GEE_Connector"
 
-        # List of tool classes associated with this toolbox
+        # List of tool classes associated with this toolbox.
         tools = []
 
         # authentication tools
@@ -102,9 +102,9 @@ class GEEInit:
             parameterType="Required",
         )
 
-        # Try to fetch the project ID from the default credentials
+        # Try to fetch the project ID from the default credentials.
         try:
-            # get project ID from Google cloud default credentials
+            # Get project ID from Google cloud default credentials.
             credentials, env_project_id = default()
             param0.value = credentials.quota_project_id
         except:
@@ -218,14 +218,14 @@ class ChangeProjectID:
         validation is performed.  This method is called whenever a parameter
         has been changed."""
 
-        # Fetch the project ID from the credentials
+        # Fetch the project ID from the credentials.
         try:
             project_id = ee.data.getProjectConfig()["name"].split("/")[1]
             parameters[0].value = project_id
         except:
             parameters[0].value = "None"
 
-        # Fetch workload tag
+        # Fetch workload tag.
         parameters[1].value = ee.data.getWorkloadTag()
 
         return
@@ -319,11 +319,11 @@ class GEEAuth:
     def execute(self, parameters, messages):
         """The source code of the tool."""
 
-        # Read input parameters
+        # Read input parameters.
         project_id = parameters[0].valueAsText
         workload_tag = parameters[1].valueAsText
 
-        # Define functions
+        # Define functions.
         def clear_credentials():
             credentials_path = os.path.expanduser("~/.config/earthengine/credentials")
             if os.path.exists(credentials_path):
@@ -437,17 +437,17 @@ class AddImg2MapbyID:
         validation is performed.  This method is called whenever a parameter
         has been changed."""
 
-        # Check band list of the selected image
+        # Check band list of the selected image.
         img_id = parameters[0].valueAsText
 
-        # Update only when filter list is empty
+        # Update only when filter list is empty.
         if img_id:
-            # clean asset id string to remove whitespace, quotes, and trailing slash
+            # Clean asset id string to remove whitespace, quotes, and trailing slash.
             img_id = arcgee.data.clean_asset_id(img_id)
             image = ee.Image(img_id)
             band_list = image.bandNames().getInfo()
 
-            # Add band resolution information to display
+            # Add band resolution information to display.
             band_res_list = []
             for iband in band_list:
                 band_tmp = image.select(iband)
@@ -456,7 +456,7 @@ class AddImg2MapbyID:
                 band_res_list.append(f"{iband}--{round(res, 1)}--m")
             parameters[1].filter.list = band_res_list
 
-        # Reset band filter list when asset ID changes
+        # Reset band filter list when asset ID changes.
         if not img_id:
             parameters[1].filter.list = []
 
@@ -475,7 +475,7 @@ class AddImg2MapbyID:
         if json_path:
             if arcgee.data.has_spaces_or_special_chars(json_path):
                 parameters[6].setErrorMessage(
-                    "The JSON file name contains spaces or special characters."
+                    "The JSON file name contains spaces or special characters. "
                     "Please specify a valid file name."
                 )
 
@@ -490,57 +490,57 @@ class AddImg2MapbyID:
         gamma_str = parameters[4].valueAsText
         palette_str = parameters[5].valueAsText
 
-        # Define visualization parameters
+        # Define visualization parameters.
         vis_params = {}
 
-        # Add bands to vis_params if specified
+        # Add bands to vis_params if specified.
         if band_str:
-            # Remove ' in band string in case users add it
+            # Remove ' in band string in case users add it.
             if "'" in band_str:
                 band_str = band_str.replace("'", "")
             bands = band_str.split(";")
             bands_only = [iband.split("--")[0] for iband in bands]
-            # Ignore the resolution part
+            # Ignore the resolution part.
             vis_params["bands"] = bands_only
 
-        # Add min and max values if specified
+        # Add min and max values if specified.
         if min_val:
             vis_params["min"] = float(min_val)
         if max_val:
             vis_params["max"] = float(max_val)
 
-        # Add gamma correction factors if specified
+        # Add gamma correction factors if specified.
         if gamma_str:
-            # Remove ' in gamma string in case users add it
+            # Remove ' in gamma string in case users add it.
             if "'" in gamma_str:
                 gamma_str = gamma_str.replace("'", "")
             gamma = [float(item) for item in gamma_str.split(",")]
             vis_params["gamma"] = gamma
 
-        # Add color palette if specified
+        # Add color palette if specified.
         if palette_str:
             vis_params["palette"] = arcgee.map.get_color_ramp(palette_str)
 
-        # Get image by label
+        # Get image by label.
         img_id = arcgee.data.clean_asset_id(img_id)
         img = ee.Image(img_id)
-        # Get the map ID and token
+        # Get the map ID and token.
         map_id_dict = img.getMapId(vis_params)
 
-        # Construct the URL
+        # Construct the URL.
         map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
 
-        # Add map URL to the current ArcMap
+        # Add map URL to the current ArcMap.
         aprx = arcpy.mp.ArcGISProject("CURRENT")
         aprxMap = aprx.listMaps("Map")[0]
         tsl = aprxMap.addDataFromPath(map_url)
-        # Add band information to map name
+        # Add band information to map name.
         if band_str:
             tsl.name = img_id + "--" + "--".join(bands_only)
         else:
             tsl.name = img_id
 
-        # Zoom to image centroid if provided by dataset
+        # Zoom to image centroid if provided by dataset.
         try:
             centroid_coords, bounds_coords = arcgee.data.get_object_centroid(img, 1)
             arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
@@ -550,7 +550,7 @@ class AddImg2MapbyID:
             )
             pass
 
-        # Save image object to serialized JSON file
+        # Save image object to serialized JSON file.
         if parameters[6].valueAsText:
             out_json = parameters[6].valueAsText
             if not out_json.endswith(".json"):
@@ -585,7 +585,7 @@ class AddImg2MapbyObj:
             direction="Input",
             parameterType="Required",
         )
-        # only displays JSON files
+        # Only displays JSON files.
         param0.filter.list = ["json"]
 
         param1 = arcpy.Parameter(
@@ -645,9 +645,9 @@ class AddImg2MapbyObj:
         json_path = parameters[0].valueAsText
         if json_path:
             image = arcgee.data.load_ee_result(json_path)
-            # Update when band filter list is empty
+            # Update when band filter list is empty.
             band_list = image.bandNames().getInfo()
-            # Add band resolution information to display
+            # Add band resolution information to display.
             band_res_list = []
             for iband in band_list:
                 band_tmp = image.select(iband)
@@ -656,7 +656,7 @@ class AddImg2MapbyObj:
                 band_res_list.append(f"{iband}--{round(res, 1)}--m")
             parameters[1].filter.list = band_res_list
 
-        # Reset band filter list when asset id changes
+        # Reset band filter list when asset id changes.
         if not json_path:
             parameters[1].filter.list = []
 
@@ -681,38 +681,38 @@ class AddImg2MapbyObj:
         gamma_str = parameters[4].valueAsText
         palette_str = parameters[5].valueAsText
 
-        # Define visualization parameters
+        # Define visualization parameters.
         vis_params = {}
 
-        # Add bands to vis_params if specified
+        # Add bands to vis_params if specified.
         if band_str:
-            # Remove ' in band string in case users add it
+            # Remove ' in band string in case users add it.
             if "'" in band_str:
                 band_str = band_str.replace("'", "")
             bands = band_str.split(";")
             bands_only = [iband.split("--")[0] for iband in bands]
-            # Ignore the resolution part
+            # Ignore the resolution part.
             vis_params["bands"] = bands_only
 
-        # Add min and max values if specified
+        # Add min and max values if specified.
         if min_val:
             vis_params["min"] = float(min_val)
         if max_val:
             vis_params["max"] = float(max_val)
 
-        # Add gamma correction factors if specified
+        # Add gamma correction factors if specified.
         if gamma_str:
-            # Remove ' in gamma string in case users add it
+            # Remove ' in gamma string in case users add it.
             if "'" in gamma_str:
                 gamma_str = gamma_str.replace("'", "")
             gamma = [float(item) for item in gamma_str.split(",")]
             vis_params["gamma"] = gamma
 
-        # Add color palette if specified
+        # Add color palette if specified.
         if palette_str:
             vis_params["palette"] = arcgee.map.get_color_ramp(palette_str)
 
-        # Get image by label
+        # Get image by label.
         img = arcgee.data.load_ee_result(json_path)
         img_id = img.get("system:id").getInfo()
         # The image object could lose image ID information after reducers are applied.
@@ -720,23 +720,23 @@ class AddImg2MapbyObj:
         if not img_id:
             img_id = Path(json_path).stem
 
-        # Get the map ID and token
+        # Get the map ID and token.
         map_id_dict = img.getMapId(vis_params)
 
-        # Construct the URL
+        # Construct the URL.
         map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
 
-        # Add map URL to the current ArcMap
+        # Add map URL to the current ArcMap.
         aprx = arcpy.mp.ArcGISProject("CURRENT")
         aprxMap = aprx.listMaps("Map")[0]
         tsl = aprxMap.addDataFromPath(map_url)
-        # Add band information to map name
+        # Add band information to map name.
         if band_str:
             tsl.name = img_id + "--" + "--".join(bands_only)
         else:
             tsl.name = img_id
 
-        # Zoom to image centroid if provided by dataset
+        # Zoom to image centroid if provided by dataset.
         try:
             centroid_coords, bounds_coords = arcgee.data.get_object_centroid(img, 1)
             arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
@@ -886,7 +886,7 @@ class AddImgCol2MapbyID:
         validation is performed.  This method is called whenever a parameter
         has been changed."""
 
-        # Get the filter dates
+        # Get the filter dates.
         if parameters[1].valueAsText:
             val_list = parameters[1].values
             start_date = val_list[0][0]
@@ -895,12 +895,12 @@ class AddImgCol2MapbyID:
             start_date = None
             end_date = None
 
-        # Get the filter bounds
+        # Get the filter bounds.
         if parameters[3].value:
-            # Disable input coordinates if map extent is used
+            # Disable input coordinates if map extent is used.
             parameters[2].enabled = False
             xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
-            # Get the centroid of map extent
+            # Get the centroid of map extent.
             lon = (xmin + xmax) / 2
             lat = (ymin + ymax) / 2
         else:
@@ -913,34 +913,33 @@ class AddImgCol2MapbyID:
                 lon = None
                 lat = None
 
-        # Check image list of a given collection asset
+        # Check image list of a given collection asset.
         asset_id = parameters[0].valueAsText
 
-        # Image collection size could be huge, may take long to load without filters
-        # Only retrieve the list of images, when either filter dates or filter bounds are selected
-        # if asset_id and ((start_date and end_date) or (lon and lat)):
+        # Image collection size could be huge, may take long to load without filters.
+        # Only retrieve the list of images, when either filter dates or filter bounds are selected.
         if asset_id:
             asset_id = arcgee.data.clean_asset_id(asset_id)
             collection = ee.ImageCollection(asset_id)
-            # Filter image collection as specified
+            # Filter image collection as specified.
             if lon is not None and lat is not None:
                 collection = collection.filterBounds(
                     ee.Geometry.Point((float(lon), float(lat)))
                 )
             if start_date is not None and end_date is not None:
                 collection = collection.filterDate(start_date, end_date)
-            # Get image IDs from collection, limit to 100 images to avoid slow response
+            # Get image IDs from collection, limit to 100 images to avoid slow response.
             image_ids = collection.limit(100).aggregate_array("system:index").getInfo()
             parameters[4].filter.list = image_ids
 
-        # Check band list of the selected image
+        # Check band list of the selected image.
         img_name = parameters[4].valueAsText
-        # Update only when filter list is empty
+        # Update only when filter list is empty.
         if img_name:
             img_id = asset_id + "/" + img_name
             image = ee.Image(img_id)
             band_list = image.bandNames().getInfo()
-            # Add band resolution information to display
+            # Add band resolution information to display.
             band_res_list = []
             for iband in band_list:
                 band_tmp = image.select(iband)
@@ -949,7 +948,7 @@ class AddImgCol2MapbyID:
                 band_res_list.append(f"{iband}--{round(res, 1)}--m")
             parameters[5].filter.list = band_res_list
 
-        # Reset image and band filter list when asset ID changes
+        # Reset image and band filter list when asset ID changes.
         if not asset_id:
             parameters[4].filter.list = []
             if not img_name:
@@ -966,7 +965,7 @@ class AddImgCol2MapbyID:
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
 
-        # start date is required when end date is provided for filter by dates
+        # Start date is required when end date is provided for filter by dates.
         if parameters[1].valueAsText:
             arcgee.data.check_start_date(parameters[1])
 
@@ -975,7 +974,7 @@ class AddImgCol2MapbyID:
         if json_path:
             if arcgee.data.has_spaces_or_special_chars(json_path):
                 parameters[10].setErrorMessage(
-                    "The JSON file name contains spaces or special characters."
+                    "The JSON file name contains spaces or special characters. "
                     "Please specify a valid file name."
                 )
         return
@@ -991,59 +990,59 @@ class AddImgCol2MapbyID:
         palette_str = parameters[9].valueAsText
 
         asset_id = arcgee.data.clean_asset_id(asset_id)
-        # Construct asset id for selected image
+        # Construct asset ID for selected image.
         img_id = asset_id + "/" + img_name
 
-        # Define visualization parameters
+        # Define visualization parameters.
         vis_params = {}
 
-        # Add bands to vis_params if specified
+        # Add bands to vis_params if specified.
         if band_str:
-            # Remove ' in band string in case users add it
+            # Remove ' in band string in case users add it.
             if "'" in band_str:
                 band_str = band_str.replace("'", "")
             bands = band_str.split(";")
             bands_only = [iband.split("--")[0] for iband in bands]
-            # Ignore the resolution part
+            # Ignore the resolution part.
             vis_params["bands"] = bands_only
 
-        # Add min and max values if specified
+        # Add min and max values if specified.
         if min_val:
             vis_params["min"] = float(min_val)
         if max_val:
             vis_params["max"] = float(max_val)
 
-        # Add gamma correction factors if specified
+        # Add gamma correction factors if specified.
         if gamma_str:
-            # Remove ' in gamma string in case users add it
+            # Remove ' in gamma string in case users add it.
             if "'" in gamma_str:
                 gamma_str = gamma_str.replace("'", "")
             gamma = [float(item) for item in gamma_str.split(",")]
             vis_params["gamma"] = gamma
 
-        # Add color palette if specified
+        # Add color palette if specified.
         if palette_str:
             vis_params["palette"] = arcgee.map.get_color_ramp(palette_str)
 
-        # Get image by label
+        # Get image by label.
         img = ee.Image(img_id)
-        # Get the map ID and token
+        # Get the map ID and token.
         map_id_dict = img.getMapId(vis_params)
 
-        # Construct the URL
+        # Construct the URL.
         map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
 
-        # Add map URL to the current ArcMap
+        # Add map URL to the current ArcMap.
         aprx = arcpy.mp.ArcGISProject("CURRENT")
         aprxMap = aprx.listMaps("Map")[0]
         tsl = aprxMap.addDataFromPath(map_url)
-        # Add band information to map name
+        # Add band information to map name.
         if band_str:
             tsl.name = img_id + "--" + "--".join(bands_only)
         else:
             tsl.name = img_id
 
-        # Zoom to image centroid if provided by dataset
+        # Zoom to image centroid if provided by dataset.
         try:
             centroid_coords, bounds_coords = arcgee.data.get_object_centroid(img, 1)
             arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
@@ -1053,13 +1052,13 @@ class AddImgCol2MapbyID:
             )
             pass
 
-        # Save filtered image collection to serialized JSON file
+        # Save filtered image collection to serialized JSON file.
         if parameters[10].valueAsText:
             out_json = parameters[10].valueAsText
             if not out_json.endswith(".json"):
                 out_json = out_json + ".json"
 
-            # Get the filter dates
+            # Get the filter dates.
             if parameters[1].valueAsText:
                 val_list = parameters[1].values
                 start_date = val_list[0][0]
@@ -1068,12 +1067,12 @@ class AddImgCol2MapbyID:
                 start_date = None
                 end_date = None
 
-            # Get the filter bounds
+            # Get the filter bounds.
             if parameters[3].value:
-                # Disable input coordinates if map extent is used
+                # Disable input coordinates if map extent is used.
                 parameters[2].enabled = False
                 xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
-                # Get the centroid of map extent
+                # Get the centroid of map extent.
                 lon = (xmin + xmax) / 2
                 lat = (ymin + ymax) / 2
             else:
@@ -1087,7 +1086,7 @@ class AddImgCol2MapbyID:
                     lat = None
 
             collection = ee.ImageCollection(asset_id)
-            # Filter image collection as specified
+            # Filter image collection as specified.
             if lon is not None and lat is not None:
                 collection = collection.filterBounds(
                     ee.Geometry.Point((float(lon), float(lat)))
@@ -1125,7 +1124,7 @@ class AddImgCol2MapbyObj:
             direction="Input",
             parameterType="Required",
         )
-        # only displays JSON files
+        # Only displays JSON files.
         param0.filter.list = ["json"]
 
         param1 = arcpy.Parameter(
@@ -1193,24 +1192,24 @@ class AddImgCol2MapbyObj:
         json_path = parameters[0].valueAsText
         if json_path:
             collection = ee.ImageCollection(arcgee.data.load_ee_result(json_path))
-            # Only fill the image id filter list when it is empty
+            # Only fill the image id filter list when it is empty.
             if not parameters[1].filter.list:
-                # Get image IDs from collection, limit to 100 images to avoid slow response
+                # Get image IDs from collection, limit to 100 images to avoid slow response.
                 image_names = (
                     collection.limit(100).aggregate_array("system:index").getInfo()
                 )
                 parameters[1].filter.list = image_names
 
-            # Check band list of the selected image
+            # Check band list of the selected image.
             img_name = parameters[1].valueAsText
-            # Update only when filter list is empty
+            # Update only when filter list is empty.
             if img_name:
-                # JSON object could have additional map functions, use collection
+                # JSON object could have additional map functions, use collection.
                 image = collection.filter(
                     ee.Filter.eq("system:index", img_name)
                 ).first()
                 band_list = image.bandNames().getInfo()
-                # Add band resolution information to display
+                # Add band resolution information to display.
                 band_res_list = []
                 for iband in band_list:
                     band_tmp = image.select(iband)
@@ -1219,10 +1218,10 @@ class AddImgCol2MapbyObj:
                     band_res_list.append(f"{iband}--{round(res, 1)}--m")
                 parameters[2].filter.list = band_res_list
 
-        # Reset asset id display and image filter list when json file is not selected
+        # Reset asset id display and image filter list when json file is not selected.
         if not json_path:
             parameters[1].filter.list = []
-            # Reset band filter list
+            # Reset band filter list.
             if not parameters[1].valueAsText:
                 parameters[2].filter.list = []
 
@@ -1248,9 +1247,9 @@ class AddImgCol2MapbyObj:
         gamma_str = parameters[5].valueAsText
         palette_str = parameters[6].valueAsText
 
-        # load collection object
+        # Load collection object.
         collection = arcgee.data.load_ee_result(json_path)
-        # Get image id for layer name
+        # Get image id for layer name.
         asset_id = collection.get("system:id").getInfo()
         # Prepend asset id if it exists, otherwise use image name.
         if asset_id:
@@ -1258,57 +1257,57 @@ class AddImgCol2MapbyObj:
         else:
             img_id = img_name
 
-        # Get image by label
+        # Get image by label.
         img = ee.Image(img_id)
 
-        # Define visualization parameters
+        # Define visualization parameters.
         vis_params = {}
 
-        # Add bands to vis_params if specified
+        # Add bands to vis_params if specified.
         if band_str:
-            # Remove ' in band string in case users add it
+            # Remove ' in band string in case users add it.
             if "'" in band_str:
                 band_str = band_str.replace("'", "")
             bands = band_str.split(";")
             bands_only = [iband.split("--")[0] for iband in bands]
-            # Ignore the resolution part
+            # Ignore the resolution part.
             vis_params["bands"] = bands_only
 
-        # Add min and max values if specified
+        # Add min and max values if specified.
         if min_val:
             vis_params["min"] = float(min_val)
         if max_val:
             vis_params["max"] = float(max_val)
 
-        # Add gamma correction factors if specified
+        # Add gamma correction factors if specified.
         if gamma_str:
-            # Remove ' in gamma string in case users add it
+            # Remove ' in gamma string in case users add it.
             if "'" in gamma_str:
                 gamma_str = gamma_str.replace("'", "")
             gamma = [float(item) for item in gamma_str.split(",")]
             vis_params["gamma"] = gamma
 
-        # Add color palette if specified
+        # Add color palette if specified.
         if palette_str:
             vis_params["palette"] = arcgee.map.get_color_ramp(palette_str)
 
-        # Get the map ID and token
+        # Get the map ID and token.
         map_id_dict = img.getMapId(vis_params)
 
-        # Construct the URL
+        # Construct the URL.
         map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
 
-        # Add map URL to the current ArcMap
+        # Add map URL to the current ArcMap.
         aprx = arcpy.mp.ArcGISProject("CURRENT")
         aprxMap = aprx.listMaps("Map")[0]
         tsl = aprxMap.addDataFromPath(map_url)
-        # Add band information to map name
+        # Add band information to map name.
         if band_str:
             tsl.name = img_id + "--" + "--".join(bands_only)
         else:
             tsl.name = img_id
 
-        # Zoom to image centroid if provided by dataset
+        # Zoom to image centroid if provided by dataset.
         try:
             centroid_coords, bounds_coords = arcgee.data.get_object_centroid(img, 1)
             arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
@@ -1517,14 +1516,14 @@ class AddFeatCol2MapbyID:
         has been changed."""
 
         asset_id = parameters[0].valueAsText
-        # Get property names from the feature collection
+        # Get property names from the feature collection.
         if asset_id:
             asset_id = arcgee.data.clean_asset_id(asset_id)
             fc = ee.FeatureCollection(asset_id)
             prop_names = fc.first().propertyNames().getInfo()
             parameters[1].filters[0].list = sorted(prop_names)
 
-        # Reset filter list when asset id is empty
+        # Reset filter list when asset ID is empty.
         if not asset_id:
             parameters[1].filters[0].list = []
 
@@ -1555,11 +1554,11 @@ class AddFeatCol2MapbyID:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
-        # Make sure the input datatype is feature collection
+        # Make sure the input datatype is feature collection.
         if parameters[0].valueAsText:
             arcgee.data.check_ee_datatype(parameters[0], "TABLE")
 
-        # Display warning if property name is used more than once
+        # Display warning if property name is used more than once.
         prop_list = []
         if parameters[1].valueAsText:
             val_list = parameters[1].values
@@ -1573,7 +1572,7 @@ class AddFeatCol2MapbyID:
                     )
                     return
 
-        # start date is required when end date is provided for filter by dates
+        # Start date is required when end date is provided for filter by dates.
         if parameters[2].valueAsText:
             arcgee.data.check_start_date(parameters[2])
 
@@ -1604,9 +1603,9 @@ class AddFeatCol2MapbyID:
         # fill_color = parameters[6].valueAsText
         # opacity    = parameters[7].valueAsText
 
-        # Define visualization parameters
+        # Define visualization parameters.
         vis_params = {}
-        # Add color to vis_params if specified
+        # Add color to vis_params if specified.
         if feat_color:
             vis_params["color"] = feat_color
 
@@ -1628,16 +1627,16 @@ class AddFeatCol2MapbyID:
         # if opacity :
         #     vis_params['fillColorOpacity'] = float(opacity)
 
-        # Get image by label
+        # Get image by label.
         fc = ee.FeatureCollection(asset_id)
 
-        # Filter by properties
+        # Filter by properties.
         if parameters[1].valueAsText:
             val_list = parameters[1].values
-            # Could be multiple filter properties
+            # Could be multiple filter properties.
             for row in val_list:
                 prop_name = row[0]
-                # property value could be integer, float or string
+                # Property value could be integer, float or string.
                 try:
                     prop_val = int(row[2])
                 except ValueError:
@@ -1647,20 +1646,20 @@ class AddFeatCol2MapbyID:
                         prop_val = row[2]
                 operator = row[1]
 
-                # Check if prop_val is a string and format accordingly
+                # Check if prop_val is a string and format accordingly.
                 if isinstance(prop_val, str):
-                    # If prop_val is a string, wrap it in single quotes
+                    # If prop_val is a string, wrap it in single quotes.
                     filter_condition = "{} {} '{}'".format(
                         prop_name, operator, prop_val
                     )
                 else:
-                    # If prop_val is an integer or float, no quotes needed
+                    # If prop_val is an integer or float, no quotes needed.
                     filter_condition = "{} {} {}".format(prop_name, operator, prop_val)
 
                 arcpy.AddMessage("Filter by property: " + filter_condition)
                 fc = fc.filter(filter_condition)
 
-        # Filter by dates if specified
+        # Filter by dates if specified.
         if parameters[2].valueAsText:
             val_list = parameters[2].values
             start_date = None
@@ -1671,7 +1670,7 @@ class AddFeatCol2MapbyID:
                 end_date = val_list[0][1]
             fc = fc.filterDate(start_date, end_date)
 
-        # Filter by bounds if specified
+        # Filter by bounds if specified.
         if filter_bounds:
             arcpy.AddMessage("Filter by bounds ...")
 
@@ -1683,7 +1682,7 @@ class AddFeatCol2MapbyID:
                 fc = fc.filterBounds(ee.Geometry.Point((float(lon), float(lat))))
         elif filter_bounds == "Map Centroid (Point)":
             xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
-            # Get the centroid of map extent
+            # Get the centroid of map extent.
             lon = (xmin + xmax) / 2
             lat = (ymin + ymax) / 2
             fc = fc.filterBounds(ee.Geometry.Point((float(lon), float(lat))))
@@ -1693,34 +1692,34 @@ class AddFeatCol2MapbyID:
             fc = fc.filterBounds(roi)
         elif filter_bounds == "Polygon (Area)":
             if parameters[5].valueAsText:
-                # Get input feature coordinates to list
+                # Get input feature coordinates to list.
                 coords = arcgee.data.get_polygon_coords(parameters[5].valueAsText)
-                # Create an Earth Engine MultiPolygon from the GeoJSON
+                # Create an Earth Engine MultiPolygon from the GeoJSON.
                 roi = ee.Geometry.MultiPolygon(coords)
                 fc = fc.filterBounds(roi)
 
-        # Limit the number of features to 100,000 to avoid slow response
+        # Limit the number of features to 100,000 to avoid slow response.
         fc = fc.limit(100000)
 
-        # Feature collection could contain zero record after filters
+        # Feature collection could contain zero record after filters.
         if fc.size().getInfo() > 0:
             arcpy.AddMessage(
                 "Google Earth Engine is preparing the map URL of the selected dataset ..."
             )
-            # Get the map ID and token
+            # Get the map ID and token.
             map_id_dict = fc.getMapId(vis_params)
 
-            # Construct the URL
+            # Construct the URL.
             map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
 
-            # Add map URL to the current ArcMap
+            # Add map URL to the current ArcMap.
             arcpy.AddMessage("Adding the map URL to ArcGIS ...")
             aprx = arcpy.mp.ArcGISProject("CURRENT")
             aprxMap = aprx.listMaps("Map")[0]
             tsl = aprxMap.addDataFromPath(map_url)
             tsl.name = asset_id
 
-            # Zoom to feature collection centroid if provided by dataset
+            # Zoom to feature collection centroid if provided by dataset.
             try:
                 centroid_coords, bounds_coords = arcgee.data.get_object_centroid(fc, 1)
                 arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
@@ -1730,7 +1729,7 @@ class AddFeatCol2MapbyID:
                 )
                 pass
 
-            # Save object to serialized JSON file
+            # Save object to serialized JSON file.
             if parameters[7].valueAsText:
                 out_json = parameters[7].valueAsText
                 if not out_json.endswith(".json"):
@@ -1785,7 +1784,7 @@ class AddFeatCol2MapbyObj:
             direction="Input",
             parameterType="Required",
         )
-        # only displays JSON files
+        # Only displays JSON files.
         param0.filter.list = ["json"]
 
         param1 = arcpy.Parameter(
@@ -1872,14 +1871,14 @@ class AddFeatCol2MapbyObj:
         json_path = parameters[0].valueAsText
         feat_color = parameters[1].valueAsText
 
-        # load collection object
+        # Load collection object.
         fc = arcgee.data.load_ee_result(json_path)
         asset_id = fc.get("system:id").getInfo()
-        # Get asset id for layer name
+        # Get asset id for layer name.
         if asset_id:
             feat_id = asset_id
         else:
-            # Use the json file name as feature id if asset id is not found
+            # Use the json file name as feature id if asset id is not found.
             feat_id = Path(json_path).stem
 
         # TODO: add more visualization parameters
@@ -1914,29 +1913,29 @@ class AddFeatCol2MapbyObj:
         # if opacity :
         #     vis_params['fillColorOpacity'] = float(opacity)
 
-        # Limit the number of features to 100,000 to avoid slow response
+        # Limit the number of features to 100,000 to avoid slow response.
         fc = fc.limit(100000)
-        # Get the map ID and token
+        # Get the map ID and token.
 
-        # Feature collection could contain zero record after filters
+        # Feature collection could contain zero record after filters.
         if fc.size().getInfo() > 0:
             arcpy.AddMessage(
                 "Google Earth Engine is preparing the map URL of the selected dataset ..."
             )
-            # Get the map ID and token
+            # Get the map ID and token.
             map_id_dict = fc.getMapId(vis_params)
 
-            # Construct the URL
+            # Construct the URL.
             map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
 
-            # Add map URL to the current ArcMap
+            # Add map URL to the current ArcMap.
             arcpy.AddMessage("Adding the map URL to ArcGIS ...")
             aprx = arcpy.mp.ArcGISProject("CURRENT")
             aprxMap = aprx.listMaps("Map")[0]
             tsl = aprxMap.addDataFromPath(map_url)
             tsl.name = feat_id
 
-            # Zoom to feature collection centroid if provided by dataset
+            # Zoom to feature collection centroid if provided by dataset.
             try:
                 centroid_coords, bounds_coords = arcgee.data.get_object_centroid(fc, 1)
                 arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
@@ -1975,7 +1974,7 @@ class DownloadImgbyID:
     def getParameterInfo(self):
         """Define the tool parameters."""
 
-        # Image collection inputs are optional
+        # Image collection inputs are optional.
         param0 = arcpy.Parameter(
             name="asset_id",
             displayName="Specify the image asset ID",
@@ -2058,12 +2057,12 @@ class DownloadImgbyID:
 
         img_id = parameters[0].valueAsText
 
-        # Update only when filter list is empty
+        # Update only when filter list is empty.
         if img_id:
             img_id = arcgee.data.clean_asset_id(img_id)
             image = ee.Image(img_id)
             band_list = image.bandNames().getInfo()
-            # Add band resolution information to display
+            # Add band resolution information to display.
             band_res_list = []
             for iband in band_list:
                 band_tmp = image.select(iband)
@@ -2072,23 +2071,23 @@ class DownloadImgbyID:
                 band_res_list.append(f"{iband}--{round(res, 1)}--m")
             parameters[1].filter.list = band_res_list
 
-        # Reset band filter list when asset id changes
+        # Reset band filter list when asset id changes.
         if not img_id:
             parameters[1].filter.list = []
 
-        # Capture the suggested scale value based on selected bands
+        # Capture the suggested scale value based on selected bands.
         band_str = parameters[1].valueAsText
         if band_str and not parameters[2].value:
-            # Remove ' in band string in case users add it
+            # Remove ' in band string in case users add it.
             if "'" in band_str:
                 band_str = band_str.replace("'", "")
             bands = band_str.split(";")
             scale_only = [float(iband.split("--")[1]) for iband in bands]
-            # use the maximum scale of the selected band by default
+            # Use the maximum scale of the selected band by default.
             parameters[2].value = max(scale_only)
 
-        # Disable input feature if map extent is used
-        if parameters[4].value:  # map extent selected
+        # Disable input feature if map extent is used.
+        if parameters[4].value:
             parameters[3].enabled = False
         else:
             parameters[3].enabled = True
@@ -2104,7 +2103,7 @@ class DownloadImgbyID:
         import rasterio
 
         """The source code of the tool."""
-        # Multiple images could be selected
+        # Multiple images could be selected.
         asset_id = parameters[0].valueAsText
         band_str = parameters[1].valueAsText
         scale = parameters[2].valueAsText
@@ -2113,59 +2112,59 @@ class DownloadImgbyID:
         out_tiff = parameters[5].valueAsText
         load_tiff = parameters[6].valueAsText
 
-        # Filter image by bands if specified
-        # Remove ' in band string in case user adds it
+        # Filter image by bands if specified.
+        # Remove ' in band string in case user adds it.
         if "'" in band_str:
             band_str = band_str.replace("'", "")
         bands = band_str.split(";")
         bands_only = [iband.split("--")[0] for iband in bands]
         arcpy.AddMessage("Bands selected: " + ",".join(bands_only))
 
-        # make sure output file ends with tif
+        # Make sure output file ends with tif.
         if not out_tiff.endswith(".tif"):
             out_tiff = out_tiff + ".tif"
 
-        # Check image projection
+        # Check image projection.
         asset_id = arcgee.data.clean_asset_id(asset_id)
         image = ee.Image(asset_id)
 
-        # Get the region of interests
-        # Use map view extent if checked
+        # Get the region of interests.
+        # Use map view extent if checked.
         if use_extent == "true":
             xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
-        # Use input feature layer as ROI
+        # Use input feature layer as ROI.
         elif in_poly:
-            # Get input feature coordinates to list
+            # Get input feature coordinates to list.
             coords = arcgee.data.get_polygon_coords(in_poly)
-            # Create an Earth Engine MultiPolygon from the GeoJSON
+            # Create an Earth Engine MultiPolygon from the GeoJSON.
             roi = ee.Geometry.MultiPolygon(coords)
-        # Not using any ROI, download entire image
+        # Not using any ROI, download entire image.
         else:
             roi = None
 
-        # Get the scale for xarray dataset
+        # Get the scale for xarray dataset.
         scale_ds = float(scale)
 
-        # Get crs for xarray metadata
-        # crs information could be missing, then use wkt from projection
+        # Get crs for xarray metadata.
+        # crs information could be missing, then use wkt from projection.
         try:
             crs = image.select(0).projection().getInfo()["crs"]
             arcpy.AddMessage("Image projection CRS is " + crs)
         except:
-            # crs is not explicitly defined
+            # CRS is not explicitly defined.
             arcpy.AddMessage("Image projection CRS is unknown. Use WKT instead.")
             wkt = image.select(0).projection().getInfo()["wkt"]
             crs = rasterio.crs.CRS.from_wkt(wkt)
 
-        # Download image by id
+        # Download image by id.
         img_id = asset_id
         arcpy.AddMessage("Download image: " + img_id + " ...")
-        # Must be image collection to convert to xarray
+        # Must be image collection to convert to xarray.
         image = ee.ImageCollection(ee.Image(img_id))
-        # Filter image by selected bands
+        # Filter image by selected bands.
         image = image.select(bands_only)
-        # Get ROI from the object extent if not provided
+        # Get ROI from the object extent if not provided.
         if roi is None:
             try:
                 roi = arcgee.data.get_roi_from_object(image)
@@ -2175,14 +2174,14 @@ class DownloadImgbyID:
                     "No ROI provided, downloading the entire image may cause memory issues!"
                 )
 
-        # check if use projection
+        # Check if use projection.
         use_projection = arcgee.data.whether_use_projection(image)
-        # download image as geotiff
+        # Download image as geotiff.
         arcgee.data.image_to_geotiff(
             image, bands_only, crs, scale_ds, roi, use_projection, out_tiff
         )
 
-        # Add out tiff to map layer
+        # Add out tiff to map layer.
         if load_tiff == "true":
             arcpy.AddMessage("Load image to map ...")
             aprx = arcpy.mp.ArcGISProject("CURRENT")
@@ -2217,7 +2216,7 @@ class DownloadImgbyObj:
             direction="Input",
             parameterType="Required",
         )
-        # only displays JSON files
+        # Only displays JSON files.
         param0.filter.list = ["json"]
 
         param1 = arcpy.Parameter(
@@ -2296,7 +2295,7 @@ class DownloadImgbyObj:
         if json_path:
             image = arcgee.data.load_ee_result(json_path)
             band_list = image.bandNames().getInfo()
-            # Add band resolution information to display
+            # Add band resolution information to display.
             band_res_list = []
             for iband in band_list:
                 band_tmp = image.select(iband)
@@ -2305,23 +2304,23 @@ class DownloadImgbyObj:
                 band_res_list.append(f"{iband}--{round(res, 1)}--m")
             parameters[1].filter.list = band_res_list
 
-        # Reset band filter list when asset id changes
+        # Reset band filter list when asset id changes.
         if not json_path:
             parameters[1].filter.list = []
 
-        # Capture the suggested scale value based on selected bands
+        # Capture the suggested scale value based on selected bands.
         band_str = parameters[1].valueAsText
         if band_str and not parameters[2].value:
-            # Remove ' in band string in case users add it
+            # Remove ' in band string in case users add it.
             if "'" in band_str:
                 band_str = band_str.replace("'", "")
             bands = band_str.split(";")
             scale_only = [float(iband.split("--")[1]) for iband in bands]
-            # use the maximum scale of the selected band by default
+            # Use the maximum scale of the selected band by default.
             parameters[2].value = max(scale_only)
 
-        # Disable input feature if map extent is used
-        if parameters[4].value:  # map extent selected
+        # Disable input feature if map extent is used.
+        if parameters[4].value:
             parameters[3].enabled = False
         else:
             parameters[3].enabled = True
@@ -2337,7 +2336,7 @@ class DownloadImgbyObj:
         import rasterio
 
         """The source code of the tool."""
-        # Multiple images could be selected
+        # Multiple images could be selected.
         json_path = parameters[0].valueAsText
         band_str = parameters[1].valueAsText
         scale = parameters[2].valueAsText
@@ -2346,56 +2345,56 @@ class DownloadImgbyObj:
         out_tiff = parameters[5].valueAsText
         load_tiff = parameters[6].valueAsText
 
-        # Filter image by bands if specified
-        # Remove ' in band string in case user adds it
+        # Filter image by bands if specified.
+        # Remove ' in band string in case user adds it.
         if "'" in band_str:
             band_str = band_str.replace("'", "")
         bands = band_str.split(";")
         bands_only = [iband.split("--")[0] for iband in bands]
         arcpy.AddMessage("Bands selected: " + ",".join(bands_only))
 
-        # Make sure output file ends with tif
+        # Make sure output file ends with tif.
         if not out_tiff.endswith(".tif"):
             out_tiff = out_tiff + ".tif"
 
-        # Check image projection
+        # Check image projection.
         image = arcgee.data.load_ee_result(json_path)
 
-        # Get the region of interests
-        # Use map view extent if checked
+        # Get the region of interests.
+        # Use map view extent if checked.
         if use_extent == "true":
             xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
-        # Use input feature layer as ROI
+        # Use input feature layer as ROI.
         elif in_poly:
-            # Get input feature coordinates to list
+            # Get input feature coordinates to list.
             coords = arcgee.data.get_polygon_coords(in_poly)
-            # Create an Earth Engine MultiPolygon from the GeoJSON
+            # Create an Earth Engine MultiPolygon from the GeoJSON.
             roi = ee.Geometry.MultiPolygon(coords)
-        # Not using any ROI, download entire image
+        # Not using any ROI, download entire image.
         else:
             roi = None
 
-        # Get the scale for xarray dataset
+        # Get the scale for xarray dataset.
         scale_ds = float(scale)
 
-        # Get crs for xarray metadata
+        # Get crs for xarray metadata.
         # crs information could be missing, then use wkt from projection
         try:
             crs = image.select(0).projection().getInfo()["crs"]
             arcpy.AddMessage("Image projection CRS is " + crs)
         except:
-            # crs is not explicitly defined
+            # crs is not explicitly defined.
             arcpy.AddMessage("Image projection CRS is unknown. Use WKT instead.")
             wkt = image.select(0).projection().getInfo()["wkt"]
             crs = rasterio.crs.CRS.from_wkt(wkt)
 
-        # Download image by id
+        # Download image by id.
         img_id = image.get("system:id").getInfo()
         arcpy.AddMessage("Download image: " + img_id + " ...")
-        # Must be image collection to convert to xarray
+        # Must be image collection to convert to xarray.
         image = ee.ImageCollection(ee.Image(img_id))
-        # Filter image by selected bands
+        # Filter image by selected bands.
         image = image.select(bands_only)
         if roi is None:
             try:
@@ -2406,14 +2405,14 @@ class DownloadImgbyObj:
                     "No ROI provided, downloading the entire image may cause memory issues!"
                 )
 
-        # check if use projection
+        # Check if use projection.
         use_projection = arcgee.data.whether_use_projection(image)
-        # download image as geotiff
+        # Download image as geotiff.
         arcgee.data.image_to_geotiff(
             image, bands_only, crs, scale_ds, roi, use_projection, out_tiff
         )
 
-        # Add out tiff to map layer
+        # Add out tiff to map layer.
         if load_tiff == "true":
             arcpy.AddMessage("Load image to map ...")
             aprx = arcpy.mp.ArcGISProject("CURRENT")
@@ -2441,7 +2440,7 @@ class DownloadImgColbyID:
     def getParameterInfo(self):
         """Define the tool parameters."""
 
-        # Image collection inputs are optional
+        # Image collection inputs are optional.
         param0 = arcpy.Parameter(
             name="ic_id",
             displayName="Specify the image collection asset ID",
@@ -2560,7 +2559,7 @@ class DownloadImgColbyID:
         validation is performed.  This method is called whenever a parameter
         has been changed."""
 
-        # Get the filter dates
+        # Get the filter dates.
         if parameters[1].valueAsText:
             val_list = parameters[1].values
             start_date = val_list[0][0]
@@ -2569,15 +2568,15 @@ class DownloadImgColbyID:
             start_date = None
             end_date = None
 
-        # Get the filter bounds
-        if parameters[3].value:  # use map extent
-            # Disable input coordinates if map extent is used
+        # Get the filter bounds.
+        if parameters[3].value:  # Use map extent.
+            # Disable input coordinates if map extent is used.
             parameters[2].enabled = False
             xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
-            # Get the centroid of map extent
+            # Get the centroid of map extent.
             lon = (xmin + xmax) / 2
             lat = (ymin + ymax) / 2
-        else:  # use input lat/lon
+        else:  # Use input lat/lon.
             parameters[2].enabled = True
             if parameters[2].valueAsText:
                 val_list = parameters[2].values
@@ -2587,36 +2586,35 @@ class DownloadImgColbyID:
                 lon = None
                 lat = None
 
-        # Check image list of a given collection asset
+        # Check image list of a given collection asset.
         asset_id = parameters[0].valueAsText
 
-        # Image collection size could be huge, may take long time to load image IDs without filters
-        # Only retrieve the list of images, when either filter dates or filter bounds are selected
-        # if asset_id and ((start_date and end_date) or (lon and lat)):
+        # Image collection size could be huge, may take long time to load image IDs without filters.
+        # Only retrieve the list of images, when either filter dates or filter bounds are selected.
         if asset_id:
             asset_id = arcgee.data.clean_asset_id(asset_id)
             collection = ee.ImageCollection(asset_id)
-            # Filter image collection as specified
+            # Filter image collection as specified.
             if lon is not None and lat is not None:
                 collection = collection.filterBounds(
                     ee.Geometry.Point((float(lon), float(lat)))
                 )
             if start_date is not None and end_date is not None:
                 collection = collection.filterDate(start_date, end_date)
-            # Get image IDs from collection
+            # Get image IDs from collection.
             image_list = collection.limit(100).aggregate_array("system:index").getInfo()
             parameters[4].filter.list = image_list
 
-        # Check the band list of the first selected image, assuming all selected images have the same bands
+        # Check the band list of the first selected image, assuming all selected images have the same bands.
         img_names = parameters[4].valueAsText
-        # Update only when filter list is empty
+        # Update only when filter list is empty.
         if img_names:
-            # Get the first select image
+            # Get the first select image.
             img_name = img_names.split(";")[0]
             img_id = asset_id + "/" + img_name
             image = ee.Image(img_id)
             band_list = image.bandNames().getInfo()
-            # Add band resolution information to display
+            # Add band resolution information to display.
             band_res_list = []
             for iband in band_list:
                 band_tmp = image.select(iband)
@@ -2625,22 +2623,22 @@ class DownloadImgColbyID:
                 band_res_list.append(f"{iband}--{round(res, 1)}--m")
             parameters[5].filter.list = band_res_list
 
-        # Reset band filter list when asset id changes
+        # Reset band filter list when asset id changes.
         if (not parameters[4].valueAsText) and (not asset_id):
             parameters[5].filter.list = []
 
-        # Capture the suggested scale value based on selected bands
+        # Capture the suggested scale value based on selected bands.
         band_str = parameters[5].valueAsText
         if band_str and not parameters[6].value:
-            # Remove ' in band string in case users add it
+            # Remove ' in band string in case users add it.
             if "'" in band_str:
                 band_str = band_str.replace("'", "")
             bands = band_str.split(";")
             scale_only = [float(iband.split("--")[1]) for iband in bands]
             parameters[6].value = max(scale_only)
 
-        # Disable input feature if map extent is used
-        if parameters[8].value:  # map extent selected
+        # Disable input feature if map extent is used.
+        if parameters[8].value:  # Map extent selected.
             parameters[7].enabled = False
         else:
             parameters[7].enabled = True
@@ -2651,7 +2649,7 @@ class DownloadImgColbyID:
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
 
-        # start date is required when end date is provided for filter by dates
+        # Start date is required when end date is provided for filter by dates.
         if parameters[1].valueAsText:
             arcgee.data.check_start_date(parameters[1])
 
@@ -2661,7 +2659,7 @@ class DownloadImgColbyID:
         import rasterio
 
         """The source code of the tool."""
-        # Multiple images could be selected
+        # Multiple images could be selected.
         asset_id = parameters[0].valueAsText
         img_names = parameters[4].valueAsText
         band_str = parameters[5].valueAsText
@@ -2673,65 +2671,65 @@ class DownloadImgColbyID:
 
         img_name_list = img_names.split(";")
 
-        # Filter image by bands if specified
-        # Remove ' in band string in case user adds it
+        # Filter image by bands if specified.
+        # Remove ' in band string in case user adds it.
         if "'" in band_str:
             band_str = band_str.replace("'", "")
         bands = band_str.split(";")
         bands_only = [iband.split("--")[0] for iband in bands]
         arcpy.AddMessage("Bands selected: " + ",".join(bands_only))
 
-        # Get the region of interests
-        # Use map view extent if checked
+        # Get the region of interests.
+        # Use map view extent if checked.
         if use_extent == "true":
             xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
-        # Use input feature layer as ROI
+        # Use input feature layer as ROI.
         elif in_poly:
-            # Get input feature coordinates to list
+            # Get input feature coordinates to list.
             coords = arcgee.data.get_polygon_coords(in_poly)
-            # Create an Earth Engine MultiPolygon from the GeoJSON
+            # Create an Earth Engine MultiPolygon from the GeoJSON.
             roi = ee.Geometry.MultiPolygon(coords)
-        # Not using any ROI, download entire image
+        # Not using any ROI, download entire image.
         else:
             roi = None
 
-        # Get the scale for xarray dataset
+        # Get the scale for xarray dataset.
         scale_ds = float(scale)
 
         asset_id = arcgee.data.clean_asset_id(asset_id)
-        # Check first image projection
+        # Check first image projection.
         image = ee.Image(asset_id + "/" + img_name_list[0])
 
-        # Get crs code for xarray metadata
-        # crs information could be missing, then use wkt from projection
+        # Get crs code for xarray metadata.
+        # crs information could be missing, then use wkt from projection.
         try:
             crs = image.select(0).projection().getInfo()["crs"]
             arcpy.AddMessage("Image projection CRS is " + crs)
         except:
-            # crs is not explicitly defined
+            # crs is not explicitly defined.
             arcpy.AddMessage("Image projection CRS is unknown.")
             wkt = image.select(0).projection().getInfo()["wkt"]
             crs = rasterio.crs.CRS.from_wkt(wkt)
 
-        # Check if use projection or crs code
+        # Check if use projection or crs code.
         image = ee.ImageCollection(image)
         use_projection = arcgee.data.whether_use_projection(image)
 
         out_tiff_list = []
-        # Iterate each selected image
+        # Iterate each selected image.
         for img_name in img_name_list:
-            # For image collection, concatenate to get the image asset ID
+            # For image collection, concatenate to get the image asset ID.
             img_id = asset_id + "/" + img_name
 
-            # Create output file name based on image IDs
+            # Create output file name based on image IDs.
             out_tiff = os.path.join(out_folder, img_name.replace("/", "_") + ".tif")
             out_tiff_list.append(out_tiff)
 
             arcpy.AddMessage("Download image: " + img_id + " ...")
-            # Must be image collection to convert to xarray
+            # Must be image collection to convert to xarray.
             image = ee.ImageCollection(ee.Image(img_id))
-            # Filter image by selected bands
+            # Filter image by selected bands.
             image = image.select(bands_only)
             if roi is None:
                 try:
@@ -2742,12 +2740,12 @@ class DownloadImgColbyID:
                         "No ROI provided, downloading the entire image may cause memory issues!"
                     )
 
-            # download image as geotiff
+            # Download image as geotiff.
             arcgee.data.image_to_geotiff(
                 image, bands_only, crs, scale_ds, roi, use_projection, out_tiff
             )
 
-        # Add out tiff to map layer
+        # Add out tiff to map layer.
         if load_tiff == "true":
             arcpy.AddMessage("Load image to map ...")
             aprx = arcpy.mp.ArcGISProject("CURRENT")
@@ -2783,7 +2781,7 @@ class DownloadImgColbyObj:
             direction="Input",
             parameterType="Required",
         )
-        # only displays JSON files
+        # Only displays JSON files.
         param0.filter.list = ["json"]
 
         param1 = arcpy.Parameter(
@@ -2869,26 +2867,26 @@ class DownloadImgColbyObj:
         json_path = parameters[0].valueAsText
         if json_path:
             collection = ee.ImageCollection(arcgee.data.load_ee_result(json_path))
-            # Only fill the image id filter list when it is empty
+            # Only fill the image id filter list when it is empty.
             if not parameters[1].filter.list:
-                # Get image IDs from collection
+                # Get image IDs from collection.
                 image_list = (
                     collection.limit(100).aggregate_array("system:index").getInfo()
                 )
                 parameters[1].filter.list = image_list
 
-            # Check band list of the selected image
+            # Check band list of the selected image.
             img_names = parameters[1].valueAsText
-            # Update only when filter list is empty
+            # Update only when filter list is empty.
             if img_names:
-                # Get the first select image
+                # Get the first select image.
                 img_name = img_names.split(";")[0]
-                # JSON object could have additional map functions, use collection
+                # JSON object could have additional map functions, use collection.
                 image = collection.filter(
                     ee.Filter.eq("system:index", img_name)
                 ).first()
                 band_list = image.bandNames().getInfo()
-                # Add band resolution information to display
+                # Add band resolution information to display.
                 band_res_list = []
                 for iband in band_list:
                     band_tmp = image.select(iband)
@@ -2897,26 +2895,26 @@ class DownloadImgColbyObj:
                     band_res_list.append(f"{iband}--{round(res, 1)}--m")
                 parameters[2].filter.list = band_res_list
 
-        # Reset image filter list
+        # Reset image filter list.
         if not json_path:
             parameters[1].filter.list = []
 
-        # Reset band filter list when asset ID or image changes
+        # Reset band filter list when asset ID or image changes.
         if (not parameters[1].valueAsText) and (not json_path):
             parameters[2].filter.list = []
 
-        # Capture the suggested scale value based on selected bands
+        # Capture the suggested scale value based on selected bands.
         band_str = parameters[2].valueAsText
         if band_str and not parameters[3].value:
-            # Remove ' in band string in case users add it
+            # Remove ' in band string in case users add it.
             if "'" in band_str:
                 band_str = band_str.replace("'", "")
             bands = band_str.split(";")
             scale_only = [float(iband.split("--")[1]) for iband in bands]
             parameters[3].value = max(scale_only)
 
-        # Disable input feature if map extent is used
-        if parameters[5].value:  # map extent selected
+        # Disable input feature if map extent is used.
+        if parameters[5].value:  # Map extent selected.
             parameters[4].enabled = False
         else:
             parameters[4].enabled = True
@@ -2932,7 +2930,7 @@ class DownloadImgColbyObj:
         import rasterio
 
         """The source code of the tool."""
-        # Multiple images could be selected
+        # Multiple images could be selected.
         json_path = parameters[0].valueAsText
         img_names = parameters[1].valueAsText
         band_str = parameters[2].valueAsText
@@ -2942,71 +2940,71 @@ class DownloadImgColbyObj:
         out_folder = parameters[6].valueAsText
         load_tiff = parameters[7].valueAsText
 
-        # load collection object
+        # Load collection object.
         collection = arcgee.data.load_ee_result(json_path)
-        # Get image collection asset id
+        # Get image collection asset id.
         asset_id = collection.get("system:id").getInfo()
 
         img_name_list = img_names.split(";")
 
-        # Filter image by bands if specified
-        # Remove ' in band string in case user adds it
+        # Filter image by bands if specified.
+        # Remove ' in band string in case user adds it.
         if "'" in band_str:
             band_str = band_str.replace("'", "")
         bands = band_str.split(";")
         bands_only = [iband.split("--")[0] for iband in bands]
         arcpy.AddMessage("Bands selected: " + ",".join(bands_only))
 
-        # Get the region of interests
-        # Use map view extent if checked
+        # Get the region of interests.
+        # Use map view extent if checked.
         if use_extent == "true":
             xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
-        # Use input feature layer as ROI
+        # Use input feature layer as ROI.
         elif in_poly:
-            # Get input feature coordinates to list
+            # Get input feature coordinates to list.
             coords = arcgee.data.get_polygon_coords(in_poly)
-            # Create an Earth Engine MultiPolygon from the GeoJSON
+            # Create an Earth Engine MultiPolygon from the GeoJSON.
             roi = ee.Geometry.MultiPolygon(coords)
-        # Not using any ROI, download entire image
+        # Not using any ROI, download entire image.
         else:
             roi = None
 
-        # Get the scale for xarray dataset
+        # Get the scale for xarray dataset.
         scale_ds = float(scale)
 
-        # Check first image projection
+        # Check first image projection.
         image = ee.Image(asset_id + "/" + img_name_list[0])
 
-        # Get crs code for xarray metadata
-        # crs information could be missing, then use wkt from projection
+        # Get crs code for xarray metadata.
+        # crs information could be missing, then use wkt from projection.
         try:
             crs = image.select(0).projection().getInfo()["crs"]
             arcpy.AddMessage("Image projection CRS is " + crs)
         except:
-            # crs is not explicitly defined
+            # crs is not explicitly defined.
             arcpy.AddMessage("Image projection CRS is unknown.")
             wkt = image.select(0).projection().getInfo()["wkt"]
             crs = rasterio.crs.CRS.from_wkt(wkt)
 
-        # Check if use projection or crs code
+        # Check if use projection or crs code.
         image = ee.ImageCollection(image)
         use_projection = arcgee.data.whether_use_projection(image)
 
         out_tiff_list = []
-        # Iterate each selected image
+        # Iterate each selected image.
         for img_name in img_name_list:
-            # For image collection, concatenate to get the image asset ID
+            # For image collection, concatenate to get the image asset ID.
             img_id = asset_id + "/" + img_name
 
-            # Create output file name based on image IDs
+            # Create output file name based on image IDs.
             out_tiff = os.path.join(out_folder, img_name.replace("/", "_") + ".tif")
             out_tiff_list.append(out_tiff)
 
             arcpy.AddMessage("Download image: " + img_id + " ...")
-            # Must be image collection to convert to xarray
+            # Must be image collection to convert to xarray.
             image = ee.ImageCollection(ee.Image(img_id))
-            # Filter image by selected bands
+            # Filter image by selected bands.
             image = image.select(bands_only)
 
             if roi is None:
@@ -3018,12 +3016,12 @@ class DownloadImgColbyObj:
                         "No ROI provided, downloading the entire image may cause memory issues!"
                     )
 
-            # download image as geotiff
+            # Download image as geotiff.
             arcgee.data.image_to_geotiff(
                 image, bands_only, crs, scale_ds, roi, use_projection, out_tiff
             )
 
-        # Add out tiff to map layer
+        # Add out tiff to map layer.
         if load_tiff == "true":
             arcpy.AddMessage("Load image to map ...")
             aprx = arcpy.mp.ArcGISProject("CURRENT")
@@ -3052,7 +3050,7 @@ class DownloadImgColbyIDMultiRegion:
     def getParameterInfo(self):
         """Define the tool parameters."""
 
-        # Image collection inputs are optional
+        # Image collection inputs are optional.
         param0 = arcpy.Parameter(
             name="ic_id",
             displayName="Specify the image collection asset ID",
@@ -3154,7 +3152,7 @@ class DownloadImgColbyIDMultiRegion:
         validation is performed.  This method is called whenever a parameter
         has been changed."""
 
-        # Get the filter dates
+        # Get the filter dates.
         if parameters[1].valueAsText:
             val_list = parameters[1].values
             start_date = val_list[0][0]
@@ -3163,23 +3161,22 @@ class DownloadImgColbyIDMultiRegion:
             start_date = None
             end_date = None
 
-        # Check image list of a given collection asset
+        # Check image list of a given collection asset.
         asset_id = parameters[0].valueAsText
 
-        # Image collection size could be huge, may take long time to load image IDs without filters
-        # Only retrieve the list of images, when either filter dates or filter bounds are selected
-        # if asset_id and ((start_date and end_date) or (lon and lat)):
+        # Image collection size could be huge, may take long time to load image IDs without filters.
+        # Only retrieve the list of images, when either filter dates or filter bounds are selected.
         if asset_id:
             asset_id = arcgee.data.clean_asset_id(asset_id)
             collection = ee.ImageCollection(asset_id)
-            # Filter image collection as specified
+            # Filter image collection as specified.
             if start_date is not None and end_date is not None:
                 collection = collection.filterDate(start_date, end_date)
 
-            # Get the first select image
+            # Get the first select image.
             image = collection.first()
             band_list = image.bandNames().getInfo()
-            # Add band resolution information to display
+            # Add band resolution information to display.
             band_res_list = []
             for iband in band_list:
                 band_tmp = image.select(iband)
@@ -3188,17 +3185,17 @@ class DownloadImgColbyIDMultiRegion:
                 band_res_list.append(f"{iband}--{round(res, 1)}--m")
             parameters[5].filter.list = band_res_list
 
-            # Capture the suggested scale value based on selected bands
+            # Capture the suggested scale value based on selected bands.
             band_str = parameters[5].valueAsText
             if band_str and not parameters[6].value:
-                # Remove ' in band string in case users add it
+                # Remove ' in band string in case users add it.
                 if "'" in band_str:
                     band_str = band_str.replace("'", "")
                 bands = band_str.split(";")
                 scale_only = [float(iband.split("--")[1]) for iband in bands]
                 parameters[6].value = max(scale_only)
 
-        # Reset band filter list when asset id changes
+        # Reset band filter list when asset id changes.
         if not asset_id:
             parameters[5].filter.list = []
 
@@ -3208,7 +3205,7 @@ class DownloadImgColbyIDMultiRegion:
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
 
-        # start date is required when end date is provided for filter by dates
+        # Start date is required when end date is provided for filter by dates.
         if parameters[1].valueAsText:
             arcgee.data.check_start_date(parameters[1])
 
@@ -3218,7 +3215,7 @@ class DownloadImgColbyIDMultiRegion:
         import rasterio
 
         """The source code of the tool."""
-        # Get the parameters
+        # Get the parameters.
         asset_id = parameters[0].valueAsText
         filter_dates = parameters[1].value
         in_poly = parameters[2].valueAsText
@@ -3232,7 +3229,7 @@ class DownloadImgColbyIDMultiRegion:
         asset_id = arcgee.data.clean_asset_id(asset_id)
         collection = ee.ImageCollection(asset_id)
 
-        # Get the filter dates
+        # Get the filter dates.
         if filter_dates:
             start_date = filter_dates[0][0]
             end_date = filter_dates[0][1]
@@ -3240,58 +3237,58 @@ class DownloadImgColbyIDMultiRegion:
             start_date = None
             end_date = None
 
-        # Filter image collection as specified
+        # Filter image collection as specified.
         if start_date is not None and end_date is not None:
             collection = collection.filterDate(start_date, end_date)
 
-        # Get the coordinate list of the selected polygons
+        # Get the coordinate list of the selected polygons.
         coords_list = arcgee.data.get_polygon_coords(in_poly)
 
-        # Get the selected bands
-        # Remove ' in band string in case user adds it
+        # Get the selected bands.
+        # Remove ' in band string in case user adds it.
         if "'" in band_str:
             band_str = band_str.replace("'", "")
         bands = band_str.split(";")
         bands_only = [iband.split("--")[0] for iband in bands]
         arcpy.AddMessage("Bands selected: " + ",".join(bands_only))
 
-        # Get the scale for xarray dataset
+        # Get the scale for xarray dataset.
         scale_ds = float(scale)
 
         out_tiff_list = []
-        # Iterate each selected region
+        # Iterate each selected region.
         icount = 1
         for coords in coords_list:
             arcpy.AddMessage("Download images at region " + str(icount) + " ...")
-            # Create an Earth Engine MultiPolygon from the GeoJSON
+            # Create an Earth Engine MultiPolygon from the GeoJSON.
             roi = ee.Geometry.MultiPolygon([coords])
-            # Filter image collection by ROI
+            # Filter image collection by ROI.
             if bound_type == "Centroid of Polygon":
-                # Get the centroid of the polygon
+                # Get the centroid of the polygon.
                 centroid = roi.centroid()
                 collection_region = collection.filterBounds(centroid)
             elif bound_type == "Bounding Box of Polygon":
                 collection_region = collection.filterBounds(roi)
-            # CRS could change per region, so get the first image of the collection after filter by ROI
+            # CRS could change per region, so get the first image of the collection after filter by ROI.
             image = collection_region.first()
 
-            # Get crs code for xarray metadata
-            # crs information could be missing, then use wkt from projection
+            # Get crs code for xarray metadata.
+            # crs information could be missing, then use wkt from projection.
             try:
                 crs = image.select(0).projection().getInfo()["crs"]
                 arcpy.AddMessage("Image projection CRS is " + crs)
             except:
-                # crs is not explicitly defined
+                # crs is not explicitly defined.
                 arcpy.AddMessage("Image projection CRS is unknown.")
                 wkt = image.select(0).projection().getInfo()["wkt"]
                 crs = rasterio.crs.CRS.from_wkt(wkt)
 
-            # Check if use projection or crs code
+            # Check if use projection or crs code.
             image = ee.ImageCollection(image)
             use_projection = arcgee.data.whether_use_projection(image)
             arcpy.AddMessage("Use projection: " + str(use_projection))
 
-            # select the max number of images
+            # Select the max number of images.
             if max_num:
                 collection_region = collection_region.limit(max_num)
 
@@ -3301,13 +3298,13 @@ class DownloadImgColbyIDMultiRegion:
                 icount += 1
                 continue
 
-            # Iterate each selected image
+            # Iterate each selected image.
             for img_name in image_list:
 
-                # For image collection, concatenate to get the image asset ID
+                # For image collection, concatenate to get the image asset ID.
                 img_id = asset_id + "/" + img_name
 
-                # Create output file name based on image IDs
+                # Create output file name based on image IDs.
                 out_tiff = os.path.join(
                     out_folder,
                     img_name.replace("/", "_")
@@ -3318,19 +3315,19 @@ class DownloadImgColbyIDMultiRegion:
                 out_tiff_list.append(out_tiff)
 
                 arcpy.AddMessage("Download image: " + img_id + " ...")
-                # Must be image collection to convert to xarray
+                # Must be image collection to convert to xarray.
                 image = ee.ImageCollection(ee.Image(img_id))
-                # Filter image by selected bands
+                # Filter image by selected bands.
                 image = image.select(bands_only)
 
-                # download image as geotiff
+                # Download image as geotiff.
                 arcgee.data.image_to_geotiff(
                     image, bands_only, crs, scale_ds, roi, use_projection, out_tiff
                 )
 
             icount += 1
 
-        # Add out tiff to map layer
+        # Add out tiff to map layer.
         if load_tiff == "true":
             arcpy.AddMessage("Load image to map ...")
             aprx = arcpy.mp.ArcGISProject("CURRENT")
@@ -3483,11 +3480,11 @@ class DownloadFeatColbyID:
             prop_names = fc.first().propertyNames().getInfo()
             parameters[1].filters[0].list = sorted(prop_names)
 
-        # Reset filter list when asset id is empty
+        # Reset filter list when asset id is empty.
         if not asset_id:
             parameters[1].filters[0].list = []
 
-        # Disable input coordinates if map extent is used
+        # Disable input coordinates if map extent is used.
         parameters[4].enabled = False
         parameters[5].enabled = False
 
@@ -3501,11 +3498,11 @@ class DownloadFeatColbyID:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
-        # Make sure the input datatype is feature collection
+        # Make sure the input datatype is feature collection.
         if parameters[0].valueAsText:
             arcgee.data.check_ee_datatype(parameters[0], "TABLE")
 
-        # Display warning if property name is used more than once
+        # Display warning if property name is used more than once.
         prop_list = []
         if parameters[1].valueAsText:
             val_list = parameters[1].values
@@ -3518,11 +3515,11 @@ class DownloadFeatColbyID:
                         f"The property name '{prop_name}' is used more than once. You can confirm and proceed."
                     )
                     return
-        # start date is required when end date is provided for filter by dates
+        # Start date is required when end date is provided for filter by dates.
         if parameters[2].valueAsText:
             arcgee.data.check_start_date(parameters[2])
 
-        # exclude shapefiles
+        # Exclude shapefiles.
         out_path = parameters[7].valueAsText
         if out_path and out_path.lower().endswith(".shp"):
             parameters[7].setErrorMessage(
@@ -3541,17 +3538,17 @@ class DownloadFeatColbyID:
 
         asset_id = arcgee.data.clean_asset_id(asset_id)
 
-        # Get image by label
+        # Get image by label.
         fc = ee.FeatureCollection(asset_id)
 
-        # Filter by properties
+        # Filter by properties.
         if parameters[1].valueAsText:
             arcpy.AddMessage("Filter by properties ...")
             val_list = parameters[1].values
-            # Could be multiple filter properties
+            # Could be multiple filter properties.
             for row in val_list:
                 prop_name = row[0]
-                # property value could be integer, float or string
+                # Property value could be integer, float or string.
                 try:
                     prop_val = int(row[2])
                 except ValueError:
@@ -3561,20 +3558,20 @@ class DownloadFeatColbyID:
                         prop_val = row[2]
                 operator = row[1]
 
-                # Check if prop_val is a string and format accordingly
+                # Check if prop_val is a string and format accordingly.
                 if isinstance(prop_val, str):
-                    # If prop_val is a string, wrap it in single quotes
+                    # If prop_val is a string, wrap it in single quotes.
                     filter_condition = "{} {} '{}'".format(
                         prop_name, operator, prop_val
                     )
                 else:
-                    # If prop_val is an integer or float, no quotes needed
+                    # If prop_val is an integer or float, no quotes needed.
                     filter_condition = "{} {} {}".format(prop_name, operator, prop_val)
 
                 arcpy.AddMessage("Filter by property: " + filter_condition)
                 fc = fc.filter(filter_condition)
 
-        # Filter by dates
+        # Filter by dates.
         if parameters[2].valueAsText:
             arcpy.AddMessage("Filter by dates ...")
             val_list = parameters[2].values
@@ -3582,7 +3579,7 @@ class DownloadFeatColbyID:
             end_date = val_list[0][1]
             fc = fc.filterDate(start_date, end_date)
 
-        # Filter by bounds
+        # Filter by bounds.
         if filter_bounds:
             arcpy.AddMessage("Filter by bounds ...")
 
@@ -3594,7 +3591,7 @@ class DownloadFeatColbyID:
                 fc = fc.filterBounds(ee.Geometry.Point((float(lon), float(lat))))
         elif filter_bounds == "Map Centroid (Point)":
             xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
-            # Get the centroid of map extent
+            # Get the centroid of map extent.
             lon = (xmin + xmax) / 2
             lat = (ymin + ymax) / 2
             fc = fc.filterBounds(ee.Geometry.Point((float(lon), float(lat))))
@@ -3604,17 +3601,17 @@ class DownloadFeatColbyID:
             fc = fc.filterBounds(roi)
         elif filter_bounds == "Polygon (Area)":
             if parameters[5].valueAsText:
-                # Get input feature coordinates to list
+                # Get input feature coordinates to list.
                 coords = arcgee.data.get_polygon_coords(parameters[5].valueAsText)
-                # Create an Earth Engine MultiPolygon from the GeoJSON
+                # Create an Earth Engine MultiPolygon from the GeoJSON.
                 roi = ee.Geometry.MultiPolygon(coords)
                 fc = fc.filterBounds(roi)
 
-        # Download feature collection to a temporary GeoJSON
+        # Download feature collection to a temporary GeoJSON.
         upper_path = os.path.dirname(arcpy.env.workspace)
         out_json = os.path.join(upper_path, "temp.geojson")
 
-        # Prepare the download URL
+        # Prepare the download URL.
         params_dict = {}
         params_dict["filetype"] = "GeoJSON"
         params_dict["filename"] = "temp_json"
@@ -3623,12 +3620,12 @@ class DownloadFeatColbyID:
         arcpy.AddMessage("Download URL is: " + download_url)
         arcpy.AddMessage("Downloading to " + out_json + " ...")
 
-        # Download the file to your local machine
+        # Download the file to your local machine.
         response = requests.get(download_url)
         with open(out_json, "wb") as file:
             file.write(response.content)
 
-        # Convert GeoJSON to feature class
+        # Convert GeoJSON to feature class.
         out_feat_list = []
 
         for geo in geometry_types:
@@ -3637,10 +3634,10 @@ class DownloadFeatColbyID:
             arcpy.AddMessage(f"Converting to {geo} feature class: {out_feat} ...")
             arcpy.conversion.JSONToFeatures(out_json, out_feat, geo.upper())
 
-        # Clean up the temp file
+        # Clean up the temp file.
         os.remove(out_json)
 
-        # Add output feature class to map layer
+        # Add output feature class to map layer.
         if load_feat:
             arcpy.AddMessage("Load feature class to map ...")
             aprx = arcpy.mp.ArcGISProject("CURRENT")
@@ -3679,7 +3676,7 @@ class DownloadFeatColbyObj:
             direction="Input",
             parameterType="Required",
         )
-        # only displays JSON files
+        # Only displays JSON files.
         param0.filter.list = ["json"]
 
         param1 = arcpy.Parameter(
@@ -3726,7 +3723,7 @@ class DownloadFeatColbyObj:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
-        # exclude shapefiles
+        # Exclude shapefiles.
         out_path = parameters[2].valueAsText
         if out_path and out_path.lower().endswith(".shp"):
             parameters[2].setErrorMessage(
@@ -3743,14 +3740,14 @@ class DownloadFeatColbyObj:
         out_filename = parameters[2].valueAsText
         load_feat = parameters[3].value
 
-        # load collection object
+        # Load collection object.
         fc = arcgee.data.load_ee_result(json_path)
 
-        # Download feature collection to a temporary GeoJSON
+        # Download feature collection to a temporary GeoJSON.
         upper_path = os.path.dirname(arcpy.env.workspace)
         out_json = os.path.join(upper_path, "temp.geojson")
 
-        # Prepare the download URL
+        # Prepare the download URL.
         params_dict = {}
         params_dict["filetype"] = "GeoJSON"
         params_dict["filename"] = "temp_json"
@@ -3759,12 +3756,12 @@ class DownloadFeatColbyObj:
         arcpy.AddMessage("Download URL is: " + download_url)
         arcpy.AddMessage("Downloading to " + out_json + " ...")
 
-        # Download the file to your local machine
+        # Download the file to your local machine.
         response = requests.get(download_url)
         with open(out_json, "wb") as file:
             file.write(response.content)
 
-        # Convert GeoJSON to feature class
+        # Convert GeoJSON to feature class.
         out_feat_list = []
 
         for geo in geometry_types:
@@ -3773,10 +3770,10 @@ class DownloadFeatColbyObj:
             arcpy.AddMessage(f"Converting to {geo} feature class: {out_feat} ...")
             arcpy.conversion.JSONToFeatures(out_json, out_feat, geo.upper())
 
-        # Clean up the temp file
+        # Clean up the temp file.
         os.remove(out_json)
 
-        # Add output feature class to map layer
+        # Add output feature class to map layer.
         if load_feat:
             arcpy.AddMessage("Load feature class to map ...")
             aprx = arcpy.mp.ArcGISProject("CURRENT")
@@ -3805,7 +3802,7 @@ class DownloadImgCol2Gif:
     def getParameterInfo(self):
         """Define the tool parameters."""
 
-        # Image collection inputs are optional
+        # Image collection inputs are optional.
         param0 = arcpy.Parameter(
             name="ic_asset_id",
             displayName="Specify the image collection asset ID",
@@ -3965,7 +3962,7 @@ class DownloadImgCol2Gif:
         validation is performed.  This method is called whenever a parameter
         has been changed."""
 
-        # Get the filter dates
+        # Get the filter dates.
         if parameters[1].valueAsText:
             val_list = parameters[1].values
             start_date = val_list[0][0]
@@ -3974,15 +3971,15 @@ class DownloadImgCol2Gif:
             start_date = None
             end_date = None
 
-        # Get the filter bounds
-        if parameters[3].value:  # use map extent
-            # Disable input coordinates if map extent is used
+        # Get the filter bounds.
+        if parameters[3].value:  # Use map extent.
+            # Disable input coordinates if map extent is used.
             parameters[2].enabled = False
             xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
-            # Get the centroid of map extent
+            # Get the centroid of map extent.
             lon = (xmin + xmax) / 2
             lat = (ymin + ymax) / 2
-        else:  # use input lat/lon
+        else:  # Use input lat/lon.
             parameters[2].enabled = True
             if parameters[2].valueAsText:
                 val_list = parameters[2].values
@@ -3992,15 +3989,15 @@ class DownloadImgCol2Gif:
                 lon = None
                 lat = None
 
-        # Check image list of a given collection asset
+        # Check image list of a given collection asset.
         asset_id = parameters[0].valueAsText
 
-        # Get image collection
+        # Get image collection.
         if asset_id:
             asset_id = arcgee.data.clean_asset_id(asset_id)
             collection = ee.ImageCollection(asset_id)
             has_filter = False
-            # Filter image collection as specified
+            # Filter image collection as specified.
             if lon is not None and lat is not None:
                 collection = collection.filterBounds(
                     ee.Geometry.Point((float(lon), float(lat)))
@@ -4010,19 +4007,19 @@ class DownloadImgCol2Gif:
                 collection = collection.filterDate(start_date, end_date)
                 has_filter = True
 
-            # Get the total number of images in the collection
+            # Get the total number of images in the collection.
             if not parameters[4].valueAsText and has_filter:
                 img_num = collection.size().getInfo()
                 parameters[4].value = img_num
 
-            # Check the band list of the first selected image, assuming all selected images have the same bands
-            # Update only when filter list is empty
+            # Check the band list of the first selected image, assuming all selected images have the same bands.
+            # Update only when filter list is empty.
             if not parameters[5].filter.list:
-                # Get the first select image
+                # Get the first select image.
                 image = collection.first()
                 band_names = image.bandNames()
                 band_list = band_names.getInfo()
-                # Add band resolution information to display
+                # Add band resolution information to display.
                 band_res_list = []
                 for iband in band_list:
                     band_tmp = image.select(iband)
@@ -4031,13 +4028,13 @@ class DownloadImgCol2Gif:
                     band_res_list.append(iband + "--" + str(round(res)) + "--m")
                 parameters[5].filter.list = band_res_list
 
-        # Reset band filter list when asset ID changes
+        # Reset band filter list when asset ID changes.
         if not asset_id:
             parameters[4].value = None
             parameters[5].filter.list = []
 
-        # Disable input feature if map extent is used
-        if parameters[7].value:  # map extent selected
+        # Disable input feature if map extent is used.
+        if parameters[7].value:  # Map extent selected.
             parameters[6].enabled = False
         else:
             parameters[6].enabled = True
@@ -4051,7 +4048,7 @@ class DownloadImgCol2Gif:
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        # Multiple images could be selected
+        # Multiple images could be selected.
         asset_id = parameters[0].valueAsText
         img_num = parameters[4].valueAsText
         band_str = parameters[5].valueAsText
@@ -4065,7 +4062,7 @@ class DownloadImgCol2Gif:
         palette_str = parameters[13].valueAsText
         out_gif = parameters[14].valueAsText
 
-        # Get the filter dates
+        # Get the filter dates.
         if parameters[1].valueAsText:
             val_list = parameters[1].values
             start_date = val_list[0][0]
@@ -4074,15 +4071,15 @@ class DownloadImgCol2Gif:
             start_date = None
             end_date = None
 
-        # Get the filter bounds
-        if parameters[3].value:  # use map extent
-            # Disable input coordinates if map extent is used
+        # Get the filter bounds.
+        if parameters[3].value:  # Use map extent.
+            # Disable input coordinates if map extent is used.
             parameters[2].enabled = False
             xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
-            # Get the centroid of map extent
+            # Get the centroid of map extent.
             lon = (xmin + xmax) / 2
             lat = (ymin + ymax) / 2
-        else:  # use input lat/lon
+        else:  # Use input lat/lon.
             parameters[2].enabled = True
             if parameters[2].valueAsText:
                 val_list = parameters[2].values
@@ -4092,10 +4089,10 @@ class DownloadImgCol2Gif:
                 lon = None
                 lat = None
 
-        # Get image collection
+        # Get image collection.
         asset_id = arcgee.data.clean_asset_id(asset_id)
         collection = ee.ImageCollection(asset_id)
-        # Filter image collection as specified
+        # Filter image collection as specified.
         if lon is not None and lat is not None:
             collection = collection.filterBounds(
                 ee.Geometry.Point((float(lon), float(lat)))
@@ -4103,49 +4100,49 @@ class DownloadImgCol2Gif:
         if start_date is not None and end_date is not None:
             collection = collection.filterDate(start_date, end_date)
 
-        # Define animation function parameters
+        # Define animation function parameters.
         videoArgs = {}
 
-        # Add bands to videoArgs if specified
+        # Add bands to videoArgs if specified.
         if band_str:
-            # Remove ' in band string in case users add it
+            # Remove ' in band string in case users add it.
             if "'" in band_str:
                 band_str = band_str.replace("'", "")
             bands = band_str.split(";")
             bands_only = [iband.split("--")[0] for iband in bands]
-            # Ignore the resolution part
+            # Ignore the resolution part.
             videoArgs["bands"] = bands_only
 
-        # Add dimensions and frames per second if specified
+        # Add dimensions and frames per second if specified.
         if dims:
             videoArgs["dimensions"] = int(dims)
         if fps:
             videoArgs["framesPerSecond"] = int(fps)
 
-        # Add min and max values if specified
+        # Add min and max values if specified.
         if min_val:
             videoArgs["min"] = float(min_val)
         if max_val:
             videoArgs["max"] = float(max_val)
 
-        # Add color palette if specified
+        # Add color palette if specified.
         if palette_str:
-            # Remove ' in palette string in case users add it
+            # Remove ' in palette string in case users add it.
             if "'" in palette_str:
                 palette_str = palette_str.replace("'", "")
-            # Convert palette string to list if specified
+            # Convert palette string to list if specified.
             palette = palette_str.split(",")
             videoArgs["palette"] = palette
 
-        # Get the region of interests
-        # Use map view extent if checked
-        if use_extent == "true":  # use map view
+        # Get the region of interests.
+        # Use map view extent if checked.
+        if use_extent == "true":  # Use map view.
             xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             bbox = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
             roi = ee.Geometry.Polygon(bbox.coordinates(), None, False)
-            # Get the region of interest
+            # Get the region of interest.
             videoArgs["region"] = roi
-        # Use input feature layer as ROI
+        # Use input feature layer as ROI.
         elif in_poly:
             spatial_ref = arcpy.Describe(in_poly).spatialReference
             poly_prj = spatial_ref.PCSCode
@@ -4153,7 +4150,7 @@ class DownloadImgCol2Gif:
                 poly_prj = spatial_ref.GCSCode
             arcpy.AddMessage("Input feature layer projection is " + str(poly_prj))
 
-            # Project input feature to GEE image coordinate system if needed
+            # Project input feature to GEE image coordinate system if needed.
             target_poly = in_poly
             if str(poly_prj) not in "EPSG:4326":
                 arcpy.AddMessage("Projecting input feature layer to EPSG:4326 ...")
@@ -4161,32 +4158,32 @@ class DownloadImgCol2Gif:
                 arcpy.Project_management(in_poly, "poly_temp", out_sr)
                 target_poly = "poly_temp"
 
-            # convert input feature to geojson
+            # Convert input feature to geojson.
             arcpy.FeaturesToJSON_conversion(
                 target_poly, "temp.geojson", "FORMATTED", "", "", "GEOJSON"
             )
 
-            # Read the GeoJSON file
+            # Read the GeoJSON file.
             upper_path = os.path.dirname(arcpy.env.workspace)
             file_geojson = os.path.join(upper_path, "temp.geojson")
             with open(file_geojson) as f:
                 geojson_data = json.load(f)
 
-            # Collect polygon object coordinates
+            # Collect polygon object coordinates.
             coords = []
             for feature in geojson_data["features"]:
                 coords.append(feature["geometry"]["coordinates"])
             arcpy.AddMessage("Total number of polygon objects: " + str(len(coords)))
 
-            # Create an Earth Engine MultiPolygon from the GeoJSON
+            # Create an Earth Engine MultiPolygon from the GeoJSON.
             roi = ee.Geometry.MultiPolygon(coords, None, False)
-            # Delete temporary geojson
+            # Delete temporary geojson.
             arcpy.management.Delete(file_geojson)
-            # Get the region of interest
+            # Get the region of interest.
             videoArgs["region"] = roi
-        # Not using any ROI, download entire image
+        # Not using any ROI, download entire image.
         else:
-            # place holder polygon
+            # Place holder polygon.
             roi = ee.Geometry.Polygon(
                 [
                     [
@@ -4201,18 +4198,18 @@ class DownloadImgCol2Gif:
 
         arcpy.AddMessage(f"Region of Interest: {roi.getInfo()}")
 
-        # Use the crs code from the first selected band if not specified
+        # Use the crs code from the first selected band if not specified.
         if not crs:
             crs = collection.first().select(0).projection().getInfo()["crs"]
 
         arcpy.AddMessage("Image asset projection is " + crs)
         videoArgs["crs"] = crs
 
-        # Make sure output gif file ends with .gif
+        # Make sure output gif file ends with .gif.
         if not out_gif.endswith(".gif"):
             out_gif = out_gif + ".gif"
 
-        # Download filtered image collection to GIF
+        # Download filtered image collection to GIF.
         try:
             arcpy.AddMessage("Generating URL...")
             url = collection.limit(int(img_num)).getVideoThumbURL(videoArgs)
@@ -4353,10 +4350,10 @@ class DownloadLandsatTimelapse2Gif:
 
         parameters[1].filter.list = ["Blue", "Green", "Red", "NIR", "SWIR1", "SWIR2"]
 
-        # Disable input feature if map extent is used
+        # Disable input feature if map extent is used.
         if (
             parameters[2].valueAsText == "Use the current map extent"
-        ):  # map extent selected
+        ):  # Map extent selected.
             parameters[3].enabled = False
         else:
             parameters[3].enabled = True
@@ -4366,7 +4363,7 @@ class DownloadLandsatTimelapse2Gif:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
-        # User must select a polygon feature layer if "Use a polygon" is selected
+        # User must select a polygon feature layer if "Use a polygon" is selected.
         if parameters[2].valueAsText == "Use a polygon":
             if not parameters[3].valueAsText:
                 parameters[3].setErrorMessage("Please select a polygon feature layer.")
@@ -4374,7 +4371,7 @@ class DownloadLandsatTimelapse2Gif:
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        # Multiple images could be selected
+        # Multiple images could be selected.
         band_str = parameters[1].valueAsText
         roi_type = parameters[2].valueAsText
         in_poly = parameters[3].valueAsText
@@ -4383,7 +4380,7 @@ class DownloadLandsatTimelapse2Gif:
         crs = parameters[6].valueAsText
         out_gif = parameters[7].valueAsText
 
-        # Get the filter dates
+        # Get the filter dates.
         if parameters[0].valueAsText:
             val_list = parameters[0].values
             start_date = val_list[0][0]
@@ -4395,9 +4392,9 @@ class DownloadLandsatTimelapse2Gif:
         arcgee.data.validate_date(start_date)
         arcgee.data.validate_date(end_date)
 
-        # Add bands to videoArgs if specified
+        # Add bands to videoArgs if specified.
         if band_str:
-            # Remove ' in band string in case users add it
+            # Remove ' in band string in case users add it.
             if "'" in band_str:
                 band_str = band_str.replace("'", "")
             bands = band_str.split(";")
@@ -4405,13 +4402,13 @@ class DownloadLandsatTimelapse2Gif:
 
         arcpy.AddMessage("Bands selected: " + str(bands_only))
 
-        # Get the region of interests
-        # Use map view extent if checked
-        if roi_type == "Use the current map extent":  # use map view
+        # Get the region of interests.
+        # Use map view extent if checked.
+        if roi_type == "Use the current map extent":  # Use map view.
             xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             bbox = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
             roi = ee.Geometry.Polygon(bbox.coordinates(), None, False)
-        # Use input feature layer as ROI
+        # Use input feature layer as ROI.
         else:
             spatial_ref = arcpy.Describe(in_poly).spatialReference
             poly_prj = spatial_ref.PCSCode
@@ -4419,7 +4416,7 @@ class DownloadLandsatTimelapse2Gif:
                 poly_prj = spatial_ref.GCSCode
             arcpy.AddMessage("Input feature layer projection is " + str(poly_prj))
 
-            # Project input feature to GEE image coordinate system if needed
+            # Project input feature to GEE image coordinate system if needed.
             target_poly = in_poly
             if str(poly_prj) not in "EPSG:4326":
                 arcpy.AddMessage("Projecting input feature layer to EPSG:4326 ...")
@@ -4427,33 +4424,33 @@ class DownloadLandsatTimelapse2Gif:
                 arcpy.Project_management(in_poly, "poly_temp", out_sr)
                 target_poly = "poly_temp"
 
-            # convert input feature to geojson
+            # Convert input feature to geojson.
             arcpy.FeaturesToJSON_conversion(
                 target_poly, "temp.geojson", "FORMATTED", "", "", "GEOJSON"
             )
 
-            # Read the GeoJSON file
+            # Read the GeoJSON file.
             upper_path = os.path.dirname(arcpy.env.workspace)
             file_geojson = os.path.join(upper_path, "temp.geojson")
             with open(file_geojson) as f:
                 geojson_data = json.load(f)
 
-            # Collect polygon object coordinates
+            # Collect polygon object coordinates.
             coords = []
             for feature in geojson_data["features"]:
                 coords.append(feature["geometry"]["coordinates"])
             arcpy.AddMessage("Total number of polygon objects: " + str(len(coords)))
 
-            # Create an Earth Engine MultiPolygon from the GeoJSON
+            # Create an Earth Engine MultiPolygon from the GeoJSON.
             roi = ee.Geometry.MultiPolygon(coords, None, False)
-            # Delete temporary geojson
+            # Delete temporary geojson.
             arcpy.management.Delete(file_geojson)
 
         arcpy.AddMessage(f"Region of Interest: {roi.getInfo()}['coordinates']")
 
         arcpy.AddMessage("Image asset projection is " + crs)
 
-        # Make sure output gif file ends with .gif
+        # Make sure output gif file ends with .gif.
         if not out_gif.endswith(".gif"):
             out_gif = out_gif + ".gif"
 
@@ -4540,12 +4537,12 @@ class SaveAsset2JSON:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
-        # Check if the JSON file name contains spaces or special characters
+        # Check if the JSON file name contains spaces or special characters.
         json_path = parameters[2].valueAsText
         if json_path:
             if arcgee.data.has_spaces_or_special_chars(json_path):
                 parameters[2].setErrorMessage(
-                    "The JSON file name contains spaces or special characters."
+                    "The JSON file name contains spaces or special characters. "
                     "Please specify a valid file name."
                 )
         return
@@ -4561,7 +4558,7 @@ class SaveAsset2JSON:
         if not out_json.endswith(".json"):
             out_json = out_json + ".json"
 
-        # Retrieve the Earth Engine object based on the asset ID and data type
+        # Retrieve the Earth Engine object based on the asset ID and data type.
         if data_type == "FeatureCollection":
             ee_object = ee.FeatureCollection(asset_id)
         elif data_type == "Image":
@@ -4668,34 +4665,34 @@ class Upload2GCS:
         validation is performed.  This method is called whenever a parameter
         has been changed."""
 
-        # Get the project ID first
+        # Get the project ID first.
         if parameters[0].valueAsText:
             project_id = parameters[0].valueAsText
-            # Initialize a Cloud Storage client, for only once
+            # Initialize a Cloud Storage client, for only once.
             if not hasattr(self, "storage_client"):
                 self.storage_client = storage.Client(project=project_id)
 
-            # Get the list of all bucket names in this project
+            # Get the list of all bucket names in this project.
             buckets = self.storage_client.list_buckets()
             bucket_names = []
             for bucket in buckets:
                 bucket_names.append(bucket.name)
 
-            # Add bucket names to filter list
+            # Add bucket names to filter list.
             parameters[1].filter.list = bucket_names
 
-            # When bucket name is selected, list all available folders
+            # When bucket name is selected, list all available folders.
             if parameters[1].valueAsText:
                 bucket_name = parameters[1].valueAsText
                 parameters[2].filter.list = arcgee.data.list_folders_recursive(
                     self.storage_client, bucket_name
                 )
 
-        # Enable additional input when uploading to earth engine checked
+        # Enable additional input when uploading to earth engine checked.
         if parameters[4].value:
             parameters[5].enabled = True
             parameters[6].enabled = True
-            # give a default asset ID when project ID is provided
+            # Give a default asset ID when project ID is provided.
             if parameters[0].valueAsText and not parameters[6].valueAsText:
                 parameters[6].value = (
                     "projects/" + parameters[0].valueAsText + "/assets/"
@@ -4704,7 +4701,7 @@ class Upload2GCS:
             parameters[5].enabled = False
             parameters[6].enabled = False
 
-        # reset input values
+        # Reset input values.
         if not parameters[0].valueAsText:
             parameters[1].value = None
             parameters[2].value = None
@@ -4720,24 +4717,24 @@ class Upload2GCS:
     def execute(self, parameters, messages):
         """The source code of the tool."""
 
-        # Read input parameters
+        # Read input parameters.
         bucket_name = parameters[1].valueAsText
         bucket_folder = parameters[2].valueAsText
         files = parameters[3].valueAsText
 
         storage_client = storage.Client(project=parameters[0].valueAsText)
 
-        # If user creates a new folder, make sure it ends with /
+        # If user creates a new folder, make sure it ends with /.
         if not bucket_folder.endswith("/"):
             bucket_folder = bucket_folder + "/"
 
-        # Get the list of selected files
-        # Remove ' in files in case users add it
+        # Get the list of selected files.
+        # Remove ' in files in case users add it.
         if "'" in files:
             files = files.replace("'", "")
         file_list = files.split(";")
 
-        # Upload files to the selected bucket name
+        # Upload files to the selected bucket name.
         gcs_file_list = []
         for ifile in file_list:
             file_name = os.path.basename(ifile)
@@ -4746,9 +4743,9 @@ class Upload2GCS:
                 storage_client, bucket_name, ifile, out_file
             )
             gcs_file_list.append(out_file)
-            # check file extension
+            # Check file extension.
             file_extension = os.path.splitext(file_name)[1]
-            # For shape file, need to upload accessary files
+            # For shape file, need to upload accessary files.
             if file_extension == ".shp":
                 for extension in [".shx", ".dbf", ".prj", ".cpg"]:
                     arcgee.data.upload_to_gcs_bucket(
@@ -4758,24 +4755,24 @@ class Upload2GCS:
                         out_file.replace(".shp", extension),
                     )
 
-        # Upload file to earth engine
+        # Upload file to earth engine.
         if parameters[4].value:
             asset_type = parameters[5].valueAsText
             asset_id = parameters[6].valueAsText
             is_col = False
 
-            # If more than one file is selected, treat as collection asset
+            # If more than one file is selected, treat as collection asset.
             if len(gcs_file_list) > 1:
                 is_col = True
-                # use input asset id as folder path
+                # Use input asset id as folder path.
                 collection_asset_folder = asset_id
-                # for image asset type, create image collection
+                # For image asset type, create image collection.
                 if asset_type == "image":
                     if not arcgee.data.asset_exists(collection_asset_folder):
                         arcgee.data.create_image_collection(collection_asset_folder)
                     else:
                         arcpy.AddMessage("The image collection already exists.")
-                # if table, create a folder, all files will be uploaded to this folder
+                # If table, create a folder, all files will be uploaded to this folder.
                 else:
                     if not arcgee.data.asset_exists(collection_asset_folder):
                         arcgee.data.create_ee_folder(collection_asset_folder)
@@ -4783,12 +4780,12 @@ class Upload2GCS:
                         arcpy.AddMessage("The folder already exists.")
 
             for ifile in gcs_file_list:
-                # get file URI (file could be URI or relative path)
+                # Get file URI (file could be URI or relative path).
                 bucket_uri = "gs://" + bucket_name + "/" + ifile
-                # check if collection
+                # Check if collection.
                 if is_col:
-                    # upload to collection folder
-                    # use file name as item id
+                    # Upload to collection folder.
+                    # Use file name as item id.
                     file_name = os.path.splitext(os.path.basename(bucket_uri))[0]
                     item_id = f"{collection_asset_folder}/{file_name}"
                     arcgee.data.gcs_file_to_ee_asset(asset_type, item_id, bucket_uri)
@@ -4880,32 +4877,32 @@ class GCSFile2Asset:
         has been changed."""
 
         project_id = parameters[0].valueAsText
-        # List buckets, folders and files
+        # List buckets, folders and files.
         if project_id:
-            # Initialize a Cloud Storage client, for only once
+            # Initialize a Cloud Storage client, for only once.
             if not hasattr(self, "storage_client"):
                 self.storage_client = storage.Client(project=project_id)
 
-            # Get the list of all bucket names in this project
+            # Get the list of all bucket names in this project.
             buckets = self.storage_client.list_buckets()
             bucket_names = []
             for bucket in buckets:
                 bucket_names.append(bucket.name)
-            # Add bucket names to filter list
+            # Add bucket names to filter list.
             parameters[1].filter.list = bucket_names
 
-            # When bucket name is selected, list all available folders
+            # When bucket name is selected, list all available folders.
             if parameters[1].valueAsText:
                 bucket_name = parameters[1].valueAsText
                 parameters[2].filter.list = arcgee.data.list_folders_recursive(
                     self.storage_client, bucket_name
                 )
 
-            # When both bucket name and folder are selected, list all files
+            # When both bucket name and folder are selected, list all files.
             if parameters[1].valueAsText and parameters[2].valueAsText:
                 bucket_name = parameters[1].valueAsText
                 folder_name = parameters[2].valueAsText
-                # only certain formats are accepted as earth engine asset
+                # Only certain formats are accepted as earth engine asset.
                 extensions = ("tif", "shp", "csv", "zip", "tfrecord")
                 file_list = arcgee.data.list_files_in_folder(
                     self.storage_client, bucket_name, folder_name
@@ -4914,11 +4911,11 @@ class GCSFile2Asset:
                     file for file in file_list if file.endswith(extensions)
                 ]
 
-            # give a default asset path when project ID is provided
+            # Give a default asset path when project ID is provided.
             if not parameters[5].valueAsText:
                 parameters[5].value = "projects/" + project_id + "/assets/"
 
-        # reset bucket, folder and file lists and values
+        # Reset bucket, folder and file lists and values.
         if not project_id:
             parameters[1].filter.list = []
             parameters[2].filter.list = []
@@ -4938,7 +4935,7 @@ class GCSFile2Asset:
             if parameters[1].valueAsText:
                 if not parameters[2].filter.list:
                     parameters[3].setWarningMessage("No folders found in this bucket.")
-            # When both bucket name and folder are selected
+            # When both bucket name and folder are selected.
             if parameters[1].valueAsText and parameters[2].valueAsText:
                 if not parameters[3].filter.list:
                     parameters[3].setWarningMessage("No files found in this folder.")
@@ -4948,35 +4945,35 @@ class GCSFile2Asset:
     def execute(self, parameters, messages):
         """The source code of the tool."""
 
-        # Read input parameters
+        # Read input parameters.
         project_id = parameters[0].valueAsText
         bucket_name = parameters[1].valueAsText
         files = parameters[3].valueAsText
         asset_type = parameters[4].valueAsText
         asset_id = parameters[5].valueAsText
 
-        # create storage client since self.storage_client can not transfer from updateParameters here
+        # Create storage client since self.storage_client can not transfer from updateParameters here.
         self.storage_client = storage.Client(project=project_id)
 
-        # Get the list of selected files
-        # Remove ' in files in case users add it
+        # Get the list of selected files.
+        # Remove ' in files in case users add it.
         if "'" in files:
             files = files.replace("'", "")
         file_list = files.split(";")
 
-        # If more than one file is selected, treat as collection asset
+        # If more than one file is selected, treat as collection asset.
         is_col = False
         if len(file_list) > 1:
             is_col = True
-            # use input asset id as folder path
+            # Use input asset id as folder path.
             collection_asset_folder = asset_id
-            # for image asset type, create image collection
+            # For image asset type, create image collection.
             if asset_type == "image":
                 if not arcgee.data.asset_exists(collection_asset_folder):
                     arcgee.data.create_image_collection(collection_asset_folder)
                 else:
                     arcpy.AddMessage("The image collection already exists.")
-            # if table, create a folder, all files will be uploaded to this folder
+            # If table, create a folder, all files will be uploaded to this folder.
             else:
                 if not arcgee.data.asset_exists(collection_asset_folder):
                     arcgee.data.create_ee_folder(collection_asset_folder)
@@ -4984,15 +4981,15 @@ class GCSFile2Asset:
                     arcpy.AddMessage("The folder already exists.")
 
         for ifile in file_list:
-            # get file URI (file could be URI or relative path)
+            # Get file URI (file could be URI or relative path).
             if "gs://" not in ifile:
                 bucket_uri = "gs://" + bucket_name + "/" + ifile
             else:
                 bucket_uri = ifile
-            # check if collection
+            # Check if collection.
             if is_col:
-                # upload to collection folder
-                # use file name as item id
+                # Upload to collection folder.
+                # Use file name as item id.
                 file_name = os.path.splitext(os.path.basename(bucket_uri))[0]
                 item_id = f"{collection_asset_folder}/{file_name}"
                 arcgee.data.gcs_file_to_ee_asset(asset_type, item_id, bucket_uri)
@@ -5093,13 +5090,13 @@ class ApplyFilterbyID:
     def execute(self, parameters, messages):
         """The source code of the tool."""
 
-        # Read input parameters
+        # Read input parameters.
         data_type = parameters[0].valueAsText
         asset_id = parameters[1].valueAsText
         filters = parameters[2].values
         out_json = parameters[3].valueAsText
 
-        # Retrieve the Earth Engine object based on the asset id and data type
+        # Retrieve the Earth Engine object based on the asset id and data type.
         if data_type == "FeatureCollection":
             ee_object = ee.FeatureCollection(asset_id)
         elif data_type == "Image":
@@ -5109,22 +5106,22 @@ class ApplyFilterbyID:
         else:
             raise ValueError(f"Unsupported data type: {data_type}")
 
-        # Apply the filters from the filter list to the Earth Engine object
+        # Apply the filters from the filter list to the Earth Engine object.
         for filter_item in filters:
             filter_type = filter_item[0]
             filter_arg = filter_item[1]
 
-            # Construct a command string based on the filter type
+            # Construct a command string based on the filter type.
             command_string = f"{filter_type}({filter_arg})"
             arcpy.AddMessage(f"Applying filter: {command_string}")
             constructed_filter = eval(command_string)
             ee_object = ee_object.filter(constructed_filter)
 
-        # Save the serialized string as JSON to the specified output path
+        # Save the serialized string as JSON to the specified output path.
         if not out_json.endswith(".json"):
             out_json = out_json + ".json"
 
-        # save to json file
+        # Save to json file.
         arcgee.data.save_ee_result(ee_object, out_json)
 
         return
@@ -5155,7 +5152,7 @@ class ApplyFilterbyObj:
             direction="Input",
             parameterType="Required",
         )
-        # only displays JSON files
+        # Only displays JSON files.
         param0.filter.list = ["json"]
 
         param1 = arcpy.Parameter(
@@ -5212,30 +5209,30 @@ class ApplyFilterbyObj:
     def execute(self, parameters, messages):
         """The source code of the tool."""
 
-        # Read input parameters
+        # Read input parameters.
         json_path = parameters[0].valueAsText
         filters = parameters[1].values
         out_json = parameters[2].valueAsText
 
-        # load collection object
+        # Load collection object.
         ee_object = arcgee.data.load_ee_result(json_path)
 
-        # Apply the filters from the filter list to the Earth Engine object
+        # Apply the filters from the filter list to the Earth Engine object.
         for filter_item in filters:
             filter_type = filter_item[0]
             filter_arg = filter_item[1]
 
-            # Construct a command string based on the filter type
+            # Construct a command string based on the filter type.
             command_string = f"{filter_type}({filter_arg})"
             arcpy.AddMessage(f"Applying filter: {command_string}")
             constructed_filter = eval(command_string)
             ee_object = ee_object.filter(constructed_filter)
 
-        # Save the serialized string as JSON to the specified output path
+        # Save the serialized string as JSON to the specified output path.
         if not out_json.endswith(".json"):
             out_json = out_json + ".json"
 
-        # save to json
+        # Save to json.
         arcgee.data.save_ee_result(ee_object, out_json)
 
         return
@@ -5318,9 +5315,9 @@ class ApplyMapFunctionbyID:
 
         import importlib
 
-        # When the map function file is selected
+        # When the map function file is selected.
         if parameters[2].valueAsText:
-            # get the file name of input map function file
+            # Get the file name of input map function file.
             file_path = parameters[2].valueAsText
             map_lib = os.path.splitext(os.path.basename(file_path))[0]
             module = importlib.import_module(map_lib)
@@ -5346,23 +5343,23 @@ class ApplyMapFunctionbyID:
         """The source code of the tool."""
         import importlib
 
-        # Read input parameters
+        # Read input parameters.
         data_type = parameters[0].valueAsText
         asset_id = parameters[1].valueAsText
         map_file = parameters[2].valueAsText
         map_functions = parameters[3].valueAsText
         out_json = parameters[4].valueAsText
 
-        # get list of map functions
+        # Get list of map functions.
         if "'" in map_functions:
             map_functions = map_functions.replace("'", "")
         function_list = map_functions.split(";")
 
-        # import module first
+        # Import module first.
         map_lib = os.path.splitext(os.path.basename(map_file))[0]
         module = importlib.import_module(map_lib)
 
-        # Retrieve the Earth Engine object based on the asset id and data type
+        # Retrieve the Earth Engine object based on the asset id and data type.
         if data_type == "FeatureCollection":
             ee_object = ee.FeatureCollection(asset_id)
         elif data_type == "ImageCollection":
@@ -5370,17 +5367,17 @@ class ApplyMapFunctionbyID:
         else:
             raise ValueError(f"Unsupported data type: {data_type}")
 
-        # Apply the filters from the filter list to the Earth Engine object
+        # Apply the filters from the filter list to the Earth Engine object.
         for func_str in function_list:
             arcpy.AddMessage(f"Applying map function: {func_str}")
             function_to_call = getattr(module, func_str)
             ee_object = ee_object.map(function_to_call)
 
-        # Save the serialized string as JSON to the specified output path
+        # Save the serialized string as JSON to the specified output path.
         if not out_json.endswith(".json"):
             out_json = out_json + ".json"
 
-        # save to json
+        # Save to json.
         arcgee.data.save_ee_result(ee_object, out_json)
 
         return
@@ -5420,7 +5417,7 @@ class ApplyMapFunctionbyObj:
             direction="Input",
             parameterType="Required",
         )
-        # only displays JSON files
+        # Only displays JSON files.
         param1.filter.list = ["json"]
 
         param2 = arcpy.Parameter(
@@ -5466,9 +5463,9 @@ class ApplyMapFunctionbyObj:
 
         import importlib
 
-        # When the map function file is selected
+        # When the map function file is selected.
         if parameters[2].valueAsText:
-            # get the file name of input map function file
+            # Get the file name of input map function file.
             file_path = parameters[2].valueAsText
             map_lib = os.path.splitext(os.path.basename(file_path))[0]
             module = importlib.import_module(map_lib)
@@ -5486,7 +5483,7 @@ class ApplyMapFunctionbyObj:
         if json_path:
             if arcgee.data.has_spaces_or_special_chars(json_path):
                 parameters[4].setErrorMessage(
-                    "The JSON file name contains spaces or special characters."
+                    "The JSON file name contains spaces or special characters. "
                     "Please specify a valid file name."
                 )
         return
@@ -5495,26 +5492,26 @@ class ApplyMapFunctionbyObj:
         """The source code of the tool."""
         import importlib
 
-        # Read input parameters
+        # Read input parameters.
         data_type = parameters[0].valueAsText
         json_path = parameters[1].valueAsText
         map_file = parameters[2].valueAsText
         map_functions = parameters[3].valueAsText
         out_json = parameters[4].valueAsText
 
-        # get list of map functions
+        # Get list of map functions.
         if "'" in map_functions:
             map_functions = map_functions.replace("'", "")
         function_list = map_functions.split(";")
 
-        # import module first
+        # Import module first.
         map_lib = os.path.splitext(os.path.basename(map_file))[0]
         module = importlib.import_module(map_lib)
 
-        # load collection object
+        # Load collection object.
         ee_object = arcgee.data.load_ee_result(json_path)
 
-        #  Re-cast the object to target data type
+        # Re-cast the object to target data type.
         if data_type == "FeatureCollection":
             ee_object = ee.FeatureCollection(ee_object)
         elif data_type == "ImageCollection":
@@ -5529,17 +5526,17 @@ class ApplyMapFunctionbyObj:
         else:
             arcpy.AddWarning("The asset ID is missing.")
 
-        # Apply the filters from the filter list to the Earth Engine object
+        # Apply the filters from the filter list to the Earth Engine object.
         for func_str in function_list:
             arcpy.AddMessage(f"Applying map function: {func_str}")
             function_to_call = getattr(module, func_str)
             ee_object = ee_object.map(function_to_call)
 
-        # Save the serialized string as JSON to the specified output path
+        # Save the serialized string as JSON to the specified output path.
         if not out_json.endswith(".json"):
             out_json = out_json + ".json"
 
-        # save to json
+        # Save to json.
         arcgee.data.save_ee_result(ee_object, out_json)
 
         return
@@ -5674,7 +5671,7 @@ class ApplyReducerbyID:
         else:
             parameters[1].filter.list = []
 
-        # when multiple reducers are selected, the shared inputs parameter is enabled
+        # When multiple reducers are selected, the shared inputs parameter is enabled.
         reducers = parameters[5].values
         if reducers and len(reducers) > 1:
             parameters[6].enabled = True
@@ -5691,7 +5688,7 @@ class ApplyReducerbyID:
         if json_path:
             if arcgee.data.has_spaces_or_special_chars(json_path):
                 parameters[7].setErrorMessage(
-                    "The JSON file name contains spaces or special characters."
+                    "The JSON file name contains spaces or special characters. "
                     "Please specify a valid file name."
                 )
         return
@@ -5699,7 +5696,7 @@ class ApplyReducerbyID:
     def execute(self, parameters, messages):
         """The source code of the tool."""
 
-        # Read input parameters
+        # Read input parameters.
         data_type = parameters[0].valueAsText
         reduction_method = parameters[1].valueAsText
         reduction_args = parameters[2].valueAsText
@@ -5711,7 +5708,7 @@ class ApplyReducerbyID:
 
         asset_id = arcgee.data.clean_asset_id(asset_id)
 
-        # Retrieve the Earth Engine object based on the asset id and data type
+        # Retrieve the Earth Engine object based on the asset id and data type.
         if data_type == "FeatureCollection":
             ee_object = ee.FeatureCollection(asset_id)
         elif data_type == "Image":
@@ -5721,32 +5718,32 @@ class ApplyReducerbyID:
         else:
             raise ValueError(f"Unsupported data type: {data_type}")
 
-        # Apply the filters from the filter list to the Earth Engine object
+        # Apply the filters from the filter list to the Earth Engine object.
         for filter_item in filters:
             filter_type = filter_item[0]
             filter_arg = filter_item[1]
 
-            # Construct a command string based on the filter type
+            # Construct a command string based on the filter type.
             command_string = f"{filter_type}({filter_arg})"
             arcpy.AddMessage(f"Applying filter: {command_string}")
             constructed_filter = eval(command_string)
             ee_object = ee_object.filter(constructed_filter)
 
-        # Construct all reducers first
-        # Multiple reducers will be treated as combined reducer
+        # Construct all reducers first.
+        # Multiple reducers will be treated as combined reducer.
         reducer_list = []
         for reducer_item in reducers:
 
             reducer_name = reducer_item[0]
             reducer_arg = reducer_item[1]
 
-            # Construct a command string based on the reducer
+            # Construct a command string based on the reducer.
             command_string = f"{reducer_name}({reducer_arg})"
             arcpy.AddMessage(f"Constructing reducer: {command_string}")
             constructed_reducer = eval(command_string)
             reducer_list.append(constructed_reducer)
 
-        # Combine reducers if more than one
+        # Combine reducers if more than one.
         if len(reducer_list) > 1:
             final_reducer = reducer_list[0]
             for reducer in reducer_list[1:]:
@@ -5758,15 +5755,15 @@ class ApplyReducerbyID:
 
             final_reducer = reducer_list[0]
 
-        # Apply the final reducer
+        # Apply the final reducer.
         arcpy.AddMessage(f"Applying reduction method:{data_type}'.'{reduction_method}")
         ee_method = getattr(ee_object, reduction_method)
         if reduction_args:
-            # Convert the string arguments into a dictionary of kwargs
+            # Convert the string arguments into a dictionary of kwargs.
             kwargs = {}
             for arg in reduction_args.split(","):
                 key, value = arg.strip().split("=")
-                # Convert string values to appropriate Python types
+                # Convert string values to appropriate Python types.
                 if value.lower() == "true":
                     value = True
                 elif value.lower() == "false":
@@ -5777,21 +5774,21 @@ class ApplyReducerbyID:
                     try:
                         value = float(value)
                     except ValueError:
-                        # If not a number, treat as a variable name
+                        # If not a number, treat as a variable name.
                         value = eval(value)
                 kwargs[key] = value
 
-            # Pass reducer and parsed kwargs to the method
+            # Pass reducer and parsed kwargs to the method.
             ee_object = ee_method(reducer=final_reducer, **kwargs)
         else:
             ee_object = ee_method(reducer=final_reducer)
 
-        # Save the serialized string as JSON to the specified output path
+        # Save the serialized string as JSON to the specified output path.
         if not out_json.endswith(".json"):
 
             out_json = out_json + ".json"
 
-        # save to json
+        # Save to json.
         arcgee.data.save_ee_result(ee_object, out_json)
 
         return
@@ -5911,7 +5908,7 @@ class ApplyReducerbyObj:
         else:
             parameters[1].filter.list = []
 
-        # when multiple reducers are selected, the shared inputs parameter is enabled
+        # When multiple reducers are selected, the shared inputs parameter is enabled.
         reducers = parameters[4].values
         if reducers and len(reducers) > 1:
             parameters[5].enabled = True
@@ -5928,7 +5925,7 @@ class ApplyReducerbyObj:
         if json_path:
             if arcgee.data.has_spaces_or_special_chars(json_path):
                 parameters[6].setErrorMessage(
-                    "The JSON file name contains spaces or special characters."
+                    "The JSON file name contains spaces or special characters. "
                     "Please specify a valid file name."
                 )
         return
@@ -5936,7 +5933,7 @@ class ApplyReducerbyObj:
     def execute(self, parameters, messages):
         """The source code of the tool."""
 
-        # Read input parameters
+        # Read input parameters.
         data_type = parameters[0].valueAsText
         reduction_method = parameters[1].valueAsText
         reduction_args = parameters[2].valueAsText
@@ -5947,7 +5944,7 @@ class ApplyReducerbyObj:
 
         ee_object = arcgee.data.load_ee_result(json_path)
 
-        # Retrieve the Earth Engine object based on the asset id and data type
+        # Retrieve the Earth Engine object based on the asset id and data type.
         if data_type == "FeatureCollection":
             ee_object = ee.FeatureCollection(ee_object)
         elif data_type == "Image":
@@ -5957,21 +5954,21 @@ class ApplyReducerbyObj:
         else:
             raise ValueError(f"Unsupported data type: {data_type}")
 
-        # Construct all reducers first
-        # Multiple reducers will be treated as combined reducer
+        # Construct all reducers first.
+        # Multiple reducers will be treated as combined reducer.
         reducer_list = []
         for reducer_item in reducers:
 
             reducer_name = reducer_item[0]
             reducer_arg = reducer_item[1]
 
-            # Construct a command string based on the reducer
+            # Construct a command string based on the reducer.
             command_string = f"{reducer_name}({reducer_arg})"
             arcpy.AddMessage(f"Constructing reducer: {command_string}")
             constructed_reducer = eval(command_string)
             reducer_list.append(constructed_reducer)
 
-        # Combine reducers if more than one
+        # Combine reducers if more than one.
         if len(reducer_list) > 1:
             final_reducer = reducer_list[0]
             for reducer in reducer_list[1:]:
@@ -5983,15 +5980,15 @@ class ApplyReducerbyObj:
 
             final_reducer = reducer_list[0]
 
-        # Apply the final reducer
+        # Apply the final reducer.
         arcpy.AddMessage(f"Applying reduction method:{data_type}'.'{reduction_method}")
         ee_method = getattr(ee_object, reduction_method)
         if reduction_args:
-            # Convert the string arguments into a dictionary of kwargs
+            # Convert the string arguments into a dictionary of kwargs.
             kwargs = {}
             for arg in reduction_args.split(","):
                 key, value = arg.strip().split("=")
-                # Convert string values to appropriate Python types
+                # Convert string values to appropriate Python types.
                 if value.lower() == "true":
                     value = True
                 elif value.lower() == "false":
@@ -6002,20 +5999,20 @@ class ApplyReducerbyObj:
                     try:
                         value = float(value)
                     except ValueError:
-                        # If not a number, treat as a variable name
+                        # If not a number, treat as a variable name.
                         value = eval(value)
                 kwargs[key] = value
 
-            # Pass reducer and parsed kwargs to the method
+            # Pass reducer and parsed kwargs to the method.
             ee_object = ee_method(reducer=final_reducer, **kwargs)
         else:
             ee_object = ee_method(reducer=final_reducer)
 
-        # Save the serialized string as JSON to the specified output path
+        # Save the serialized string as JSON to the specified output path.
         if not out_json.endswith(".json"):
             out_json = out_json + ".json"
 
-        # save to json
+        # Save to json.
         arcgee.data.save_ee_result(ee_object, out_json)
 
         return
@@ -6069,10 +6066,10 @@ class RunPythonScript:
         """The source code of the tool."""
         import subprocess
 
-        # Read input parameters
+        # Read input parameters.
         py_script = parameters[0].valueAsText
 
-        # Run the script as an external process
+        # Run the script as an external process.
         subprocess.run(["python", py_script])
 
         return

@@ -12,14 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# built-in modules
 import datetime
 import json
 import os
 import re
 from pathlib import Path
 
-# third-party modules
 import numpy as np
 import requests
 import ujson
@@ -103,11 +101,11 @@ def load_ee_result(path):
         with open(path, "r") as f:
             ee_object = ujson.load(f)
 
-        # Attempt to deserialize the Earth Engine object
+        # Attempt to deserialize the Earth Engine object.
         return ee.deserializer.fromJSON(ee_object)
 
     except Exception as e:
-        # Log an error message and raise a RuntimeError
+        # Log an error message and raise a RuntimeError.
         error_message = (
             f"Failed to deserialize the Earth Engine object from {path}: {str(e)}"
         )
@@ -209,9 +207,9 @@ def get_filter_list():
             - And more
 
     """
-    # all filters in the ee.Filter
+    # All filters in the ee.Filter.
     filters = [
-        "ee.Filter.and",  # Combines two or more filters with logical AND
+        "ee.Filter.and",  # Combines two or more filters with logical AND.
         "ee.Filter.area",
         "ee.Filter.aside",
         "ee.Filter.bounds",  # Filter by geographic bounds (within a geometry)
@@ -279,29 +277,29 @@ def add_date_to_gif(
     """
     from PIL import Image, ImageDraw, ImageFont, ImageSequence
 
-    # Open the input GIF
+    # Open the input GIF.
     gif = Image.open(input_gif)
 
-    # Load the font (use a default font if no font_path is provided)
+    # Load the font (use a default font if no font_path is provided).
     font = ImageFont.truetype(font_path or "arial.ttf", font_size)
 
     frames = []
     for i, frame in enumerate(ImageSequence.Iterator(gif)):
-        # Ensure the number of dates matches the frames
+        # Ensure the number of dates matches the frames.
         if i >= len(dates):
             break
 
-        # Copy the frame to edit
+        # Copy the frame to edit.
         frame = frame.convert("RGBA")
         draw = ImageDraw.Draw(frame)
 
-        # Add the date text
+        # Add the date text.
         draw.text(position, dates[i], font=font, fill=color)
 
-        # Append the edited frame
+        # Append the edited frame.
         frames.append(frame)
 
-    # Save the frames as a new GIF
+    # Save the frames as a new GIF.
     frames[0].save(
         output_gif,
         save_all=True,
@@ -326,15 +324,15 @@ def validate_date(date_str, date_format="%Y-%m-%d"):
         >>> validate_date("01/01/2023")  # Raises ValueError
     """
     try:
-        # Try to parse the date string with the expected format
+        # Try to parse the date string with the expected format.
         datetime.datetime.strptime(date_str, date_format)
         arcpy.AddMessage(f"Valid date: {date_str}")
     except ValueError:
-        # Add error message if the format is incorrect
+        # Add error message if the format is incorrect.
         arcpy.AddError(
             f"Invalid date format: '{date_str}'. Expected format: {date_format}."
         )
-        raise  # Re-raise the error to stop execution
+        raise  # Re-raise the error to stop execution.
 
 
 def download_ee_video(collection, video_args, out_gif, timeout=300, proxies=None):
@@ -569,7 +567,7 @@ def landsat_timeseries(
     start_month = int(start_date[:2])
     start_day = int(start_date[3:5])
 
-    # Landsat collection preprocessingEnabled
+    # Landsat collection preprocessingEnabled.
     # Get Landsat surface reflectance collections for OLI, ETM+ and TM sensors.
     LC09col = ee.ImageCollection("LANDSAT/LC09/C02/T1_L2")
     LC08col = ee.ImageCollection("LANDSAT/LC08/C02/T1_L2")
@@ -818,7 +816,7 @@ def landsat_timeseries(
         )
         imgList = months.map(getMonthlyComp)
 
-    # Convert image composite list to collection
+    # Convert image composite list to collection.
     imgCol = ee.ImageCollection.fromImages(imgList)
 
     imgCol = imgCol.map(
@@ -992,13 +990,13 @@ def check_ee_datatype(parameter, type_str):
     """Check the Earth Engine data type of the input object."""
     asset_id = parameter.valueAsText
     asset_id = clean_asset_id(asset_id)
-    # type_str = "IMAGE" or "TABLE" or "IMAGE_COLLECTION"
+    # type_str equals to "IMAGE" or "TABLE" or "IMAGE_COLLECTION".
     if type_str == "TABLE":
         type_out = "FEATURE COLLECTION"
     else:
         type_out = type_str.replace("_", " ")
 
-    # asset ID could be invalid
+    # Asset ID could be invalid.
     try:
         data_type = get_ee_datatype(asset_id)
         if data_type != type_str:
@@ -1019,9 +1017,9 @@ def get_ee_datatype(asset_id):
     Returns:
         str: Earth Engine data type of the input object
     """
-    # Get the input object
+    # Get the input object.
     obj = ee.data.getAsset(asset_id)
-    # Get the data type of the input object
+    # Get the data type of the input object.
     data_type = obj["type"]
     return data_type
 
@@ -1044,7 +1042,7 @@ def init_and_set_tags(project=None, workload_tag=None):
     if workload_tag is not None:
         ee.data.setWorkloadTag(workload_tag)
 
-    # check initialization setup
+    # Check initialization setup.
     project_id = ee.data.getProjectConfig()["name"].split("/")[1]
     arcpy.AddMessage(f"Current project ID: {project_id}")
     arcpy.AddMessage(f"Current user agent: {ee.data.getUserAgent()}")
@@ -1075,7 +1073,7 @@ def get_roi_from_object(obj: "ee.Image | ee.FeatureCollection") -> "ee.Geometry.
     return roi
 
 
-# Get centroid and extent coordinates of input image or feature collection
+# Get centroid and extent coordinates of input image or feature collection.
 def get_object_centroid(obj, error_margin):
     """Get the centroid and extent coordinates of an Earth Engine object.
 
@@ -1088,18 +1086,18 @@ def get_object_centroid(obj, error_margin):
             - centroid_coords is [lon, lat] of centroid
             - extent_coords is list of corner coordinates defining the bounds
     """
-    # get centroid geometry from input image
+    # Get centroid geometry from input image.
     centroid = obj.geometry().centroid(error_margin)
-    # coordinates in list
+    # Coordinates in list.
     centroid_coords = centroid.coordinates().getInfo()
-    # get image extent
+    # Get image extent.
     extent = obj.geometry().bounds(error_margin)
-    # coordinates in list
+    # Coordinates in list.
     extent_coords = extent.coordinates().get(0).getInfo()
     return centroid_coords, extent_coords
 
 
-# convert coordinates to bounding box values
+# Convert coordinates to bounding box values.
 def convert_coords_to_bbox(coords):
     """Convert coordinates to bounding box values.
 
@@ -1119,7 +1117,7 @@ def convert_coords_to_bbox(coords):
     return x_min, y_min, x_max, y_max
 
 
-# Get the coordinates from polygon feature layer
+# Get the coordinates from polygon feature layer.
 def get_polygon_coords(in_poly):
     """Extract coordinates from a polygon feature layer and convert to WGS 84.
 
@@ -1135,7 +1133,7 @@ def get_polygon_coords(in_poly):
         poly_prj = spatial_ref.GCSCode
     arcpy.AddMessage("Input feature layer projection CRS is " + str(poly_prj))
 
-    # Project input feature to EPSG:4326 if needed
+    # Project input feature to EPSG:4326 if needed.
     target_poly = in_poly
     if str(poly_prj) not in "EPSG:4326":
         arcpy.AddMessage("Projecting input feature layer to EPSG:4326 ...")
@@ -1143,24 +1141,24 @@ def get_polygon_coords(in_poly):
         arcpy.Project_management(in_poly, "poly_temp", out_sr)
         target_poly = "poly_temp"
 
-    # convert input feature to geojson
+    # Convert input feature to geojson.
     arcpy.FeaturesToJSON_conversion(
         target_poly, "temp.geojson", "FORMATTED", "", "", "GEOJSON"
     )
 
-    # Read the GeoJSON file
+    # Read the GeoJSON file.
     upper_path = os.path.dirname(arcpy.env.workspace)
     file_geojson = os.path.join(upper_path, "temp.geojson")
     with open(file_geojson) as f:
         geojson_data = json.load(f)
 
-    # Collect polygon object coordinates
+    # Collect polygon object coordinates.
     coords = []
     for feature in geojson_data["features"]:
         coords.append(feature["geometry"]["coordinates"])
     arcpy.AddMessage("Total number of polygon objects: " + str(len(coords)))
 
-    # Delete temporary geojson
+    # Delete temporary geojson.
     if target_poly == "poly_temp":
         arcpy.management.Delete("poly_temp")
     arcpy.management.Delete(file_geojson)
@@ -1168,7 +1166,7 @@ def get_polygon_coords(in_poly):
     return coords
 
 
-# Check whether use projection or crs code for image to xarray dataset
+# Check whether use projection or crs code for image to xarray dataset.
 def whether_use_projection(ic):
     """Check whether to use projection or CRS code for image to xarray dataset.
 
@@ -1178,16 +1176,16 @@ def whether_use_projection(ic):
     Returns:
         bool: True if projection should be used, False if CRS code should be used
     """
-    # Start with original projection
+    # Start with original projection.
     prj = ic.first().select(0).projection()
-    # Check crs code
+    # Check crs code.
     crs_code = prj.crs().getInfo()
-    # Three scenarios: EPSG is unknown, EPSG is 4326, EPSG is others
+    # Three scenarios: EPSG is unknown, EPSG is 4326, EPSG is others.
     if (crs_code is None) or (crs_code == "EPSG:4326"):
         use_projection = True
         arcpy.AddMessage("Open dataset with projection")
-    # ESPG is others
-    # ValueError: cannot convert float NaN to integer will occur if using projection
+    # ESPG is others.
+    # ValueError: cannot convert float NaN to integer will occur if using projection.
     else:
         use_projection = False
         arcpy.AddMessage("Open dataset with CRS code")
@@ -1195,7 +1193,7 @@ def whether_use_projection(ic):
     return use_projection
 
 
-# Download GEE Image to GeoTiff
+# Download GEE Image to GeoTiff.
 def image_to_geotiff(
     ic,
     bands,
@@ -1222,7 +1220,7 @@ def image_to_geotiff(
     prj = ic.first().select(0).projection()
     crs_code = prj.crs().getInfo()
 
-    # When EPSG is unknown or 4326, use projection
+    # When EPSG is unknown or 4326, use projection.
     if use_projection:
         ds = xarray.open_dataset(
             ic,
@@ -1231,7 +1229,7 @@ def image_to_geotiff(
             scale=scale_ds,
             **({"geometry": roi} if roi is not None else {}),
         )
-        # Use either X/Y or lat/lon depending on the availability
+        # Use either X/Y or lat/lon depending on the availability.
         if "X" in list(ds.variables.keys()):
             arcpy.AddMessage("Use X/Y to define transform")
             transform = from_origin(
@@ -1244,8 +1242,8 @@ def image_to_geotiff(
             transform = from_origin(
                 ds["lon"].values[0], ds["lat"].values[-1], scale_x, -scale_y
             )
-    # ESPG is others, use crs code
-    # ValueError: cannot convert float NaN to integer will occur if using projection
+    # ESPG is others, use crs code.
+    # ValueError: cannot convert float NaN to integer will occur if using projection.
     else:
         ds = xarray.open_dataset(
             ic,
@@ -1266,27 +1264,27 @@ def image_to_geotiff(
             transform = from_origin(
                 ds["lon"].values[0], ds["lat"].values[0], scale_x, -scale_y
             )
-    # Display transform parameters
+    # Display transform parameters.
     arcpy.AddMessage(transform)
 
     meta = {
         "driver": "GTiff",
         "height": ds[bands[0]].shape[2],
         "width": ds[bands[0]].shape[1],
-        "count": len(bands),  # Number of bands
-        "dtype": ds[bands[0]].dtype,  # Data type of the array
-        "crs": crs,  # Coordinate Reference System, change if needed
+        "count": len(bands),  # Number of bands.
+        "dtype": ds[bands[0]].dtype,  # Data type of the array.
+        "crs": crs,  # Coordinate Reference System, change if needed.
         "transform": transform,
     }
 
-    # Store band names
+    # Store band names.
     band_names = {}
     i = 1
     for iband in bands:
         band_names["band_" + str(i)] = iband
         i += 1
 
-    # Write the array to a multiband GeoTIFF file
+    # Write the array to a multiband GeoTIFF file.
     arcpy.AddMessage("Save image to " + out_tiff + " ...")
     i = 1
     with rasterio.open(out_tiff, "w", **meta) as dst:
@@ -1297,12 +1295,12 @@ def image_to_geotiff(
                 dst.write(np.transpose(ds[iband].values[0]), i)
 
             i += 1
-        # write band names into output tiff
+        # Write band names into output tiff.
         dst.update_tags(**band_names)
     return
 
 
-# Upload local file to Google Cloud Storage bucket
+# Upload local file to Google Cloud Storage bucket.
 def upload_to_gcs_bucket(
     storage_client, bucket_name, source_file_name, destination_blob_name
 ):
@@ -1315,20 +1313,20 @@ def upload_to_gcs_bucket(
         destination_blob_name (str): Destination path in GCS bucket
     """
     arcpy.AddMessage("Upload to Google Cloud Storage ...")
-    # Get the bucket that the file will be uploaded to
+    # Get the bucket that the file will be uploaded to.
     bucket = storage_client.bucket(bucket_name)
 
-    # Create a new blob and upload the file's content
+    # Create a new blob and upload the file's content.
     blob = bucket.blob(destination_blob_name)
 
-    # Upload the file
+    # Upload the file.
     blob.upload_from_filename(source_file_name)
 
     full_blob_name = bucket_name + "/" + destination_blob_name
     arcpy.AddMessage(f"File {source_file_name} has been uploaded to {full_blob_name}.")
 
 
-# Convert Google Cloud Storage file to Earth Engine asset
+# Convert Google Cloud Storage file to Earth Engine asset.
 def gcs_file_to_ee_asset(asset_type, asset_id, bucket_uri):
     """Convert a Google Cloud Storage file to an Earth Engine asset.
 
@@ -1341,7 +1339,7 @@ def gcs_file_to_ee_asset(asset_type, asset_id, bucket_uri):
 
     arcpy.AddMessage("Convert Google Cloud Storage file to Earth Engine asset ...")
     arcpy.AddMessage("Upload " + bucket_uri + " to " + asset_id)
-    # Define the Earth Engine CLI command
+    # Define the Earth Engine CLI command.
     command = [
         "earthengine",
         "upload",
@@ -1350,7 +1348,7 @@ def gcs_file_to_ee_asset(asset_type, asset_id, bucket_uri):
         bucket_uri,
     ]
 
-    # Run the command
+    # Run the command.
     try:
         output = subprocess.check_output(command, stderr=subprocess.STDOUT)
         arcpy.AddMessage(output.decode("utf-8"))
@@ -1362,7 +1360,7 @@ def gcs_file_to_ee_asset(asset_type, asset_id, bucket_uri):
         arcpy.AddError(f"Permission error: {e}")
 
 
-# Create an Earth Engine image collection
+# Create an Earth Engine image collection.
 def create_image_collection(asset_folder):
     """Create an Earth Engine image collection.
 
@@ -1372,7 +1370,7 @@ def create_image_collection(asset_folder):
     import subprocess
 
     arcpy.AddMessage("Create an Earth Engine image collection ...")
-    # Define the Earth Engine CLI command
+    # Define the Earth Engine CLI command.
     command = [
         "earthengine",
         "create",
@@ -1380,16 +1378,16 @@ def create_image_collection(asset_folder):
         asset_folder,
     ]
 
-    # Run the command
+    # Run the command.
     process = subprocess.run(
         command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
 
-    # Output the result
+    # Output the result.
     arcpy.AddMessage(process.stdout.decode("utf-8"))
 
 
-# Create a folder on Earth Engine
+# Create a folder on Earth Engine.
 def create_ee_folder(asset_folder):
     """Create a folder on Earth Engine.
 
@@ -1399,7 +1397,7 @@ def create_ee_folder(asset_folder):
     import subprocess
 
     arcpy.AddMessage("Create an Earth Engine folder ...")
-    # Define the Earth Engine CLI command
+    # Define the Earth Engine CLI command.
     command = [
         "earthengine",
         "create",
@@ -1407,16 +1405,16 @@ def create_ee_folder(asset_folder):
         asset_folder,
     ]
 
-    # Run the command
+    # Run the command.
     process = subprocess.run(
         command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
 
-    # Output the result
+    # Output the result.
     arcpy.AddMessage(process.stdout.decode("utf-8"))
 
 
-# Check if an Earth Engine asset already exists
+# Check if an Earth Engine asset already exists.
 def asset_exists(asset_id):
     """Check if an Earth Engine asset already exists.
 
@@ -1427,15 +1425,15 @@ def asset_exists(asset_id):
         bool: True if asset exists, False otherwise
     """
     try:
-        # Try to retrieve asset information
+        # Try to retrieve asset information.
         ee.data.getAsset(asset_id)
         return True
     except ee.EEException:
-        # Asset does not exist
+        # Asset does not exist.
         return False
 
 
-# List all folders in the bucket
+# List all folders in the bucket.
 def list_folders_recursive(storage_client, bucket_name, prefix=""):
     """Recursively list all folders in a Google Cloud Storage bucket.
 
@@ -1447,19 +1445,19 @@ def list_folders_recursive(storage_client, bucket_name, prefix=""):
     Returns:
         list: Sorted list of folder paths in the bucket
     """
-    # List blobs with a delimiter to group them by "folders"
+    # List blobs with a delimiter to group them by "folders".
     blobs = storage_client.list_blobs(bucket_name, prefix=prefix, delimiter="/")
 
-    # Need this code to active blob prefixes, otherwise, blob.prefixes are empty
+    # Need this code to active blob prefixes, otherwise, blob.prefixes are empty.
     for blob in blobs:
         blob_name = blob.name
 
     folder_list = []
-    # Folders are stored in the prefixes attribute
+    # Folders are stored in the prefixes attribute.
     if blobs.prefixes:
         for folder in blobs.prefixes:
             folder_list.append(folder)
-            # Recursively call the function to go deeper into the folder
+            # Recursively call the function to go deeper into the folder.
             folder_list.extend(
                 list_folders_recursive(storage_client, bucket_name, prefix=folder)
             )
@@ -1467,7 +1465,7 @@ def list_folders_recursive(storage_client, bucket_name, prefix=""):
     return sorted(folder_list)
 
 
-# List files within a folder in the bucket
+# List files within a folder in the bucket.
 def list_files_in_folder(storage_client, bucket_name, folder_name):
     """List files within a specified folder in a Google Cloud Storage bucket.
 
@@ -1481,13 +1479,13 @@ def list_files_in_folder(storage_client, bucket_name, folder_name):
     """
     blobs = storage_client.list_blobs(bucket_name, prefix=folder_name)
 
-    # Filter out any "folders" (items ending with a trailing slash)
+    # Filter out any "folders" (items ending with a trailing slash).
     files = [blob.name for blob in blobs if not blob.name.endswith("/")]
 
     return files
 
 
-# check if the start date is given when end date is provided for filter by dates
+# Check if the start date is given when end date is provided for filter by dates.
 def check_start_date(parameter):
     """Check if the start date is given when end date is provided for filter by dates.
 
@@ -1495,7 +1493,7 @@ def check_start_date(parameter):
         parameter (Parameter): The parameter to check
     """
     val_list = parameter.values
-    # display error message if start date is not provided when end date is provided
+    # Display error message if start date is not provided when end date is provided.
     if not val_list[0][0]:
         parameter.setErrorMessage("Start date is required when end date is provided.")
         return
