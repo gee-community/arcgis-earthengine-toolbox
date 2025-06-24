@@ -1,4 +1,5 @@
 # ArcGIS Earth Engine Toolbox User Guide: Data Processing Tools
+
 These tools allow applying filters and map functions to collection datasets, apply reducers and run Python scripts.
 
 ## Data Processing Tools
@@ -22,7 +23,6 @@ For a quick guide on filtering image collection, please visit [this link](https:
 3. Specify the filters and the corresponding arguments
 4. Specify the output JSON file name
 
-
 Here is the video guide for applying filters to collection dataset by asset ID:
 
 <div align="center">
@@ -30,7 +30,6 @@ Here is the video guide for applying filters to collection dataset by asset ID:
     <img src="https://img.youtube.com/vi/KXi2LGbp--U/0.jpg" alt="Apply Filters to Collection Dataset by Asset ID" width="640" height="360" border="10" />
   </a>
 </div>
-
 
 ### Apply Filters to Collection Dataset by Serialized Object
 
@@ -50,7 +49,6 @@ For a quick guide on filtering image collection, please visit [this link](https:
 2. Specify the filters and the corresponding arguments
 3. Specify the output JSON file name
 
-
 Here is the video guide for applying filters to collection dataset by serialized object:
 
 <div align="center">
@@ -58,7 +56,6 @@ Here is the video guide for applying filters to collection dataset by serialized
     <img src="https://img.youtube.com/vi/6SZdwaiiM-M/0.jpg" alt="Apply Filters to Collection Dataset by Serialized Object" width="640" height="360" border="10" />
   </a>
 </div>
-
 
 ### Apply Map Functions to Collection Dataset by Asset ID
 
@@ -70,7 +67,6 @@ For a quick guide on mapping over feature collection dataset, please visit [this
 
 ![Alt Text](images/ApplyMap2ColbyID.png)
 
-
 #### Parameters
 
 1. Choose the type of dataset to process
@@ -78,7 +74,6 @@ For a quick guide on mapping over feature collection dataset, please visit [this
 3. Specify the python script that contains the map functions
 4. Select the map functions to apply
 5. Specify the output JSON file name
-
 
 >[!NOTE]
 > The python script that contains the map functions must be saved in the same folder as the GEE Connector Python Toolbox.
@@ -90,8 +85,6 @@ Here is the video guide for applying map functions to collection dataset by asse
     <img src="https://img.youtube.com/vi/qKPIULsXd-s/0.jpg" alt="Apply Map Functions to Collection Dataset by Asset ID" width="640" height="360" border="10" />
   </a>
 </div>
-
-
 
 ### Apply Map Functions to Collection Dataset by Serialized Object
 
@@ -111,7 +104,6 @@ For a quick guide on mapping over feature collection dataset, please visit [this
 4. Select the map functions to apply
 5. Specify the output JSON file name
 
-
 >[!NOTE]
 > The python script that contains the map functions must be saved in the same folder as the GEE Connector Python Toolbox.
 
@@ -123,7 +115,6 @@ Here is the video guide for applying map functions to collection dataset by seri
   </a>
 </div>
 
-
 ### Apply Reducers to Earth Engine Dataset by Asset ID
 
 This script applies reducers to the feature collection, image or image collection dataset by asset ID and saves the processed dataset to a serialized JSON object for future use.
@@ -134,7 +125,6 @@ For reducer overview, please visit [this link](https://developers.google.com/ear
 
 ![Alt Text](images/ApplyReducerbyID.png)
 
-
 #### Parameters
 
 1. Choose the type of dataset to process
@@ -144,9 +134,6 @@ For reducer overview, please visit [this link](https://developers.google.com/ear
 5. Specify the filters and the corresponding arguments
 6. Specify the reducers and the corresponding arguments
 7. Specify the output JSON file name
-
-
-
 
 ### Apply Reducers to Earth Engine Dataset by Serialized Object
 
@@ -167,25 +154,30 @@ For reducer overview, please visit [this link](https://developers.google.com/ear
 5. Specify the reducers and the corresponding arguments
 6. Specify the output JSON file name
 
-
-
 ### Run User-Provided Python Script
 
-This script enables users to execute customized Python scripts within ArcPro. To ensure your script runs successfully, follow these tips:
+This script enables users to execute customized Python scripts within ArcGIS Pro. To ensure your script runs successfully, follow these tips:
 
-1.	Include the following line at the beginning of your script to import the Earth Engine API
+1. Include the following line at the beginning of your script to import the Earth Engine API
+
 ```
 import ee
 ```
-2.	Unlike the ArcPro environment, the Earth Engine API must be initialized separately. Add the following line to your script, replacing QUOTA_PROJECT_ID with your project ID
+
+2. Unlike the ArcGIS Pro environment, the Earth Engine API must be initialized separately. Add the following line to your script, replacing QUOTA_PROJECT_ID with your project ID
+
 ```
 ee.Initialize(project='QUOTA_PROJECT_ID')
 ```
-3.	Set workload tag if needed, add the following line to your script, replacing WORKLOAD_TAG with your workload tag such as "arcgis-ee-connector"
+
+3. Set workload tag if needed, add the following line to your script, replacing WORKLOAD_TAG with your workload tag such as "arcgis-ee-connector"
+
 ```
 ee.data.setWorkloadTag(WORKLOAD_TAG)
 ```
-4.	To prevent the script window from closing immediately after execution, include this line at the end of your code:
+
+4. To prevent the script window from closing immediately after execution, include this line at the end of your code:
+
 ```
 input("Press Enter to exit...")
 ```
