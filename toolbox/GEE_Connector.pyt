@@ -1395,30 +1395,20 @@ class AddFeatCol2MapbyID:
         )
 
         param3.filter.list = [
-            "Coordinates (Point)",
-            "Map Centroid (Point)",
             "Polygon (Area)",
             "Map Extent (Area)",
         ]
 
         param4 = arcpy.Parameter(
-            name="use_coords",
-            displayName="Filter by location in coordinates",
-            datatype="GPValueTable",
-            direction="Input",
-            parameterType="Optional",
-        )
-        param4.columns = [["GPString", "Longitude"], ["GPString", "Latitude"]]
-
-        param5 = arcpy.Parameter(
             name="use_poly",
             displayName="Choose a polygon as region of interest",
             datatype="GPFeatureLayer",
             direction="Input",
             parameterType="Optional",
         )
+        param4.filter.list = ["Polygon"]
 
-        param6 = arcpy.Parameter(
+        param5 = arcpy.Parameter(
             name="color",
             displayName="Specify the color for visualization",
             datatype="GPString",
@@ -1426,7 +1416,7 @@ class AddFeatCol2MapbyID:
             parameterType="Optional",
         )
 
-        param7 = arcpy.Parameter(
+        param6 = arcpy.Parameter(
             name="out_json",
             displayName="Save the filtered feature collection to serialized JSON file",
             datatype="DEFile",
@@ -1434,7 +1424,7 @@ class AddFeatCol2MapbyID:
             parameterType="Optional",
         )
 
-        param7.filter.list = ["json"]
+        param6.filter.list = ["json"]
 
         # TODO: add reset parameters if script refreshing takes too long
         # param8 = arcpy.Parameter(
@@ -1503,7 +1493,7 @@ class AddFeatCol2MapbyID:
             param4,
             param5,
             param6,
-            param7,
+            # param7,
             # param8,
         ]
         return params
@@ -1529,13 +1519,8 @@ class AddFeatCol2MapbyID:
         if not asset_id:
             parameters[1].filters[0].list = []
 
-        parameters[4].enabled = False
-        parameters[5].enabled = False
-
-        if parameters[3].valueAsText == "Coordinates (Point)":
-            parameters[4].enabled = True
-        elif parameters[3].valueAsText == "Polygon (Area)":
-            parameters[5].enabled = True
+        # Enable polygon feature input when polygon filter is selected.
+        parameters[4].enabled = parameters[3].valueAsText == "Polygon (Area)"
 
         # TODO: add reset parameters if script refreshing takes too long
         # # Reset parameters when reset_params is checked
@@ -1579,11 +1564,11 @@ class AddFeatCol2MapbyID:
             arcgee.data.check_start_date(parameters[2])
 
         # Check if the JSON file name contains spaces or special characters.
-        json_path = parameters[7].valueAsText
+        json_path = parameters[6].valueAsText
         if json_path:
             if arcgee.data.has_spaces_or_special_chars(json_path):
-                parameters[7].setErrorMessage(
-                    "The JSON file name contains spaces or special characters."
+                parameters[6].setErrorMessage(
+                    "The JSON file name contains spaces or special characters. "
                     "Please specify a valid file name."
                 )
 
@@ -1593,7 +1578,7 @@ class AddFeatCol2MapbyID:
         """
         asset_id = parameters[0].valueAsText
         filter_bounds = parameters[3].valueAsText
-        feat_color = parameters[6].valueAsText
+        feat_color = parameters[5].valueAsText
 
         asset_id = arcgee.data.clean_asset_id(asset_id)
 
@@ -1676,26 +1661,14 @@ class AddFeatCol2MapbyID:
         if filter_bounds:
             arcpy.AddMessage("Filter by bounds ...")
 
-        if filter_bounds == "Coordinates (Point)":
-            if parameters[4].valueAsText:
-                val_list = parameters[4].values
-                lon = val_list[0][0]
-                lat = val_list[0][1]
-                fc = fc.filterBounds(ee.Geometry.Point((float(lon), float(lat))))
-        elif filter_bounds == "Map Centroid (Point)":
-            xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
-            # Get the centroid of map extent.
-            lon = (xmin + xmax) / 2
-            lat = (ymin + ymax) / 2
-            fc = fc.filterBounds(ee.Geometry.Point((float(lon), float(lat))))
-        elif filter_bounds == "Map Extent (Area)":
+        if filter_bounds == "Map Extent (Area)":
             xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
             fc = fc.filterBounds(roi)
         elif filter_bounds == "Polygon (Area)":
-            if parameters[5].valueAsText:
+            if parameters[4].valueAsText:
                 # Get input feature coordinates to list.
-                coords = arcgee.data.get_polygon_coords(parameters[5].valueAsText)
+                coords = arcgee.data.get_polygon_coords(parameters[4].valueAsText)
                 # Create an Earth Engine MultiPolygon from the GeoJSON.
                 roi = ee.Geometry.MultiPolygon(coords)
                 fc = fc.filterBounds(roi)
@@ -1732,8 +1705,8 @@ class AddFeatCol2MapbyID:
                 pass
 
             # Save object to serialized JSON file.
-            if parameters[7].valueAsText:
-                out_json = parameters[7].valueAsText
+            if parameters[6].valueAsText:
+                out_json = parameters[6].valueAsText
                 if not out_json.endswith(".json"):
                     out_json = out_json + ".json"
                 arcgee.data.save_ee_result(fc, out_json)
@@ -3400,31 +3373,18 @@ class DownloadFeatColbyID:
             parameterType="Required",
         )
 
-        param3.filter.list = [
-            "Coordinates (Point)",
-            "Map Centroid (Point)",
-            "Polygon (Area)",
-            "Map Extent (Area)",
-        ]
+        param3.filter.list = ["Polygon (Area)", "Map Extent (Area)"]
 
         param4 = arcpy.Parameter(
-            name="use_coords",
-            displayName="Filter by location in coordinates",
-            datatype="GPValueTable",
-            direction="Input",
-            parameterType="Optional",
-        )
-        param4.columns = [["GPString", "Longitude"], ["GPString", "Latitude"]]
-
-        param5 = arcpy.Parameter(
             name="use_poly",
             displayName="Choose a polygon as region of interest",
             datatype="GPFeatureLayer",
             direction="Input",
             parameterType="Optional",
         )
+        param4.filter.list = ["Polygon"]
 
-        param6 = arcpy.Parameter(
+        param5 = arcpy.Parameter(
             name="select_geometry",
             displayName="Select the geometry type to download",
             datatype="GPString",
@@ -3433,9 +3393,9 @@ class DownloadFeatColbyID:
             parameterType="Required",
         )
 
-        param6.filter.list = ["Point", "Multipoint", "Polyline", "Polygon"]
+        param5.filter.list = ["Point", "Multipoint", "Polyline", "Polygon"]
 
-        param7 = arcpy.Parameter(
+        param6 = arcpy.Parameter(
             name="out_feature",
             displayName="Specify the output file name",
             datatype="DEFeatureClass",
@@ -3443,7 +3403,7 @@ class DownloadFeatColbyID:
             parameterType="Required",
         )
 
-        param8 = arcpy.Parameter(
+        param7 = arcpy.Parameter(
             name="load_feat",
             displayName="Load feature class to map after download",
             datatype="GPBoolean",
@@ -3460,7 +3420,7 @@ class DownloadFeatColbyID:
             param5,
             param6,
             param7,
-            param8,
+            # param8,
         ]
 
         return params
@@ -3486,14 +3446,8 @@ class DownloadFeatColbyID:
         if not asset_id:
             parameters[1].filters[0].list = []
 
-        # Disable input coordinates if map extent is used.
-        parameters[4].enabled = False
-        parameters[5].enabled = False
-
-        if parameters[3].valueAsText == "Coordinates (Point)":
-            parameters[4].enabled = True
-        elif parameters[3].valueAsText == "Polygon (Area)":
-            parameters[5].enabled = True
+        # Enable polygon feature input when polygon filter is selected.
+        parameters[4].enabled = parameters[3].valueAsText == "Polygon (Area)"
 
         return
 
@@ -3522,9 +3476,9 @@ class DownloadFeatColbyID:
             arcgee.data.check_start_date(parameters[2])
 
         # Exclude shapefiles.
-        out_path = parameters[7].valueAsText
+        out_path = parameters[6].valueAsText
         if out_path and out_path.lower().endswith(".shp"):
-            parameters[7].setErrorMessage(
+            parameters[6].setErrorMessage(
                 "Shapefiles (.shp) are not supported. Please save to a file geodatabase."
             )
 
@@ -3534,9 +3488,9 @@ class DownloadFeatColbyID:
         """
         asset_id = parameters[0].valueAsText
         filter_bounds = parameters[3].valueAsText
-        geometry_types = parameters[6].valueAsText.split(";")
-        out_filename = parameters[7].valueAsText
-        load_feat = parameters[8].value
+        geometry_types = parameters[5].valueAsText.split(";")
+        out_filename = parameters[6].valueAsText
+        load_feat = parameters[7].value
 
         asset_id = arcgee.data.clean_asset_id(asset_id)
 
@@ -3585,26 +3539,14 @@ class DownloadFeatColbyID:
         if filter_bounds:
             arcpy.AddMessage("Filter by bounds ...")
 
-        if filter_bounds == "Coordinates (Point)":
-            if parameters[4].valueAsText:
-                val_list = parameters[4].values
-                lon = val_list[0][0]
-                lat = val_list[0][1]
-                fc = fc.filterBounds(ee.Geometry.Point((float(lon), float(lat))))
-        elif filter_bounds == "Map Centroid (Point)":
-            xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
-            # Get the centroid of map extent.
-            lon = (xmin + xmax) / 2
-            lat = (ymin + ymax) / 2
-            fc = fc.filterBounds(ee.Geometry.Point((float(lon), float(lat))))
-        elif filter_bounds == "Map Extent (Area)":
+        if filter_bounds == "Map Extent (Area)":
             xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
             fc = fc.filterBounds(roi)
         elif filter_bounds == "Polygon (Area)":
-            if parameters[5].valueAsText:
+            if parameters[4].valueAsText:
                 # Get input feature coordinates to list.
-                coords = arcgee.data.get_polygon_coords(parameters[5].valueAsText)
+                coords = arcgee.data.get_polygon_coords(parameters[4].valueAsText)
                 # Create an Earth Engine MultiPolygon from the GeoJSON.
                 roi = ee.Geometry.MultiPolygon(coords)
                 fc = fc.filterBounds(roi)
@@ -5084,7 +5026,7 @@ class ApplyFilterbyID:
         if json_path:
             if arcgee.data.has_spaces_or_special_chars(json_path):
                 parameters[3].setErrorMessage(
-                    "The JSON file name contains spaces or special characters."
+                    "The JSON file name contains spaces or special characters. "
                     "Please specify a valid file name."
                 )
         return
@@ -5203,7 +5145,7 @@ class ApplyFilterbyObj:
         if json_path:
             if arcgee.data.has_spaces_or_special_chars(json_path):
                 parameters[2].setErrorMessage(
-                    "The JSON file name contains spaces or special characters."
+                    "The JSON file name contains spaces or special characters. "
                     "Please specify a valid file name."
                 )
         return
@@ -5336,7 +5278,7 @@ class ApplyMapFunctionbyID:
         if json_path:
             if arcgee.data.has_spaces_or_special_chars(json_path):
                 parameters[4].setErrorMessage(
-                    "The JSON file name contains spaces or special characters."
+                    "The JSON file name contains spaces or special characters. "
                     "Please specify a valid file name."
                 )
         return
