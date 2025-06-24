@@ -1,10 +1,10 @@
 # ArcGIS Earth Engine Connector
 
-An ArcPro Python toolbox for connection to Google Earth Engine (GEE) through the GEE Python API.
+An ArcGIS Pro Python toolbox for connection to Google Earth Engine (GEE) through the GEE Python API.
 
 ## Introduction
 
-ArcGIS Earth Engine Connector is a Python toolbox for ArcGIS that seamlessly connects the Google Earth Engine Python API with ArcPro. This integration empowers ArcGIS users to explore, download, analyze, and visualize an extensive repository of Google Earth Engine datasets directly within ArcPro, while also enabling the upload of local datasets to Google Earth Engine assets. ArcGIS Earth Engine Connector provides a powerful, no-code solution for big data analytics, combining the strengths of both platforms for an enhanced, efficient workflow.
+ArcGIS Earth Engine Connector is a Python toolbox for ArcGIS that seamlessly connects the Google Earth Engine Python API with ArcGIS Pro. This integration empowers ArcGIS users to explore, download, analyze, and visualize an extensive repository of Google Earth Engine datasets directly within ArcGIS Pro, while also enabling the upload of local datasets to Google Earth Engine assets. ArcGIS Earth Engine Connector provides a powerful, no-code solution for big data analytics, combining the strengths of both platforms for an enhanced, efficient workflow.
 
 ## Getting started
 

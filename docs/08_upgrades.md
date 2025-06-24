@@ -2,7 +2,7 @@
 
 ## Upgrade ArcGIS Pro
 
-In the future, if you upgrade your ArcPro to a newer version, for example, from `3.3` to `3.4`, you will need to set up the conda environment again. Because the existing `gee` conda environment is not compatible with the new ArcPro version. To do this, you need to:
+In the future, if you upgrade your ArcGIS Pro to a newer version, for example, from `3.3` to `3.4`, you will need to set up the conda environment again. Because the existing `gee` conda environment is not compatible with the new ArcGIS Pro version. To do this, you need to:
 
 1. Delete the existing conda environment `gee` using the following command:
 

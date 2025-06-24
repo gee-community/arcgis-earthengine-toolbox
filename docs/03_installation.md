@@ -18,9 +18,9 @@ Before starting the installation process, ensure you have the following:
 
 ## Conda Environment Setup For Earth Engine API
 
-Before starting the installation, ensure that you have the necessary account permissions to create a conda environment and install the required packages. **If your ArcPro was installed by an administrator, you will need administrator-level permissions to complete the installation.**
+Before starting the installation, ensure that you have the necessary account permissions to create a conda environment and install the required packages. **If your ArcGIS Pro was installed by an administrator, you will need administrator-level permissions to complete the installation.**
 
-For ArcPro version `3.x`, follow the steps below to set up the conda environment. If you have ArcPro version lower than `3.0`, it is suggested that you upgrade it to `3.x`. You can login to your ESRI account, and download the specific ArcPro version from the **Downloads** -> **All Products and Versions** -> **All Versions**.
+For ArcGIS Pro version `3.x`, follow the steps below to set up the conda environment. If you have ArcGIS Pro version lower than `3.0`, it is suggested that you upgrade it to `3.x`. You can login to your ESRI account, and download the specific ArcGIS Pro version from the **Downloads** -> **All Products and Versions** -> **All Versions**.
 
 **A video guide for the Conda Environment Setup is available following the steps below.**
 
@@ -32,7 +32,7 @@ To do this in your Windows computer, go to **Start Menu** -> **All Apps** -> **A
 
 Once you run the Python Command Prompt,
 
-1. List all available conda environments using the following command. The default ArcPro package should be `arcgispro-py3`.
+1. List all available conda environments using the following command. The default ArcGIS Pro package should be `arcgispro-py3`.
 
         conda env list
 
@@ -58,15 +58,15 @@ Once you run the Python Command Prompt,
 
         conda install earthengine-api xee --channel conda-forge
 
-7. Install the specific version of `rasterio` from [the `esri` conda channel](https://anaconda.org/Esri/repo). The current default installation version of `rasterio=1.3.10` may be incompatible with ArcPro pre-installed `gdal`. (**Note: `rasterio` is only required for the image and image collection download scripts; other scripts do not depend on it.**)
+7. Install the specific version of `rasterio` from [the `esri` conda channel](https://anaconda.org/Esri/repo). The current default installation version of `rasterio=1.3.10` may be incompatible with ArcGIS Pro pre-installed `gdal`. (**Note: `rasterio` is only required for the image and image collection download scripts; other scripts do not depend on it.**)
 
         conda install rasterio=1.3.9 --channel esri
 
-8. Activate package `gee` within ArcPro
+8. Activate package `gee` within ArcGIS Pro
 
         proswap gee
 
-After running the above commands, close Python Command Prompt, and start ArcPro. The default conda environment becomes `gee`. To check if the packages have been successfully installed, click **Analysis** -> **Python** -> **Python Window**. Run the following commands.
+After running the above commands, close Python Command Prompt, and start ArcGIS Pro. The default conda environment becomes `gee`. To check if the packages have been successfully installed, click **Analysis** -> **Python** -> **Python Window**. Run the following commands.
 
     import ee
     import xee
@@ -74,7 +74,7 @@ After running the above commands, close Python Command Prompt, and start ArcPro.
 
 The `earthengine-api` is then ready for authentication and initialization.
 
-**If you want to upgrade your ArcPro to a newer version after installing the toolbox, please see the [Upgrades](08_upgrades.md) page for instructions.**
+**If you want to upgrade your ArcGIS Pro to a newer version after installing the toolbox, please see the [Upgrades](08_upgrades.md) page for instructions.**
 
 Here is the video guide for the Conda environment setup:
 
@@ -94,10 +94,10 @@ The ArcGIS Earth Engine Toolbox can be obtained through the following steps:
    - Clone the repository using git: `git clone https://github.com/gee-community/arcgis-earthengine-toolbox.git`
    - Or download as ZIP file and extract it to your desired location
 
-   You can download the repository folder to your ArcPro project folder such as `C:\Users\<username>\Documents\ArcGIS\Projects\<project_name>\ArcGIS Earth Engine Toolbox`. Meanwhile, you can also download the repository folder to any other location and connect it to ArcPro.
+   You can download the repository folder to your ArcGIS Pro project folder such as `C:\Users\<username>\Documents\ArcGIS\Projects\<project_name>\ArcGIS Earth Engine Toolbox`. Meanwhile, you can also download the repository folder to any other location and connect it to ArcGIS Pro.
 
-2. Add the toolbox to ArcPro:
-   - Open ArcPro
+2. Add the toolbox to ArcGIS Pro:
+   - Open ArcGIS Pro
    - In the Catalog pane, right-click on "Toolboxes"
    - Select "Add Toolbox"
    - Navigate to and select the toolbox in the downloaded repository folder

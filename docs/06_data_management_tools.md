@@ -7,26 +7,24 @@ These tools allow you to download Google Earth Engine feature collections, image
 
 ### Convert Cloud Storage File to Earth Engine Asset
 
-
 > [!NOTE]
 > This script is only available for users who have installed Google Cloud SDK.
 
 This script converts file(s) in Google Cloud Storage to Earth Engine asset. It is used to share dataset on the Earth Engine platform. The file(s) will be assigned with a user-specified asset ID.
 
-
 ![Alt Text](images/GCS2Asset.png)
 
 There are two options to locate the target files:
 
-1.	If you know the gsutil URI of the target file, just specify the project ID and paste the URI to the file input. If you are dealing with a large bucket with lots of folders and files, it is recommended to use file URI directly. Otherwise, it will take time to locate the file.
-2.	If not, specify the project ID and select the bucket, folder and target file one by one.
+1. If you know the gsutil URI of the target file, just specify the project ID and paste the URI to the file input. If you are dealing with a large bucket with lots of folders and files, it is recommended to use file URI directly. Otherwise, it will take time to locate the file.
+2. If not, specify the project ID and select the bucket, folder and target file one by one.
 
 You can convert the file(s) to the following types of Earth Engine assets:
 
-1.	Image, when you select one file in `.tif` format
-2.	Image collection, when you select multiple files in `.tif` format
-3.	Feature collection, when you select one file in `.shp`, `.csv`, `.zip` or `.tfrecord` format. **Each `.zip` file must contain only one shape file with its accessory files.**
-4.	Feature collections, when you select multiple files in `.shp`, `.csv`, `.zip` or `.tfrecord` format. Each file will be converted to a feature collection, respectively.
+1. Image, when you select one file in `.tif` format
+2. Image collection, when you select multiple files in `.tif` format
+3. Feature collection, when you select one file in `.shp`, `.csv`, `.zip` or `.tfrecord` format. **Each `.zip` file must contain only one shape file with its accessory files.**
+4. Feature collections, when you select multiple files in `.shp`, `.csv`, `.zip` or `.tfrecord` format. Each file will be converted to a feature collection, respectively.
 
 #### Parameters
 
@@ -46,13 +44,11 @@ Here is the video guide for converting cloud storage file to Earth Engine asset:
   </a>
 </div>
 
-
 ### Download Feature Collection by Asset ID
 
 ![Alt Text](images/DownloadFCbyID.png)
 
-This script downloads the Earth Engine feature collection dataset to ArcPro feature class by its asset ID. The geometry types of the feature collection can be converted to the ArcPro geometry types: point, multipoint, polyline, polygon. Since ArcPro feature class does not allow multiple geometry types in the same file, the different geometry types will be saved into separate feature class files.
-
+This script downloads the Earth Engine feature collection dataset to ArcGIS Pro feature class by its asset ID. The geometry types of the feature collection can be converted to the ArcGIS Pro geometry types: point, multipoint, polyline, polygon. Since ArcGIS Pro feature class does not allow multiple geometry types in the same file, the different geometry types will be saved into separate feature class files.
 
 #### Parameters
 
@@ -66,7 +62,6 @@ This script downloads the Earth Engine feature collection dataset to ArcPro feat
 8. Specify the output file name
 9. Check the box to load feature class to map after download
 
-
 Here is the video guide for downloading feature collection by asset ID:
 
 <div align="center">
@@ -75,12 +70,11 @@ Here is the video guide for downloading feature collection by asset ID:
   </a>
 </div>
 
-
 ### Download Feature Collection by Serialized Object
 
-This script downloads the Earth Engine feature collection dataset to ArcPro feature class by its serialized JSON object. The user can save the serialized Google Earth Engine object (Image, Image Collection, Feature, Feature Collection, List, Geometry, etc. ) to JSON file. This is very helpful when the user filters the dataset and saves the modified dataset for future use.
+This script downloads the Earth Engine feature collection dataset to ArcGIS Pro feature class by its serialized JSON object. The user can save the serialized Google Earth Engine object (Image, Image Collection, Feature, Feature Collection, List, Geometry, etc. ) to JSON file. This is very helpful when the user filters the dataset and saves the modified dataset for future use.
 
-The geometry types of the feature collection can be converted to the ArcPro geometry types: point, multipoint, polyline, polygon. Since ArcPro feature class does not allow multiple geometry types in the same file, the different geometry types will be saved into separate feature class files.
+The geometry types of the feature collection can be converted to the ArcGIS Pro geometry types: point, multipoint, polyline, polygon. Since ArcGIS Pro feature class does not allow multiple geometry types in the same file, the different geometry types will be saved into separate feature class files.
 
 ![Alt Text](images/DownloadFCbyJSON.png)
 
@@ -90,7 +84,6 @@ The geometry types of the feature collection can be converted to the ArcPro geom
 2. Select the geometry type to download
 3. Specify the output file name
 4. Check the box to load feature class to map after download
-
 
 Here is the video guide for downloading feature collection by serialized object:
 
@@ -106,7 +99,6 @@ This script downloads the Earth Engine image dataset to GeoTIFF by its asset ID.
 
 ![Alt Text](images/DownloadImgbyID.png)
 
-
 #### Parameters
 
 1. Asset ID
@@ -117,7 +109,6 @@ This script downloads the Earth Engine image dataset to GeoTIFF by its asset ID.
 6. Specify the output GeoTIFF name
 7. Check the box to load image to map after download
 
-
 Here is the video guide for downloading image by asset ID:
 
 <div align="center">
@@ -125,7 +116,6 @@ Here is the video guide for downloading image by asset ID:
     <img src="https://img.youtube.com/vi/_bZxfkRwaIs/0.jpg" alt="Download Image by Asset ID" width="640" height="360" border="10" />
   </a>
 </div>
-
 
 ### Download Image by Serialized Object
 
@@ -143,7 +133,6 @@ This script downloads the Earth Engine image dataset to GeoTIFF by its serialize
 6. Specify the output GeoTIFF name
 7. Check the box to load image to map after download
 
-
 Here is the video guide for downloading image by serialized object:
 
 <div align="center">
@@ -152,14 +141,11 @@ Here is the video guide for downloading image by serialized object:
   </a>
 </div>
 
-
-
 ### Download Image Collection by Asset ID
 
 This script downloads the Earth Engine image collection dataset to GeoTIFF by its asset ID. It converts Earth Engine image collection object to xarray dataset using `xee` and writes to local GeoTIFF file using `rasterio`. Theoretically, there is no file size limitation compared to other functions such as `ee.Image.getDownloadURL()` and `ee.data.getPixels()`. Larger files will take longer to download.
 
 ![Alt Text](images/DownloadICbyID.png)
-
 
 #### Parameters
 
@@ -175,7 +161,6 @@ This script downloads the Earth Engine image collection dataset to GeoTIFF by it
  10. Specify the output folder
  11. Check the box to load images to map after download
 
-
 Here is the video guide for downloading image collection by asset ID:
 
 <div align="center">
@@ -184,11 +169,9 @@ Here is the video guide for downloading image collection by asset ID:
   </a>
 </div>
 
-
 ### Download Image Collection by Asset ID at Multiple Regions
 
 This script downloads the Earth Engine image collection dataset to GeoTIFF by its asset ID at multiple regions. Each object in the input polygon features is considered as a region of interest. Images will be clipped to each region of interest.
-
 
 ![Alt Text](images/DownloadICbyID_Multi.png)
 
@@ -204,7 +187,6 @@ This script downloads the Earth Engine image collection dataset to GeoTIFF by it
 8. Specify the output folder
 9. Check the box to load images to map after download
 
-
 Here is the video guide for downloading image collection by asset ID at multiple regions:
 
 <div align="center">
@@ -213,11 +195,9 @@ Here is the video guide for downloading image collection by asset ID at multiple
   </a>
 </div>
 
-
 ### Download Image Collection by Serialized Object
 
 This script downloads the Earth Engine image collection dataset to GeoTIFF by its serialized JSON object. It converts Earth Engine image collection object to xarray dataset using `xee` and writes to local GeoTIFF file using `rasterio`. Theoretically, there is no file size limitation compared to other functions such as `ee.Image.getDownloadURL()` and `ee.data.getPixels()`. Larger files will take longer to download.
-
 
 ![Alt Text](images/DownloadICbyJSON.png)
 
@@ -232,7 +212,6 @@ This script downloads the Earth Engine image collection dataset to GeoTIFF by it
  7. Specify the output GeoTIFF name
  8. Check the box to load images to map after download
 
-
 Here is the video guide for downloading image collection by serialized object:
 
 <div align="center">
@@ -245,9 +224,7 @@ Here is the video guide for downloading image collection by serialized object:
 
 This script exports Earth Engine dataset from an asset ID to a serialized JSON file, allowing for quick access in the future without needing to recall the asset ID.
 
-
 ![Alt Text](images/SaveAsset2JSON.png)
-
 
 #### Parameters
 
@@ -270,21 +247,19 @@ Here is the video guide for saving Earth Engine asset to serialized JSON file:
 
 This script uploads file(s) from local storage to Google Cloud Storage and converts file(s) to Earth Engine asset. It is used to share dataset on Google Cloud and the Earth Engine platform. The file(s) will be assigned with a user-specified asset ID.
 
-
 ![Alt Text](images/Upload2GCS2Asset.png)
-
 
 There are two options to locate the target files:
 
-1.	If you know the gsutil URI of the target file, just specify the project ID and paste the URI to the file input. If you are dealing with a large bucket with lots of folders and files, it is recommended to use file URI directly. Otherwise, it will take time to locate the file.
-2.	If not, specify the project ID and select the bucket, folder and target file one by one.
+1. If you know the gsutil URI of the target file, just specify the project ID and paste the URI to the file input. If you are dealing with a large bucket with lots of folders and files, it is recommended to use file URI directly. Otherwise, it will take time to locate the file.
+2. If not, specify the project ID and select the bucket, folder and target file one by one.
 
 You can convert the file(s) to the following types of Earth Engine assets:
 
-1.	Image, when you select one file in `.tif` format
-2.	Image collection, when you select multiple files in `.tif` format
-3.	Feature collection, when you select one file in `.shp`, `.csv`, `.zip` or `.tfrecord` format. **Each `.zip` file must contain only one shape file with its accessory files.**
-4.	Feature collections, when you select multiple files in `.shp`, `.csv`, `.zip` or `.tfrecord` format. Each file will be converted to a feature collection, respectively.
+1. Image, when you select one file in `.tif` format
+2. Image collection, when you select multiple files in `.tif` format
+3. Feature collection, when you select one file in `.shp`, `.csv`, `.zip` or `.tfrecord` format. **Each `.zip` file must contain only one shape file with its accessory files.**
+4. Feature collections, when you select multiple files in `.shp`, `.csv`, `.zip` or `.tfrecord` format. Each file will be converted to a feature collection, respectively.
 
 #### Parameters
 
@@ -304,4 +279,3 @@ Here is the video guide for uploading file to cloud storage and converting to Ea
     <img src="https://img.youtube.com/vi/mxtBPxd36gI/0.jpg" alt="Upload File to Cloud Storage and Convert to Earth Engine Asset" width="640" height="360" border="10" />
   </a>
 </div>
-
