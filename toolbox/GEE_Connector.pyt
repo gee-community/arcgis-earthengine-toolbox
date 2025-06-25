@@ -1378,15 +1378,6 @@ class AddFeatCol2MapbyID:
         param1.filters[1].list = ["==", "!=", ">", ">=", "<", "<="]
 
         param2 = arcpy.Parameter(
-            name="filter_dates",
-            displayName="Filter by dates in YYYY-MM-DD",
-            datatype="GPValueTable",
-            direction="Input",
-            parameterType="Optional",
-        )
-        param2.columns = [["GPString", "Starting Date"], ["GPString", "Ending Date"]]
-
-        param3 = arcpy.Parameter(
             name="filter_bounds",
             displayName="Select the type of filter-by-location",
             datatype="GPString",
@@ -1394,21 +1385,21 @@ class AddFeatCol2MapbyID:
             parameterType="Optional",
         )
 
-        param3.filter.list = [
+        param2.filter.list = [
             "Polygon (Area)",
             "Map Extent (Area)",
         ]
 
-        param4 = arcpy.Parameter(
+        param3 = arcpy.Parameter(
             name="use_poly",
             displayName="Choose a polygon as region of interest",
             datatype="GPFeatureLayer",
             direction="Input",
             parameterType="Optional",
         )
-        param4.filter.list = ["Polygon"]
+        param3.filter.list = ["Polygon"]
 
-        param5 = arcpy.Parameter(
+        param4 = arcpy.Parameter(
             name="color",
             displayName="Specify the color for visualization",
             datatype="GPString",
@@ -1416,7 +1407,7 @@ class AddFeatCol2MapbyID:
             parameterType="Optional",
         )
 
-        param6 = arcpy.Parameter(
+        param5 = arcpy.Parameter(
             name="out_json",
             displayName="Save the filtered feature collection to serialized JSON file",
             datatype="DEFile",
@@ -1424,7 +1415,7 @@ class AddFeatCol2MapbyID:
             parameterType="Optional",
         )
 
-        param6.filter.list = ["json"]
+        param5.filter.list = ["json"]
 
         # TODO: add reset parameters if script refreshing takes too long
         # param8 = arcpy.Parameter(
@@ -1492,9 +1483,6 @@ class AddFeatCol2MapbyID:
             param3,
             param4,
             param5,
-            param6,
-            # param7,
-            # param8,
         ]
         return params
 
@@ -1520,7 +1508,7 @@ class AddFeatCol2MapbyID:
             parameters[1].filters[0].list = []
 
         # Enable polygon feature input when polygon filter is selected.
-        parameters[4].enabled = parameters[3].valueAsText == "Polygon (Area)"
+        parameters[3].enabled = parameters[2].valueAsText == "Polygon (Area)"
 
         # TODO: add reset parameters if script refreshing takes too long
         # # Reset parameters when reset_params is checked
@@ -1559,15 +1547,11 @@ class AddFeatCol2MapbyID:
                     )
                     return
 
-        # Start date is required when end date is provided for filter by dates.
-        if parameters[2].valueAsText:
-            arcgee.data.check_start_date(parameters[2])
-
         # Check if the JSON file name contains spaces or special characters.
-        json_path = parameters[6].valueAsText
+        json_path = parameters[5].valueAsText
         if json_path:
             if arcgee.data.has_spaces_or_special_chars(json_path):
-                parameters[6].setErrorMessage(
+                parameters[5].setErrorMessage(
                     "The JSON file name contains spaces or special characters. "
                     "Please specify a valid file name."
                 )
@@ -1577,8 +1561,8 @@ class AddFeatCol2MapbyID:
         The source code of the tool.
         """
         asset_id = parameters[0].valueAsText
-        filter_bounds = parameters[3].valueAsText
-        feat_color = parameters[5].valueAsText
+        filter_bounds = parameters[2].valueAsText
+        feat_color = parameters[4].valueAsText
 
         asset_id = arcgee.data.clean_asset_id(asset_id)
 
@@ -1646,17 +1630,6 @@ class AddFeatCol2MapbyID:
                 arcpy.AddMessage("Filter by property: " + filter_condition)
                 fc = fc.filter(filter_condition)
 
-        # Filter by dates if specified.
-        if parameters[2].valueAsText:
-            val_list = parameters[2].values
-            start_date = None
-            end_date = None
-            if val_list[0][0]:
-                start_date = val_list[0][0]
-            if val_list[0][1]:
-                end_date = val_list[0][1]
-            fc = fc.filterDate(start_date, end_date)
-
         # Filter by bounds if specified.
         if filter_bounds:
             arcpy.AddMessage("Filter by bounds ...")
@@ -1666,9 +1639,9 @@ class AddFeatCol2MapbyID:
             roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
             fc = fc.filterBounds(roi)
         elif filter_bounds == "Polygon (Area)":
-            if parameters[4].valueAsText:
+            if parameters[3].valueAsText:
                 # Get input feature coordinates to list.
-                coords = arcgee.data.get_polygon_coords(parameters[4].valueAsText)
+                coords = arcgee.data.get_polygon_coords(parameters[3].valueAsText)
                 # Create an Earth Engine MultiPolygon from the GeoJSON.
                 roi = ee.Geometry.MultiPolygon(coords)
                 fc = fc.filterBounds(roi)
@@ -1705,8 +1678,8 @@ class AddFeatCol2MapbyID:
                 pass
 
             # Save object to serialized JSON file.
-            if parameters[6].valueAsText:
-                out_json = parameters[6].valueAsText
+            if parameters[5].valueAsText:
+                out_json = parameters[5].valueAsText
                 if not out_json.endswith(".json"):
                     out_json = out_json + ".json"
                 arcgee.data.save_ee_result(fc, out_json)
@@ -3357,15 +3330,6 @@ class DownloadFeatColbyID:
         param1.filters[1].list = ["==", "!=", ">", ">=", "<", "<="]
 
         param2 = arcpy.Parameter(
-            name="filter_dates",
-            displayName="Filter by dates in YYYY-MM-DD",
-            datatype="GPValueTable",
-            direction="Input",
-            parameterType="Optional",
-        )
-        param2.columns = [["GPString", "Starting Date"], ["GPString", "Ending Date"]]
-
-        param3 = arcpy.Parameter(
             name="filter_bounds",
             displayName="Select the type of filter-by-location",
             datatype="GPString",
@@ -3373,18 +3337,18 @@ class DownloadFeatColbyID:
             parameterType="Required",
         )
 
-        param3.filter.list = ["Polygon (Area)", "Map Extent (Area)"]
+        param2.filter.list = ["Polygon (Area)", "Map Extent (Area)"]
 
-        param4 = arcpy.Parameter(
+        param3 = arcpy.Parameter(
             name="use_poly",
             displayName="Choose a polygon as region of interest",
             datatype="GPFeatureLayer",
             direction="Input",
             parameterType="Optional",
         )
-        param4.filter.list = ["Polygon"]
+        param3.filter.list = ["Polygon"]
 
-        param5 = arcpy.Parameter(
+        param4 = arcpy.Parameter(
             name="select_geometry",
             displayName="Select the geometry type to download",
             datatype="GPString",
@@ -3393,9 +3357,9 @@ class DownloadFeatColbyID:
             parameterType="Required",
         )
 
-        param5.filter.list = ["Point", "Multipoint", "Polyline", "Polygon"]
+        param4.filter.list = ["Point", "Multipoint", "Polyline", "Polygon"]
 
-        param6 = arcpy.Parameter(
+        param5 = arcpy.Parameter(
             name="out_feature",
             displayName="Specify the output file name",
             datatype="DEFeatureClass",
@@ -3403,7 +3367,7 @@ class DownloadFeatColbyID:
             parameterType="Required",
         )
 
-        param7 = arcpy.Parameter(
+        param6 = arcpy.Parameter(
             name="load_feat",
             displayName="Load feature class to map after download",
             datatype="GPBoolean",
@@ -3419,8 +3383,6 @@ class DownloadFeatColbyID:
             param4,
             param5,
             param6,
-            param7,
-            # param8,
         ]
 
         return params
@@ -3447,7 +3409,7 @@ class DownloadFeatColbyID:
             parameters[1].filters[0].list = []
 
         # Enable polygon feature input when polygon filter is selected.
-        parameters[4].enabled = parameters[3].valueAsText == "Polygon (Area)"
+        parameters[3].enabled = parameters[2].valueAsText == "Polygon (Area)"
 
         return
 
@@ -3471,14 +3433,11 @@ class DownloadFeatColbyID:
                         f"The property name '{prop_name}' is used more than once. You can confirm and proceed."
                     )
                     return
-        # Start date is required when end date is provided for filter by dates.
-        if parameters[2].valueAsText:
-            arcgee.data.check_start_date(parameters[2])
 
         # Exclude shapefiles.
-        out_path = parameters[6].valueAsText
+        out_path = parameters[5].valueAsText
         if out_path and out_path.lower().endswith(".shp"):
-            parameters[6].setErrorMessage(
+            parameters[5].setErrorMessage(
                 "Shapefiles (.shp) are not supported. Please save to a file geodatabase."
             )
 
@@ -3487,10 +3446,10 @@ class DownloadFeatColbyID:
         The source code of the tool.
         """
         asset_id = parameters[0].valueAsText
-        filter_bounds = parameters[3].valueAsText
-        geometry_types = parameters[5].valueAsText.split(";")
-        out_filename = parameters[6].valueAsText
-        load_feat = parameters[7].value
+        filter_bounds = parameters[2].valueAsText
+        geometry_types = parameters[4].valueAsText.split(";")
+        out_filename = parameters[5].valueAsText
+        load_feat = parameters[6].value
 
         asset_id = arcgee.data.clean_asset_id(asset_id)
 
@@ -3527,14 +3486,6 @@ class DownloadFeatColbyID:
                 arcpy.AddMessage("Filter by property: " + filter_condition)
                 fc = fc.filter(filter_condition)
 
-        # Filter by dates.
-        if parameters[2].valueAsText:
-            arcpy.AddMessage("Filter by dates ...")
-            val_list = parameters[2].values
-            start_date = val_list[0][0]
-            end_date = val_list[0][1]
-            fc = fc.filterDate(start_date, end_date)
-
         # Filter by bounds.
         if filter_bounds:
             arcpy.AddMessage("Filter by bounds ...")
@@ -3544,9 +3495,9 @@ class DownloadFeatColbyID:
             roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
             fc = fc.filterBounds(roi)
         elif filter_bounds == "Polygon (Area)":
-            if parameters[4].valueAsText:
+            if parameters[3].valueAsText:
                 # Get input feature coordinates to list.
-                coords = arcgee.data.get_polygon_coords(parameters[4].valueAsText)
+                coords = arcgee.data.get_polygon_coords(parameters[3].valueAsText)
                 # Create an Earth Engine MultiPolygon from the GeoJSON.
                 roi = ee.Geometry.MultiPolygon(coords)
                 fc = fc.filterBounds(roi)
