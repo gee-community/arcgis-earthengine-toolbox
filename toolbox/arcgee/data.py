@@ -1498,3 +1498,19 @@ def check_start_date(parameter):
     if not val_list[0][0]:
         parameter.setErrorMessage("Start date is required when end date is provided.")
         return
+
+
+# Check if an image has valid pixels.
+def has_valid_pixels(image: "ee.Image", roi: "ee.Geometry", scale: int) -> bool:
+    """Check if an image has valid pixels.
+
+    Args:
+        image : Input image
+        roi : Region of interest
+
+    Returns:
+        bool: True if the image has valid pixels, False otherwise
+    """
+    sample = image.sample(region=roi, scale=scale, numPixels=30)
+
+    return sample.size().gt(0).getInfo()
