@@ -116,6 +116,7 @@ def get_map_view_extent(target_epsg=4326):
 
     # Extract the projection and the boundary coordinates (extent).
     spatial_ref = camera.getExtent().spatialReference
+    arcpy.AddMessage(f"The current map projection is EPSG:{spatial_ref.factoryCode}.")
     xmin = camera.getExtent().XMin
     ymin = camera.getExtent().YMin
     xmax = camera.getExtent().XMax
@@ -127,9 +128,8 @@ def get_map_view_extent(target_epsg=4326):
     # can not be converted to ESPG 4326 (latitude and longitude).
     # Need to clip the map extent coordinates to valid EPSG 3857 extent.
     if spatial_ref.PCSCode == 3857:
-        arcpy.AddMessage("The current projection is EPSG 3857.")
         xmin, ymin, xmax, ymax = clip_to_epsg3857_extent(xmin, ymin, xmax, ymax)
-        arcpy.AddMessage("The map extent has been clipped to valid EPSG 3857 extent.")
+        arcpy.AddMessage("The map extent has been clipped to valid EPSG:3857 extent.")
     # Check if projection code is the target EPSG code.
     # projected
     poly_prj = spatial_ref.PCSCode
@@ -139,9 +139,10 @@ def get_map_view_extent(target_epsg=4326):
     # Always using latitude and longtiude for ee.Geometry, ee will automatically transform.
     if str(poly_prj) not in "EPSG:" + str(target_epsg):
         # Convert the extent corners to target EPSG.
+        arcpy.AddMessage(f"Converting the extent corners to target EPSG:{target_epsg}.")
         xmin, ymin = project_to_new_sr(xmin, ymin, spatial_ref, target_epsg)
         xmax, ymax = project_to_new_sr(xmax, ymax, spatial_ref, target_epsg)
-
+    arcpy.AddMessage([xmin, ymin, xmax, ymax])
     return xmin, ymin, xmax, ymax
 
 

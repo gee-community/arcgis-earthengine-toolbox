@@ -2122,6 +2122,13 @@ class DownloadImgbyID:
                     "No ROI provided. Downloading the entire image may cause memory issues!"
                 )
 
+        # Check if the image has valid pixels.
+        if not arcgee.data.has_valid_pixels(image.first(), roi, scale_ds):
+            arcpy.AddWarning(
+                f"Image {img_id} has no valid pixels in the region of interest. Stop the tool."
+            )
+            return
+
         # Check if use projection.
         use_projection = arcgee.data.whether_use_projection(image)
         # Download image as geotiff.
@@ -2344,6 +2351,7 @@ class DownloadImgbyObj:
         image = ee.ImageCollection(ee.Image(img_id))
         # Filter image by selected bands.
         image = image.select(bands_only)
+        # Get the region of interest from the image if no ROI is provided.
         if not roi:
             try:
                 roi = arcgee.data.get_roi_from_object(image)
@@ -2352,6 +2360,13 @@ class DownloadImgbyObj:
                     f"Error getting ROI from object: {e}. "
                     "No ROI provided. Downloading the entire image may cause memory issues!"
                 )
+
+        # Check if the image has valid pixels.
+        if not arcgee.data.has_valid_pixels(image.first(), roi, scale_ds):
+            arcpy.AddWarning(
+                f"Image {img_id} has no valid pixels in the region of interest. Stop the tool."
+            )
+            return
 
         # Check if use projection.
         use_projection = arcgee.data.whether_use_projection(image)
@@ -2670,15 +2685,12 @@ class DownloadImgColbyID:
             # For image collection, concatenate to get the image asset ID.
             img_id = asset_id + "/" + img_name
 
-            # Create output file name based on image IDs.
-            out_tiff = os.path.join(out_folder, img_name.replace("/", "_") + ".tif")
-            out_tiff_list.append(out_tiff)
-
-            arcpy.AddMessage("Download image: " + img_id + " ...")
             # Must be image collection to convert to xarray.
             image = ee.ImageCollection(ee.Image(img_id))
             # Filter image by selected bands.
             image = image.select(bands_only)
+
+            # Get the region of interest from the image if no ROI is provided.
             if not roi:
                 try:
                     roi = arcgee.data.get_roi_from_object(image)
@@ -2688,13 +2700,30 @@ class DownloadImgColbyID:
                         "No ROI provided. Downloading the entire image may cause memory issues!"
                     )
 
+            # Check if the image has valid pixels.
+            if not arcgee.data.has_valid_pixels(image.first(), roi, scale_ds):
+                arcpy.AddWarning(
+                    f"Image {img_id} has no valid pixels in the region of interest. Skip this image."
+                )
+                continue
+            else:
+                arcpy.AddMessage(
+                    f"Image {img_id} has valid pixels in the region of interest. Downloading ..."
+                )
+
+            # Create output file name based on image IDs.
+            out_tiff = str(
+                pathlib.Path(out_folder, img_name.replace("/", "_") + ".tif")
+            )
+            out_tiff_list.append(out_tiff)
+
             # Download image as geotiff.
             arcgee.data.image_to_geotiff(
                 image, bands_only, crs, scale_ds, roi, use_projection, out_tiff
             )
 
         # Add out tiff to map layer.
-        if load_tiff == "true":
+        if load_tiff == "true" and out_tiff_list:
             arcpy.AddMessage("Load image to map ...")
             aprx = arcpy.mp.ArcGISProject("CURRENT")
             aprxMap = aprx.activeMap
@@ -2945,16 +2974,12 @@ class DownloadImgColbyObj:
             # For image collection, concatenate to get the image asset ID.
             img_id = asset_id + "/" + img_name
 
-            # Create output file name based on image IDs.
-            out_tiff = os.path.join(out_folder, img_name.replace("/", "_") + ".tif")
-            out_tiff_list.append(out_tiff)
-
-            arcpy.AddMessage("Download image: " + img_id + " ...")
             # Must be image collection to convert to xarray.
             image = ee.ImageCollection(ee.Image(img_id))
             # Filter image by selected bands.
             image = image.select(bands_only)
 
+            # Get the region of interest from the image if no ROI is provided.
             if not roi:
                 try:
                     roi = arcgee.data.get_roi_from_object(image)
@@ -2964,13 +2989,30 @@ class DownloadImgColbyObj:
                         "No ROI provided. Downloading the entire image may cause memory issues!"
                     )
 
+            # Check if the image has valid pixels.
+            if not arcgee.data.has_valid_pixels(image.first(), roi, scale_ds):
+                arcpy.AddWarning(
+                    f"Image {img_id} has no valid pixels in the region of interest. Skip this image."
+                )
+                continue
+            else:
+                arcpy.AddMessage(
+                    f"Image {img_id} has valid pixels in the region of interest. Downloading ..."
+                )
+
+            # Create output file name based on image IDs.
+            out_tiff = str(
+                pathlib.Path(out_folder, img_name.replace("/", "_") + ".tif")
+            )
+            out_tiff_list.append(out_tiff)
+
             # Download image as geotiff.
             arcgee.data.image_to_geotiff(
                 image, bands_only, crs, scale_ds, roi, use_projection, out_tiff
             )
 
         # Add out tiff to map layer.
-        if load_tiff == "true":
+        if load_tiff == "true" and out_tiff_list:
             arcpy.AddMessage("Load image to map ...")
             aprx = arcpy.mp.ArcGISProject("CURRENT")
             aprxMap = aprx.activeMap
@@ -3207,7 +3249,8 @@ class DownloadImgColbyIDMultiRegion:
         # Iterate each selected region.
         icount = 1
         for coords in coords_list:
-            arcpy.AddMessage("Download images at region " + str(icount) + " ...")
+            arcpy.AddMessage("-" * 50)
+            arcpy.AddMessage(f"Downloading images at region {icount} ...")
             # Create an Earth Engine MultiPolygon from the GeoJSON.
             roi = ee.Geometry.MultiPolygon([coords])
             # Filter image collection by ROI.
@@ -3217,6 +3260,18 @@ class DownloadImgColbyIDMultiRegion:
                 collection_region = collection.filterBounds(centroid)
             elif bound_type == "Bounding Box of Polygon":
                 collection_region = collection.filterBounds(roi)
+            # Check if the image collection has data.
+            if collection_region.size().getInfo() == 0:
+                arcpy.AddWarning(
+                    f"No images found at region {icount}. Skip this region."
+                )
+                icount += 1
+                continue
+            else:
+                arcpy.AddMessage(
+                    f"Found {collection_region.size().getInfo()} images at region {icount}."
+                )
+
             # CRS could change per region, so get the first image of the collection after filter by ROI.
             image = collection_region.first()
 
@@ -3234,17 +3289,12 @@ class DownloadImgColbyIDMultiRegion:
             # Check if use projection or crs code.
             image = ee.ImageCollection(image)
             use_projection = arcgee.data.whether_use_projection(image)
-            arcpy.AddMessage("Use projection: " + str(use_projection))
 
             # Select the max number of images.
             if max_num:
                 collection_region = collection_region.limit(max_num)
 
             image_list = collection_region.aggregate_array("system:index").getInfo()
-            if len(image_list) == 0:
-                arcpy.AddMessage("No images found at region " + str(icount) + ".")
-                icount += 1
-                continue
 
             # Iterate each selected image.
             for img_name in image_list:
@@ -3252,21 +3302,31 @@ class DownloadImgColbyIDMultiRegion:
                 # For image collection, concatenate to get the image asset ID.
                 img_id = asset_id + "/" + img_name
 
-                # Create output file name based on image IDs.
-                out_tiff = os.path.join(
-                    out_folder,
-                    img_name.replace("/", "_")
-                    + "_region"
-                    + str(icount).zfill(2)
-                    + ".tif",
-                )
-                out_tiff_list.append(out_tiff)
-
-                arcpy.AddMessage("Download image: " + img_id + " ...")
                 # Must be image collection to convert to xarray.
                 image = ee.ImageCollection(ee.Image(img_id))
                 # Filter image by selected bands.
                 image = image.select(bands_only)
+                # Even the image collection has images after filtering by ROI, the ROI could be masked out.
+                # Check if the image has valid pixels.
+                if not arcgee.data.has_valid_pixels(image.first(), roi, scale_ds):
+                    arcpy.AddWarning(
+                        f"Image {img_id} has no valid pixels in the region of interest. Skip this image."
+                    )
+                    continue
+                else:
+                    arcpy.AddMessage(
+                        f"Image {img_id} has valid pixels in the region of interest. Downloading ..."
+                    )
+
+                # Create output file name based on image IDs.
+                out_tiff = str(
+                    pathlib.Path(
+                        out_folder,
+                        img_name.replace("/", "_")
+                        + f"_region{str(icount).zfill(2)}.tif",
+                    )
+                )
+                out_tiff_list.append(out_tiff)
 
                 # Download image as geotiff.
                 arcgee.data.image_to_geotiff(
@@ -3276,8 +3336,8 @@ class DownloadImgColbyIDMultiRegion:
             icount += 1
 
         # Add out tiff to map layer.
-        if load_tiff == "true":
-            arcpy.AddMessage("Load image to map ...")
+        if load_tiff == "true" and out_tiff_list:
+            arcpy.AddMessage("Loading images to map ...")
             aprx = arcpy.mp.ArcGISProject("CURRENT")
             aprxMap = aprx.activeMap
             for out_tiff in out_tiff_list:
