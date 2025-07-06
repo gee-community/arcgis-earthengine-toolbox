@@ -1514,3 +1514,35 @@ def has_valid_pixels(image: "ee.Image", roi: "ee.Geometry", scale: int) -> bool:
     sample = image.sample(region=roi, scale=scale, numPixels=30)
 
     return sample.size().gt(0).getInfo()
+
+
+# Check if the JSON file is valid.
+def is_valid_json(json_file: str) -> bool:
+    """Check if the JSON file is valid.
+
+    Args:
+        json_file: Path to the JSON file
+
+    Returns:
+        bool: True if the JSON file is valid, False otherwise
+    """
+    try:
+        with open(json_file, "r") as f:
+            data = json.load(f)
+
+        # If 'error' key exists at the top level, it's invalid.
+        if "error" in data:
+            arcpy.AddError(
+                f"Error found: {data['error'].get('message', 'Unknown error')}. "
+                "The data is too large to be processed. Please narrow down the area of interest and try again."
+            )
+            return False
+
+        return True
+
+    except json.JSONDecodeError as e:
+        arcpy.AddError(f"Invalid JSON format: {e}")
+        return False
+    except Exception as e:
+        arcpy.AddError(f"Failed to read file: {e}")
+        return False
