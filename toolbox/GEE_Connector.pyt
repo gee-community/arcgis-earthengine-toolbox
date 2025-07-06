@@ -1194,13 +1194,12 @@ class AddImgCol2MapbyObj:
         json_path = parameters[0].valueAsText
         if json_path:
             collection = ee.ImageCollection(arcgee.data.load_ee_result(json_path))
-            # Only fill the image id filter list when it is empty.
-            if not parameters[1].filter.list:
-                # Get image IDs from collection, limit to 100 images to avoid slow response.
-                image_names = (
-                    collection.limit(100).aggregate_array("system:index").getInfo()
-                )
-                parameters[1].filter.list = image_names
+
+            # Get image IDs from collection, limit to 100 images to avoid slow response.
+            image_names = (
+                collection.limit(100).aggregate_array("system:index").getInfo()
+            )
+            parameters[1].filter.list = image_names
 
             # Check band list of the selected image.
             img_name = parameters[1].valueAsText
@@ -2564,7 +2563,7 @@ class DownloadImgColbyID:
                 )
             if start_date is not None and end_date is not None:
                 collection = collection.filterDate(start_date, end_date)
-            # Get image IDs from collection.
+            # Get image IDs from collection. Limit to 100 images to avoid slow response.
             image_list = collection.limit(100).aggregate_array("system:index").getInfo()
             parameters[4].filter.list = image_list
 
@@ -2844,13 +2843,10 @@ class DownloadImgColbyObj:
         json_path = parameters[0].valueAsText
         if json_path:
             collection = ee.ImageCollection(arcgee.data.load_ee_result(json_path))
-            # Only fill the image id filter list when it is empty.
-            if not parameters[1].filter.list:
-                # Get image IDs from collection.
-                image_list = (
-                    collection.limit(100).aggregate_array("system:index").getInfo()
-                )
-                parameters[1].filter.list = image_list
+
+            # Get image IDs from collection. Limit to 100 images to avoid slow response.
+            image_list = collection.limit(100).aggregate_array("system:index").getInfo()
+            parameters[1].filter.list = image_list
 
             # Check band list of the selected image.
             img_names = parameters[1].valueAsText
