@@ -3580,6 +3580,10 @@ class DownloadFeatColbyID:
         with open(out_json, "wb") as file:
             file.write(response.content)
 
+        # Check if the JSON file is valid.
+        if not arcgee.data.is_valid_json(out_json):
+            return
+
         # Convert GeoJSON to feature class.
         out_feat_list = []
 
@@ -3715,6 +3719,10 @@ class DownloadFeatColbyObj:
         response = requests.get(download_url)
         with open(out_json, "wb") as file:
             file.write(response.content)
+
+        # Check if the JSON file is valid.
+        if not arcgee.data.is_valid_json(out_json):
+            return
 
         # Convert GeoJSON to feature class.
         out_feat_list = []
