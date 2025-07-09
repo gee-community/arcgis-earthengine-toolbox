@@ -1405,6 +1405,19 @@ class AddFeatCol2MapbyID:
             direction="Input",
             parameterType="Optional",
         )
+        param4.filter.list = [
+            "red",
+            "green",
+            "blue",
+            "yellow",
+            "purple",
+            "orange",
+            "brown",
+            "gray",
+            "black",
+            "cyan",
+            "magenta",
+        ]
 
         param5 = arcpy.Parameter(
             name="out_json",
@@ -1741,6 +1754,19 @@ class AddFeatCol2MapbyObj:
             direction="Input",
             parameterType="Optional",
         )
+        param1.filter.list = [
+            "red",
+            "green",
+            "blue",
+            "yellow",
+            "purple",
+            "orange",
+            "brown",
+            "gray",
+            "black",
+            "cyan",
+            "magenta",
+        ]
 
         # TODO: add more visualization parameters
         # param2 = arcpy.Parameter(
