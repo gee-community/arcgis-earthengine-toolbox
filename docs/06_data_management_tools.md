@@ -245,6 +245,12 @@ Here is the video guide for saving Earth Engine asset to serialized JSON file:
 > [!NOTE]
 > This script is only available for users who have installed Google Cloud SDK.
 
+> [!NOTE]
+> Running this script requires Administrator access.
+
+> [!NOTE]
+> Depending on the uploaded file size, it may take a minute or more so the user may not see the asset in the Earth Engine Data Catalog as soon as the script completes.
+
 This script uploads file(s) from local storage to Google Cloud Storage and converts file(s) to Earth Engine asset. It is used to share dataset on Google Cloud and the Earth Engine platform. The file(s) will be assigned with a user-specified asset ID.
 
 ![Alt Text](images/Upload2GCS2Asset.png)
