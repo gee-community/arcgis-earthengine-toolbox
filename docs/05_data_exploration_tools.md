@@ -9,7 +9,7 @@ These tools allow you to visualize Google Earth Engine feature collections, imag
 
 This script adds the Earth Engine Feature Collection dataset to ArcGIS Pro as a base map by its asset ID and customizes the visualization parameters. **To avoid slow response, the feature collection size is limited to 100,000 elements.**
 
-Please note that the dataset is added as a Tiled Service Layer (TSL), which cannot be edited directly. The user will need to download the dataset for analysis in ArcGIS Pro. To browse all datasets, please visit this [link](https://developers.google.com/earth-engine/datasets/catalog).
+Please note that the dataset is added as a Tiled Map Service Layer, which cannot be edited directly. The user will need to download the dataset for analysis in ArcGIS Pro. To browse all datasets, please visit this [link](https://developers.google.com/earth-engine/datasets/catalog).
 
 ![Alt Text](images/AddFC2MapbyID.png)
 
@@ -18,10 +18,12 @@ Please note that the dataset is added as a Tiled Service Layer (TSL), which cann
  1. Asset ID
  2. Filter by dataset properties
  3. Filter by dates
-
  4. Choose filter-by-location type: point or area
  5. Color for visualization
  6. Save the filtered dataset to serialized JSON file
+
+> [!NOTE]
+> The serialized JSON file contains only the filtered Earth Engine object and does not include any visualization parameters.
 
 Here is the video guide for adding feature collection to map by asset ID:
 
@@ -39,7 +41,7 @@ This script adds the Earth Engine Feature Collection dataset to ArcGIS Pro as a 
 
 ![Alt Text](images/AddFC2MapbyJSON.png)
 
-Please note that the dataset is added as a Tiled Service Layer (TSL), which cannot be edited. The user will need to download the dataset for analysis in ArcGIS Pro. To browse all datasets, please visit this [link](https://developers.google.com/earth-engine/datasets/catalog).
+Please note that the dataset is added as a Tiled Map Service Layer, which cannot be edited. The user will need to download the dataset for analysis in ArcGIS Pro. To browse all datasets, please visit this [link](https://developers.google.com/earth-engine/datasets/catalog).
 
 #### Parameters
 
@@ -56,7 +58,7 @@ Here is the video guide for adding feature collection to map by serialized objec
 
 ### Add Image to Map by Asset ID
 
-This script adds the Earth Engine Image dataset to ArcGIS Pro as a base map by its asset ID and customizes the visualization parameters. Please note that the dataset is added as a Tiled Service Layer (TSL), which cannot be edited. The user will need to download the dataset for analysis in ArcGIS Pro. To browse all datasets, please visit this [link](https://developers.google.com/earth-engine/datasets/catalog).
+This script adds the Earth Engine Image dataset to ArcGIS Pro as a base map by its asset ID and customizes the visualization parameters. Please note that the dataset is added as a Tiled Map Service Layer, which cannot be edited. The user will need to download the dataset for analysis in ArcGIS Pro. To browse all datasets, please visit this [link](https://developers.google.com/earth-engine/datasets/catalog).
 
 ![Alt Text](images/AddImg2MapbyID.png)
 
@@ -82,7 +84,7 @@ Here is the video guide for adding image to map by asset ID:
 
 ![Alt Text](images/AddImg2MapbyJSON.png)
 
-This script adds the Earth Engine Image dataset to ArcGIS Pro as a base map by its serialized JSON object and customizes the visualization parameters. Please note that the dataset is added as a Tiled Service Layer (TSL), which cannot be edited. The user will need to download the dataset for analysis in ArcGIS Pro. To browse all datasets, please visit this [link](https://developers.google.com/earth-engine/datasets/catalog).
+This script adds the Earth Engine Image dataset to ArcGIS Pro as a base map by its serialized JSON object and customizes the visualization parameters. Please note that the dataset is added as a Tiled Map Service Layer, which cannot be edited. The user will need to download the dataset for analysis in ArcGIS Pro. To browse all datasets, please visit this [link](https://developers.google.com/earth-engine/datasets/catalog).
 
 The user can save the serialized Earth Engine object (Image, Image Collection, Feature, Feature Collection, List, Geometry, etc.) to JSON file, which is the string representation of the dataset. This is helpful when the user filters the dataset and saves the modified dataset for future access.
 
@@ -105,7 +107,7 @@ Here is the video guide for adding image to map by serialized object:
 
 ### Add Image Collection to Map by Asset ID
 
-This script adds the Earth Engine Image Collection dataset to ArcGIS Pro as a base map by its asset ID and customizes the visualization parameters. **The user can only add one image to ArcGIS Pro per run.** Please note that the dataset is added as a Tiled Service Layer (TSL), which cannot be edited directly. The user will need to download the dataset for analysis in ArcGIS Pro. To browse all datasets, please visit this [link](https://developers.google.com/earth-engine/datasets/catalog).
+This script adds the Earth Engine Image Collection dataset to ArcGIS Pro as a base map by its asset ID and customizes the visualization parameters. **The user can only add one image to ArcGIS Pro per run.** Please note that the dataset is added as a Tiled Map Service Layer, which cannot be edited directly. The user will need to download the dataset for analysis in ArcGIS Pro. To browse all datasets, please visit this [link](https://developers.google.com/earth-engine/datasets/catalog).
 
 ![Alt Text](images/AddIC2MapbyID.png)
 
@@ -133,7 +135,7 @@ Here is the video guide for adding image collection to map by asset ID:
 
 ### Add Image Collection to Map by Serialized Object
 
-This script adds the Earth Engine Image Collection dataset to ArcGIS Pro as a base map by its serialized JSON object and customizes the visualization parameters. **The user can only add one image to ArcGIS Pro per run.** Please note that the dataset is added as a Tiled Service Layer (TSL), which cannot be edited. The user will need to download the dataset for analysis in ArcGIS Pro. To browse all datasets, please visit this [link](https://developers.google.com/earth-engine/datasets/catalog).
+This script adds the Earth Engine Image Collection dataset to ArcGIS Pro as a base map by its serialized JSON object and customizes the visualization parameters. **The user can only add one image to ArcGIS Pro per run.** Please note that the dataset is added as a Tiled Map Service Layer, which cannot be edited. The user will need to download the dataset for analysis in ArcGIS Pro. To browse all datasets, please visit this [link](https://developers.google.com/earth-engine/datasets/catalog).
 
 ![Alt Text](images/AddIC2MapbyJSON.png)
 
