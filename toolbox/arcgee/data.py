@@ -254,6 +254,43 @@ def get_filter_list():
     return filters
 
 
+def filter_by_properties(
+    collection: "ee.ImageCollection or ee.FeatureCollection",
+    value_list: list[str],
+) -> "ee.ImageCollection or ee.FeatureCollection":
+    """
+    Filter an image collection or feature collection by properties.
+    Args:
+        collection (ee.ImageCollection or ee.FeatureCollection): The collection to filter.
+        value_list (list): A list of strings, containing a property name, operator, and value.
+    Returns:
+        ee.ImageCollection or ee.FeatureCollection: The filtered collection.
+    """
+
+    prop_name = value_list[0]
+    operator = value_list[1]
+    # Property value could be integer, float or string.
+    try:
+        prop_val = int(value_list[2])
+    except ValueError:
+        try:
+            prop_val = float(value_list[2])
+        except ValueError:
+            prop_val = value_list[2]
+
+    # Check if prop_val is a string and format accordingly.
+    if isinstance(prop_val, str):
+        # If prop_val is a string, wrap it in single quotes.
+        filter_condition = "{} {} '{}'".format(prop_name, operator, prop_val)
+    else:
+        # If prop_val is an integer or float, no quotes needed.
+        filter_condition = "{} {} {}".format(prop_name, operator, prop_val)
+
+    collection = collection.filter(filter_condition)
+
+    return collection
+
+
 def add_date_to_gif(
     input_gif,
     output_gif,

@@ -775,28 +775,40 @@ class AddImgCol2MapbyID:
             direction="Input",
             parameterType="Required",
         )
-
         param1 = arcpy.Parameter(
+            name="filter_props",
+            displayName="Filter by properties",
+            datatype="GPValueTable",
+            direction="Input",
+            parameterType="Optional",
+        )
+        param1.columns = [
+            ["GPString", "Property Name"],
+            ["GPString", "Operator"],
+            ["GPString", "Filter Value"],
+        ]
+        param1.filters[1].list = ["==", "!=", ">", ">=", "<", "<="]
+
+        param2 = arcpy.Parameter(
             name="filter_dates",
-            displayName="Filter by dates in YYYY-MM-DD",
+            displayName="Filter by dates",
             datatype="GPValueTable",
             direction="Input",
             parameterType="Optional",
             multiValue=False,
         )
-        param1.columns = [["GPString", "Starting Date"], ["GPString", "Ending Date"]]
-        param1.value = [["2014-03-01", "2014-05-01"]]
+        param2.columns = [["GPString", "Starting Date"], ["GPString", "Ending Date"]]
 
-        param2 = arcpy.Parameter(
+        param3 = arcpy.Parameter(
             name="filter_bounds",
             displayName="Filter by location in coordinates",
             datatype="GPValueTable",
             direction="Input",
             parameterType="Optional",
         )
-        param2.columns = [["GPString", "Longitude"], ["GPString", "Latitude"]]
+        param3.columns = [["GPString", "Longitude"], ["GPString", "Latitude"]]
 
-        param3 = arcpy.Parameter(
+        param4 = arcpy.Parameter(
             name="use_centroid",
             displayName="Use the center of the current map view extent",
             datatype="GPBoolean",
@@ -804,7 +816,7 @@ class AddImgCol2MapbyID:
             parameterType="Optional",
         )
 
-        param4 = arcpy.Parameter(
+        param5 = arcpy.Parameter(
             name="image",
             displayName="Select an image",
             datatype="GPString",
@@ -812,7 +824,7 @@ class AddImgCol2MapbyID:
             parameterType="Required",
         )
 
-        param5 = arcpy.Parameter(
+        param6 = arcpy.Parameter(
             name="bands",
             displayName="Specify up to three bands for RGB visualization",
             datatype="GPString",
@@ -821,7 +833,7 @@ class AddImgCol2MapbyID:
             parameterType="Optional",
         )
 
-        param6 = arcpy.Parameter(
+        param7 = arcpy.Parameter(
             name="min_val",
             displayName="Specify the minimum value for visualization",
             datatype="GPDouble",
@@ -829,7 +841,7 @@ class AddImgCol2MapbyID:
             parameterType="Optional",
         )
 
-        param7 = arcpy.Parameter(
+        param8 = arcpy.Parameter(
             name="max_val",
             displayName="Specify the maximum value for visualization",
             datatype="GPDouble",
@@ -837,7 +849,7 @@ class AddImgCol2MapbyID:
             parameterType="Optional",
         )
 
-        param8 = arcpy.Parameter(
+        param9 = arcpy.Parameter(
             name="gamma",
             displayName="Specify gamma correction factors",
             datatype="GPString",
@@ -845,16 +857,16 @@ class AddImgCol2MapbyID:
             parameterType="Optional",
         )
 
-        param9 = arcpy.Parameter(
+        param10 = arcpy.Parameter(
             name="palette",
             displayName="Choose a color palette for visualization",
             datatype="GPString",
             direction="Input",
             parameterType="Optional",
         )
-        param9.filter.list = arcgee.map.list_color_ramps()
+        param10.filter.list = arcgee.map.list_color_ramps()
 
-        param10 = arcpy.Parameter(
+        param11 = arcpy.Parameter(
             name="out_json",
             displayName="Save the filtered image collection to serialized JSON file",
             datatype="DEFile",
@@ -862,7 +874,7 @@ class AddImgCol2MapbyID:
             parameterType="Optional",
         )
 
-        param10.filter.list = ["json"]
+        param11.filter.list = ["json"]
 
         params = [
             param0,
@@ -876,6 +888,7 @@ class AddImgCol2MapbyID:
             param8,
             param9,
             param10,
+            param11,
         ]
         return params
 
@@ -887,10 +900,16 @@ class AddImgCol2MapbyID:
         """Modify the values and properties of parameters before internal
         validation is performed.  This method is called whenever a parameter
         has been changed."""
+        # Get properties from the image collection.
+        if parameters[0].valueAsText:
+            asset_id = arcgee.data.clean_asset_id(parameters[0].valueAsText)
+            collection = ee.ImageCollection(asset_id)
+            properties = collection.first().propertyNames().getInfo()
+            parameters[1].filters[0].list = sorted(properties)
 
         # Get the filter dates.
-        if parameters[1].valueAsText:
-            val_list = parameters[1].values
+        if parameters[2].valueAsText:
+            val_list = parameters[2].values
             start_date = val_list[0][0]
             end_date = val_list[0][1]
         else:
@@ -898,32 +917,34 @@ class AddImgCol2MapbyID:
             end_date = None
 
         # Get the filter bounds.
-        if parameters[3].value:
+        if parameters[4].value:
             # Disable input coordinates if map extent is used.
-            parameters[2].enabled = False
+            parameters[3].enabled = False
             xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             # Get the centroid of map extent.
             lon = (xmin + xmax) / 2
             lat = (ymin + ymax) / 2
         else:
-            parameters[2].enabled = True
-            if parameters[2].valueAsText:
-                val_list = parameters[2].values
+            parameters[3].enabled = True
+            if parameters[3].valueAsText:
+                val_list = parameters[3].values
                 lon = val_list[0][0]
                 lat = val_list[0][1]
             else:
                 lon = None
                 lat = None
 
-        # Check image list of a given collection asset.
-        asset_id = parameters[0].valueAsText
-
         # Image collection size could be huge, may take long to load without filters.
         # Only retrieve the list of images, when either filter dates or filter bounds are selected.
-        if asset_id:
-            asset_id = arcgee.data.clean_asset_id(asset_id)
+        if parameters[0].valueAsText:
+            asset_id = arcgee.data.clean_asset_id(parameters[0].valueAsText)
             collection = ee.ImageCollection(asset_id)
             # Filter image collection as specified.
+            if parameters[1].valueAsText:
+                value_list = parameters[1].values
+                for row in value_list:
+                    if row[0] and row[1] and row[2]:
+                        collection = arcgee.data.filter_by_properties(collection, row)
             if lon is not None and lat is not None:
                 collection = collection.filterBounds(
                     ee.Geometry.Point((float(lon), float(lat)))
@@ -932,10 +953,10 @@ class AddImgCol2MapbyID:
                 collection = collection.filterDate(start_date, end_date)
             # Get image IDs from collection, limit to 100 images to avoid slow response.
             image_ids = collection.limit(100).aggregate_array("system:index").getInfo()
-            parameters[4].filter.list = image_ids
+            parameters[5].filter.list = image_ids
 
         # Check band list of the selected image.
-        img_name = parameters[4].valueAsText
+        img_name = parameters[5].valueAsText
         # Update only when filter list is empty.
         if img_name:
             img_id = asset_id + "/" + img_name
@@ -948,18 +969,18 @@ class AddImgCol2MapbyID:
                 proj = band_tmp.projection()
                 res = proj.nominalScale().getInfo()
                 band_res_list.append(f"{iband}--{round(res, 1)}--m")
-            parameters[5].filter.list = band_res_list
+            parameters[6].filter.list = band_res_list
 
         # Reset image and band filter list when asset ID changes.
-        if not asset_id:
-            parameters[4].filter.list = []
+        if not parameters[0].valueAsText:
+            parameters[5].filter.list = []
             if not img_name:
-                parameters[5].filter.list = []
+                parameters[6].filter.list = []
 
         # Switch off the color palette when more than 1 band is selected.
-        if parameters[5].valueAsText:
-            bands = parameters[5].valueAsText.split(";")
-            parameters[9].enabled = len(bands) == 1
+        if parameters[6].valueAsText:
+            bands = parameters[6].valueAsText.split(";")
+            parameters[10].enabled = len(bands) == 1
 
         return
 
@@ -968,14 +989,14 @@ class AddImgCol2MapbyID:
         parameter. This method is called after internal validation."""
 
         # Start date is required when end date is provided for filter by dates.
-        if parameters[1].valueAsText:
-            arcgee.data.check_start_date(parameters[1])
+        if parameters[2].valueAsText:
+            arcgee.data.check_start_date(parameters[2])
 
         # Check if the JSON file name contains spaces or special characters.
-        json_path = parameters[10].valueAsText
+        json_path = parameters[11].valueAsText
         if json_path:
             if arcgee.data.has_spaces_or_special_chars(json_path):
-                parameters[10].setErrorMessage(
+                parameters[11].setErrorMessage(
                     "The JSON file name contains spaces or special characters. "
                     "Please specify a valid file name."
                 )
@@ -984,17 +1005,18 @@ class AddImgCol2MapbyID:
     def execute(self, parameters, messages):
         """The source code of the tool."""
         asset_id = parameters[0].valueAsText
-        img_name = parameters[4].valueAsText
-        band_str = parameters[5].valueAsText
-        min_val = parameters[6].valueAsText
-        max_val = parameters[7].valueAsText
-        gamma_str = parameters[8].valueAsText
-        palette_str = parameters[9].valueAsText
+        img_name = parameters[5].valueAsText
+        band_str = parameters[6].valueAsText
+        min_val = parameters[7].valueAsText
+        max_val = parameters[8].valueAsText
+        gamma_str = parameters[9].valueAsText
+        palette_str = parameters[10].valueAsText
 
         asset_id = arcgee.data.clean_asset_id(asset_id)
         # Construct asset ID for selected image.
         img_id = asset_id + "/" + img_name
 
+        arcpy.AddMessage("Preparing visualization parameters...")
         # Define visualization parameters.
         vis_params = {}
 
@@ -1026,6 +1048,7 @@ class AddImgCol2MapbyID:
         if palette_str:
             vis_params["palette"] = arcgee.map.get_color_ramp(palette_str)
 
+        arcpy.AddMessage("Constructing map URL...")
         # Get image by label.
         img = ee.Image(img_id)
         # Get the map ID and token.
@@ -1034,6 +1057,7 @@ class AddImgCol2MapbyID:
         # Construct the URL.
         map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
 
+        arcpy.AddMessage("Adding map URL to the current ArcMap...")
         # Add map URL to the current ArcMap.
         aprx = arcpy.mp.ArcGISProject("CURRENT")
         aprxMap = aprx.listMaps("Map")[0]
@@ -1055,14 +1079,17 @@ class AddImgCol2MapbyID:
             pass
 
         # Save filtered image collection to serialized JSON file.
-        if parameters[10].valueAsText:
-            out_json = parameters[10].valueAsText
+        if parameters[11].valueAsText:
+            arcpy.AddMessage(
+                "Saving filtered image collection to serialized JSON file."
+            )
+            out_json = parameters[11].valueAsText
             if not out_json.endswith(".json"):
                 out_json = out_json + ".json"
 
             # Get the filter dates.
-            if parameters[1].valueAsText:
-                val_list = parameters[1].values
+            if parameters[2].valueAsText:
+                val_list = parameters[2].values
                 start_date = val_list[0][0]
                 end_date = val_list[0][1]
             else:
@@ -1070,17 +1097,17 @@ class AddImgCol2MapbyID:
                 end_date = None
 
             # Get the filter bounds.
-            if parameters[3].value:
+            if parameters[4].value:
                 # Disable input coordinates if map extent is used.
-                parameters[2].enabled = False
+                parameters[3].enabled = False
                 xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
                 # Get the centroid of map extent.
                 lon = (xmin + xmax) / 2
                 lat = (ymin + ymax) / 2
             else:
-                parameters[2].enabled = True
-                if parameters[2].valueAsText:
-                    val_list = parameters[2].values
+                parameters[3].enabled = True
+                if parameters[3].valueAsText:
+                    val_list = parameters[3].values
                     lon = val_list[0][0]
                     lat = val_list[0][1]
                 else:
@@ -1089,6 +1116,11 @@ class AddImgCol2MapbyID:
 
             collection = ee.ImageCollection(asset_id)
             # Filter image collection as specified.
+            if parameters[1].valueAsText:
+                value_list = parameters[1].values
+                for row in value_list:
+                    if row[0] and row[1] and row[2]:
+                        collection = arcgee.data.filter_by_properties(collection, row)
             if lon is not None and lat is not None:
                 collection = collection.filterBounds(
                     ee.Geometry.Point((float(lon), float(lat)))
@@ -1618,29 +1650,9 @@ class AddFeatCol2MapbyID:
             val_list = parameters[1].values
             # Could be multiple filter properties.
             for row in val_list:
-                prop_name = row[0]
-                # Property value could be integer, float or string.
-                try:
-                    prop_val = int(row[2])
-                except ValueError:
-                    try:
-                        prop_val = float(row[2])
-                    except ValueError:
-                        prop_val = row[2]
-                operator = row[1]
-
-                # Check if prop_val is a string and format accordingly.
-                if isinstance(prop_val, str):
-                    # If prop_val is a string, wrap it in single quotes.
-                    filter_condition = "{} {} '{}'".format(
-                        prop_name, operator, prop_val
-                    )
-                else:
-                    # If prop_val is an integer or float, no quotes needed.
-                    filter_condition = "{} {} {}".format(prop_name, operator, prop_val)
-
-                arcpy.AddMessage("Filter by property: " + filter_condition)
-                fc = fc.filter(filter_condition)
+                if row[0] and row[1] and row[2]:
+                    arcpy.AddMessage(f"Filter by property: {row[0]} {row[1]} {row[2]}")
+                    fc = arcgee.data.filter_by_properties(fc, row)
 
         # Filter by bounds if specified.
         if filter_bounds:
@@ -3544,29 +3556,9 @@ class DownloadFeatColbyID:
             val_list = parameters[1].values
             # Could be multiple filter properties.
             for row in val_list:
-                prop_name = row[0]
-                # Property value could be integer, float or string.
-                try:
-                    prop_val = int(row[2])
-                except ValueError:
-                    try:
-                        prop_val = float(row[2])
-                    except ValueError:
-                        prop_val = row[2]
-                operator = row[1]
-
-                # Check if prop_val is a string and format accordingly.
-                if isinstance(prop_val, str):
-                    # If prop_val is a string, wrap it in single quotes.
-                    filter_condition = "{} {} '{}'".format(
-                        prop_name, operator, prop_val
-                    )
-                else:
-                    # If prop_val is an integer or float, no quotes needed.
-                    filter_condition = "{} {} {}".format(prop_name, operator, prop_val)
-
-                arcpy.AddMessage("Filter by property: " + filter_condition)
-                fc = fc.filter(filter_condition)
+                if row[0] and row[1] and row[2]:
+                    arcpy.AddMessage(f"Filter by property: {row[0]} {row[1]} {row[2]}")
+                    fc = arcgee.data.filter_by_properties(fc, row)
 
         # Filter by bounds.
         if filter_bounds:
