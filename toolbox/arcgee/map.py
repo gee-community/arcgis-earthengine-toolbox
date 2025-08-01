@@ -19,7 +19,10 @@ import matplotlib.cm as cm
 
 
 def list_color_ramps() -> list[str]:
-    """Return a list all supported color ramps."""
+    """Return a list all supported color ramps.
+    Returns:
+        list[str] : A list of supported color ramps.
+    """
     return [
         "viridis",
         "magma",
@@ -36,7 +39,13 @@ def list_color_ramps() -> list[str]:
 
 
 def get_color_ramp(name: str, n: int = 10) -> list[str]:
-    """Return a list of hex color codes from a matplotlib colormap name."""
+    """Return a list of hex color codes from a matplotlib colormap name.
+    Args:
+        name : The name of the colormap.
+        n : The number of colors to return.
+    Returns:
+        list[str] : A list of hex color codes.
+    """
     try:
         cmap = cm.get_cmap(name, n)
         return [mcolors.to_hex(cmap(i)) for i in range(cmap.N)]
@@ -44,7 +53,17 @@ def get_color_ramp(name: str, n: int = 10) -> list[str]:
         raise ValueError(f"Colormap '{name}' is not recognized by Matplotlib.")
 
 
-def add_layer(ee_object, vis_params=None, name=None):
+def add_layer(
+    ee_object: "ee.Image | ee.ImageCollection",
+    vis_params: dict = None,
+    name: str = None,
+) -> None:
+    """Add an Earth Engine object to the current map view.
+    Args:
+        ee_object : Earth Engine object to add.
+        vis_params : Visualization parameters for the Earth Engine object.
+        name : Name of the layer to add.
+    """
 
     # Check if Earth Engine object is an Image Collection.
     # If so, then create a mosaic before adding to the map.
@@ -63,13 +82,17 @@ def add_layer(ee_object, vis_params=None, name=None):
 
 
 # Zoom project map view to point.
-def zoom_to_point(aprx, point_coords, extent_coords):
+def zoom_to_point(
+    aprx: "arcpy.mp.ArcGISProject",
+    point_coords: list[float],
+    extent_coords: list[list[float]],
+) -> None:
     """Zoom the map view to a point with buffer based on extent.
 
     Args:
-        aprx (ArcGISProject): ArcGIS Pro project object.
-        point_coords (list): [lon, lat] coordinates of center point.
-        extent_coords (list): List of corner coordinates defining the bounds.
+        aprx : ArcGIS Pro project object.
+        point_coords : [lon, lat] coordinates of center point.
+        extent_coords : List of corner coordinates defining the bounds.
     """
     # Get the current project map view.
     view = aprx.activeView
@@ -101,12 +124,12 @@ def zoom_to_point(aprx, point_coords, extent_coords):
 
 
 # Get map view extent.
-def get_map_view_extent(target_epsg=4326):
+def get_map_view_extent(target_epsg: int = 4326) -> tuple[float, float, float, float]:
     """Get the current map view extent coordinates in WGS 84.
     Args:
-        target_epsg (int): Target EPSG code for the extent coordinates.
+        target_epsg : Target EPSG code for the extent coordinates.
     Returns:
-        tuple: (xmin, ymin, xmax, ymax) coordinates in WGS 84.
+        tuple : (xmin, ymin, xmax, ymax) coordinates in WGS 84.
     """
     aprx = arcpy.mp.ArcGISProject("CURRENT")
     # Get the active map view.
@@ -147,14 +170,19 @@ def get_map_view_extent(target_epsg=4326):
 
 
 # Project a point to a different spatial reference.
-def project_to_new_sr(x, y, in_spatial_ref, out_spatial_ref):
+def project_to_new_sr(
+    x: float,
+    y: float,
+    in_spatial_ref: "arcpy.SpatialReference",
+    out_spatial_ref: "arcpy.SpatialReference",
+) -> tuple[float, float]:
     """Project a point from input spatial reference to output spatial reference.
 
     Args:
-        x (float): X coordinate in input spatial reference.
-        y (float): Y coordinate in input spatial reference.
-        in_spatial_ref (SpatialReference): Input spatial reference object.
-        out_spatial_ref (SpatialReference): Output spatial reference object.
+        x : X coordinate in input spatial reference.
+        y : Y coordinate in input spatial reference.
+        in_spatial_ref : Input spatial reference object.
+        out_spatial_ref : Output spatial reference object.
 
     Returns:
         tuple: coordinates in output spatial reference.
