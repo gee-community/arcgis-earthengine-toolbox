@@ -1198,52 +1198,91 @@ def convert_coords_to_bbox(
 
 
 # Get the coordinates from polygon feature layer.
-def get_polygon_coords(in_poly: str) -> list[list[float]]:
-    """Extract coordinates from a polygon feature layer and convert to WGS 84.
+def get_polygon_coords(in_poly: str) -> list[list[list[float]]]:
+    """Extract polygon coordinates from a polygon feature layer and convert to WGS 84.
 
     Args:
         in_poly : Input polygon feature layer path/name
 
     Returns:
-        list: List of polygon coordinates in WGS 84
+        list: List of polygon coordinates in WGS 84 (list of rings, each ring is list of [x, y])
     """
     spatial_ref = arcpy.Describe(in_poly).spatialReference
     poly_prj = spatial_ref.PCSCode
     if poly_prj == 0:
         poly_prj = spatial_ref.GCSCode
-    arcpy.AddMessage("Input feature layer projection CRS is " + str(poly_prj))
 
-    # Project input feature to EPSG:4326 if needed.
+    # Project to EPSG:4326 if needed
     target_poly = in_poly
     if str(poly_prj) not in "EPSG:4326":
-        arcpy.AddMessage("Projecting input feature layer to EPSG:4326 ...")
         out_sr = arcpy.SpatialReference(4326)
         arcpy.Project_management(in_poly, "poly_temp", out_sr)
         target_poly = "poly_temp"
 
-    # Convert input feature to geojson.
-    arcpy.FeaturesToJSON_conversion(
-        target_poly, "temp.geojson", "FORMATTED", "", "", "GEOJSON"
-    )
-
-    # Read the GeoJSON file.
-    upper_path = os.path.dirname(arcpy.env.workspace)
-    file_geojson = os.path.join(upper_path, "temp.geojson")
-    with open(file_geojson) as f:
-        geojson_data = json.load(f)
-
-    # Collect polygon object coordinates.
     coords = []
-    for feature in geojson_data["features"]:
-        coords.append(feature["geometry"]["coordinates"])
-    arcpy.AddMessage("Total number of polygon objects: " + str(len(coords)))
+    with arcpy.da.SearchCursor(target_poly, ["SHAPE@"]) as cursor:
+        for row in cursor:
+            polygon = row[0]
+            polygon_coords = []
+            for part in polygon:  # Each part = one ring
+                ring_coords = [[pt.X, pt.Y] for pt in part if pt]  # Avoid None points
+                polygon_coords.append(ring_coords)
+            coords.append(polygon_coords)
 
-    # Delete temporary geojson.
     if target_poly == "poly_temp":
         arcpy.management.Delete("poly_temp")
-    arcpy.management.Delete(file_geojson)
 
     return coords
+
+
+# Get the centroid of a polygon feature layer.
+def get_polygon_centroid(in_poly: str) -> list[list[float]]:
+    """Extract centroid coordinates from a polygon feature layer and convert to WGS 84.
+
+    Args:
+        in_poly : Input polygon feature layer path/name
+
+    Returns:
+        list: List of centroid coordinates [longitude, latitude] in WGS 84
+    """
+    spatial_ref = arcpy.Describe(in_poly).spatialReference
+    poly_prj = spatial_ref.PCSCode
+    if poly_prj == 0:
+        poly_prj = spatial_ref.GCSCode
+    # Project to EPSG:4326 if needed
+    target_poly = in_poly
+    if str(poly_prj) not in "EPSG:4326":
+        out_sr = arcpy.SpatialReference(4326)
+        arcpy.Project_management(in_poly, "poly_temp", out_sr)
+        target_poly = "poly_temp"
+
+    centroids = []
+    with arcpy.da.SearchCursor(target_poly, ["SHAPE@XY"]) as cursor:
+        for row in cursor:
+            x, y = row[0]  # SHAPE@XY gives centroid coordinates in target spatial ref
+            centroids.append([x, y])
+
+    if target_poly == "poly_temp":
+        arcpy.management.Delete("poly_temp")
+
+    return centroids
+
+
+# Merge centroids to a single point.
+def merge_centroids(centroids: list[list[float]]) -> list[float]:
+    """Merge centroids to a single point.
+
+    Args:
+        centroids : List of centroid coordinates
+
+    Returns:
+        list: List of merged centroid coordinates
+    """
+    # Calculate the average of all centroids.
+    avg_x = sum(centroid[0] for centroid in centroids) / len(centroids)
+    avg_y = sum(centroid[1] for centroid in centroids) / len(centroids)
+
+    return [avg_x, avg_y]
 
 
 # Check whether use projection or crs code for image to xarray dataset.
