@@ -35,6 +35,13 @@ __version__ = "0.1.1"
 
 
 def is_valid_workload_tag(tag: str) -> bool:
+    """
+    Check if a tag is valid for a workload.
+    Args:
+        tag : The tag to check.
+    Returns:
+        bool : True if the tag is valid, False otherwise.
+    """
     if not tag:
         return True  # Empty string is allowed to reset the tag.
 
@@ -44,12 +51,19 @@ def is_valid_workload_tag(tag: str) -> bool:
 
 
 def has_spaces_or_special_chars(filepath: str) -> bool:
+    """
+    Check if a file path has spaces or special characters.
+    Args:
+        filepath : The file path to check.
+    Returns:
+        bool : True if the file path has spaces or special characters, False otherwise.
+    """
     filename = Path(filepath).name
     # Matches any character that is not a-z, A-Z, 0-9, underscore, dash, or dot.
     return bool(re.search(r"[^a-zA-Z0-9_.-]", filename))
 
 
-def get_version_info():
+def get_version_info() -> str:
     """
     Returns version information about the GEE Connector.
 
@@ -59,7 +73,12 @@ def get_version_info():
     return f"GEE Connector v{__version__}"
 
 
-def auth(project=None):
+def auth(project: str = None) -> None:
+    """
+    Authenticate with Google Cloud and Earth Engine.
+    Args:
+        project : The project to authenticate with.
+    """
     credentials, _ = google.auth.default(
         scopes=[
             "https://www.googleapis.com/auth/cloud-platform",
@@ -74,8 +93,13 @@ def auth(project=None):
     return
 
 
-def save_ee_result(ee_object, path):
-
+def save_ee_result(ee_object: "ee.ComputedObject", path: str) -> None:
+    """
+    Save an Earth Engine object to a JSON file.
+    Args:
+        ee_object : The Earth Engine object to save.
+        path : The file path to save the Earth Engine object.
+    """
     serialized_obj = ee_object.serialize()
 
     with open(path, "w") as f:
@@ -84,12 +108,12 @@ def save_ee_result(ee_object, path):
     return
 
 
-def load_ee_result(path):
+def load_ee_result(path: str) -> "ee.ComputedObject":
     """
     Loads a serialized Earth Engine object from a JSON file and deserializes it.
 
     Args:
-        path (str): The file path to the JSON file.
+        path : The file path to the JSON file.
 
     Returns:
         ee.ComputedObject: The deserialized Earth Engine object.
@@ -112,7 +136,7 @@ def load_ee_result(path):
         raise RuntimeError(error_message) from e
 
 
-def get_reducer_list():
+def get_reducer_list() -> list[str]:
     """
     Get the complete list of available reducers from ee.Reducer.
 
@@ -193,7 +217,7 @@ def get_reducer_list():
     return reducers
 
 
-def get_filter_list():
+def get_filter_list() -> list[str]:
     """
     Get the complete list of available filters from ee.Filter.
 
@@ -255,16 +279,16 @@ def get_filter_list():
 
 
 def filter_by_properties(
-    collection: "ee.ImageCollection or ee.FeatureCollection",
+    collection: "ee.ImageCollection | ee.FeatureCollection",
     value_list: list[str],
-) -> "ee.ImageCollection or ee.FeatureCollection":
+) -> "ee.ImageCollection | ee.FeatureCollection":
     """
     Filter an image collection or feature collection by properties.
     Args:
-        collection (ee.ImageCollection or ee.FeatureCollection): The collection to filter.
-        value_list (list): A list of strings, containing a property name, operator, and value.
+        collection : The collection to filter.
+        value_list : A list of strings, containing a property name, operator, and value.
     Returns:
-        ee.ImageCollection or ee.FeatureCollection: The filtered collection.
+        ee.ImageCollection | ee.FeatureCollection: The filtered collection.
     """
 
     prop_name = value_list[0]
@@ -292,25 +316,25 @@ def filter_by_properties(
 
 
 def add_date_to_gif(
-    input_gif,
-    output_gif,
-    dates,
-    font_path=None,
-    font_size=40,
-    position=(10, 10),
-    color="white",
-):
+    input_gif: str,
+    output_gif: str,
+    dates: list[str],
+    font_path: str = None,
+    font_size: int = 40,
+    position: tuple[int, int] = (10, 10),
+    color: str = "white",
+) -> None:
     """
     Adds a date label to each frame of a GIF.
 
     Args:
-        input_gif (str): Path to the input GIF file.
-        output_gif (str): Path to save the output GIF file.
-        dates (list): List of dates to add to each frame. Must match the number of frames in the GIF.
-        font_path (str): Path to a font file. Defaults to a system font.
-        font_size (int): Font size for the date text.
-        position (tuple): (x, y) position for the date label.
-        color (str): Color of the text. Defaults to white.
+        input_gif : Path to the input GIF file.
+        output_gif : Path to save the output GIF file.
+        dates : List of dates to add to each frame. Must match the number of frames in the GIF.
+        font_path : Path to a font file. Defaults to a system font.
+        font_size : Font size for the date text.
+        position : (x, y) pixel coordinates for the date label.
+        color : Color of the text. Defaults to white.
     """
     from PIL import Image, ImageDraw, ImageFont, ImageSequence
 
@@ -346,12 +370,12 @@ def add_date_to_gif(
     )
 
 
-def validate_date(date_str, date_format="%Y-%m-%d"):
+def validate_date(date_str: str, date_format: str = "%Y-%m-%d") -> None:
     """Validates that a date string matches the expected format.
 
     Args:
-        date_str (str): The date string to validate
-        date_format (str, optional): Expected date format. Defaults to "%Y-%m-%d".
+        date_str : The date string to validate
+        date_format : Expected date format. Defaults to "%Y-%m-%d".
 
     Raises:
         ValueError: If the date string does not match the expected format
@@ -372,15 +396,21 @@ def validate_date(date_str, date_format="%Y-%m-%d"):
         raise  # Re-raise the error to stop execution.
 
 
-def download_ee_video(collection, video_args, out_gif, timeout=300, proxies=None):
+def download_ee_video(
+    collection: "ee.ImageCollection",
+    video_args: dict,
+    out_gif: str,
+    timeout: int = 300,
+    proxies: dict = None,
+) -> None:
     """Downloads a video thumbnail as a GIF image from Earth Engine.
 
     Args:
-        collection (object): An ee.ImageCollection.
-        video_args (object): Parameters for expring the video thumbnail.
-        out_gif (str): File path to the output GIF.
-        timeout (int, optional): The number of seconds the request will be timed out. Defaults to 300.
-        proxies (dict, optional): A dictionary of proxy servers to use. Defaults to None.
+        collection : An ee.ImageCollection.
+        video_args : Parameters for expring the video thumbnail.
+        out_gif : File path to the output GIF.
+        timeout : The number of seconds the request will be timed out. Defaults to 300.
+        proxies : A dictionary of proxy servers to use. Defaults to None.
     """
 
     out_gif = os.path.abspath(out_gif)
@@ -426,15 +456,21 @@ def download_ee_video(collection, video_args, out_gif, timeout=300, proxies=None
         print(e)
 
 
-def date_sequence(start, end, unit, date_format="YYYY-MM-dd", step=1):
+def date_sequence(
+    start: str,
+    end: str,
+    unit: str,
+    date_format: str = "YYYY-MM-dd",
+    step: int = 1,
+) -> "ee.List":
     """Creates a date sequence.
 
     Args:
-        start (str): The start date, e.g., '2000-01-01'.
-        end (str): The end date, e.g., '2000-12-31'.
-        unit (str): One of 'year', 'quarter', 'month' 'week', 'day', 'hour', 'minute', or 'second'.
-        date_format (str, optional): A pattern, as described at http://joda-time.sourceforge.net/apidocs/org/joda/time/format/DateTimeFormat.html. Defaults to 'YYYY-MM-dd'.
-        step (int, optional): The step size. Defaults to 1.
+        start : The start date, e.g., '2000-01-01'.
+        end : The end date, e.g., '2000-12-31'.
+        unit : One of 'year', 'quarter', 'month' 'week', 'day', 'hour', 'minute', or 'second'.
+        date_format : A pattern, as described at http://joda-time.sourceforge.net/apidocs/org/joda/time/format/DateTimeFormat.html. Defaults to 'YYYY-MM-dd'.
+        step : The step size. Defaults to 1.
 
     Returns:
         ee.List: A list of date sequence.
@@ -480,7 +516,7 @@ def date_sequence(start, end, unit, date_format="YYYY-MM-dd", step=1):
     return date_seq
 
 
-def get_current_year():
+def get_current_year() -> int:
     """Get the current year.
 
     Returns:
@@ -492,30 +528,30 @@ def get_current_year():
 
 # Generate landsat timeseries, from GEEMAP
 def landsat_timeseries(
-    roi=None,
-    start_year=1984,
-    end_year=None,
-    start_date="06-10",
-    end_date="09-20",
-    apply_fmask=True,
-    frequency="year",
-    date_format=None,
-    step=1,
-):
+    roi: "ee.Geometry" = None,
+    start_year: int = 1984,
+    end_year: int = None,
+    start_date: str = "06-10",
+    end_date: str = "09-20",
+    apply_fmask: bool = True,
+    frequency: str = "year",
+    date_format: str = None,
+    step: int = 1,
+) -> "ee.ImageCollection":
     """Generates an annual Landsat ImageCollection. This algorithm is adapted from https://gist.github.com/jdbcode/76b9ac49faf51627ebd3ff988e10adbc. A huge thank you to Justin Braaten for sharing his fantastic work.
 
     Args:
-        roi (object, optional): Region of interest to create the timelapse. Defaults to None.
-        start_year (int, optional): Starting year for the timelapse. Defaults to 1984.
-        end_year (int, optional): Ending year for the timelapse. Defaults to None, which means the current year.
-        start_date (str, optional): Starting date (month-day) each year for filtering ImageCollection. Defaults to '06-10'.
-        end_date (str, optional): Ending date (month-day) each year for filtering ImageCollection. Defaults to '09-20'.
-        apply_fmask (bool, optional): Whether to apply Fmask (Function of mask) for automated clouds, cloud shadows, snow, and water masking.
-        frequency (str, optional): Frequency of the timelapse: year, quarter, month. Defaults to 'year'.
-        date_format (str, optional): Format of the date. Defaults to None.
-        step (int, optional): The step size to use when creating the date sequence. Defaults to 1.
+        roi : Region of interest to create the timelapse. Defaults to None.
+        start_year : Starting year for the timelapse. Defaults to 1984.
+        end_year : Ending year for the timelapse. Defaults to None, which means the current year.
+        start_date : Starting date (month-day) each year for filtering ImageCollection. Defaults to '06-10'.
+        end_date : Ending date (month-day) each year for filtering ImageCollection. Defaults to '09-20'.
+        apply_fmask : Whether to apply Fmask (Function of mask) for automated clouds, cloud shadows, snow, and water masking.
+        frequency : Frequency of the timelapse: year, quarter, month. Defaults to 'year'.
+        date_format : Format of the date. Defaults to None.
+        step : The step size to use when creating the date sequence. Defaults to 1.
     Returns:
-        object: Returns an ImageCollection containing annual Landsat images.
+        ee.ImageCollection: Returns an ImageCollection containing annual Landsat images.
     """
 
     # Input and output parameters.
@@ -865,36 +901,36 @@ def landsat_timeseries(
 
 # Create landsat timelapse, simplified from GEEMAP
 def landsat_timelapse(
-    roi=None,
-    out_gif=None,
-    start_year=1984,
-    end_year=None,
-    start_date="06-10",
-    end_date="09-20",
-    bands=["NIR", "Red", "Green"],
-    vis_params=None,
-    dimensions=768,
-    frames_per_second=5,
-    crs="EPSG:3857",
-    apply_fmask=True,
-    frequency="year",
-):
+    roi: "ee.Geometry" = None,
+    out_gif: str = None,
+    start_year: int = 1984,
+    end_year: int = None,
+    start_date: str = "06-10",
+    end_date: str = "09-20",
+    bands: list[str] = ["NIR", "Red", "Green"],
+    vis_params: dict = None,
+    dimensions: int = 768,
+    frames_per_second: int = 5,
+    crs: str = "EPSG:3857",
+    apply_fmask: bool = True,
+    frequency: str = "year",
+) -> str:
     """Generates a Landsat timelapse GIF image. This function is adapted from https://emaprlab.users.earthengine.app/view/lt-gee-time-series-animator. A huge thank you to Justin Braaten for sharing his fantastic work.
 
     Args:
-        roi (object, optional): Region of interest to create the timelapse. Defaults to None.
-        out_gif (str, optional): File path to the output animated GIF. Defaults to None.
-        start_year (int, optional): Starting year for the timelapse. Defaults to 1984.
-        end_year (int, optional): Ending year for the timelapse. Defaults to None, which will use the current year.
-        start_date (str, optional): Starting date (month-day) each year for filtering ImageCollection. Defaults to '06-10'.
-        end_date (str, optional): Ending date (month-day) each year for filtering ImageCollection. Defaults to '09-20'.
-        bands (list, optional): Three bands selected from ['Blue', 'Green', 'Red', 'NIR', 'SWIR1', 'SWIR2', 'pixel_qa']. Defaults to ['NIR', 'Red', 'Green'].
-        vis_params (dict, optional): Visualization parameters. Defaults to None.
-        dimensions (int, optional): a number or pair of numbers (in format 'WIDTHxHEIGHT') Maximum dimensions of the thumbnail to render, in pixels. If only one number is passed, it is used as the maximum, and the other dimension is computed by proportional scaling. Defaults to 768.
-        frames_per_second (int, optional): Animation speed. Defaults to 5.
-        crs (str, optional): The coordinate reference system to use. Defaults to "EPSG:3857".
-        apply_fmask (bool, optional): Whether to apply Fmask (Function of mask) for automated clouds, cloud shadows, snow, and water masking.
-        frequency (str, optional): Frequency of the timelapse: year, quarter, month. Defaults to 'year'.
+        roi : Region of interest to create the timelapse. Defaults to None.
+        out_gif : File path to the output animated GIF. Defaults to None.
+        start_year : Starting year for the timelapse. Defaults to 1984.
+        end_year : Ending year for the timelapse. Defaults to None, which will use the current year.
+        start_date : Starting date (month-day) each year for filtering ImageCollection. Defaults to '06-10'.
+        end_date : Ending date (month-day) each year for filtering ImageCollection. Defaults to '09-20'.
+        bands : Three bands selected from ['Blue', 'Green', 'Red', 'NIR', 'SWIR1', 'SWIR2', 'pixel_qa']. Defaults to ['NIR', 'Red', 'Green'].
+        vis_params : Visualization parameters. Defaults to None.
+        dimensions : a number or pair of numbers (in format 'WIDTHxHEIGHT') Maximum dimensions of the thumbnail to render, in pixels. If only one number is passed, it is used as the maximum, and the other dimension is computed by proportional scaling. Defaults to 768.
+        frames_per_second : Animation speed. Defaults to 5.
+        crs : The coordinate reference system to use. Defaults to "EPSG:3857".
+        apply_fmask : Whether to apply Fmask (Function of mask) for automated clouds, cloud shadows, snow, and water masking.
+        frequency : Frequency of the timelapse: year, quarter, month. Defaults to 'year'.
 
     Returns:
         str: File path to the output GIF image.
@@ -990,11 +1026,11 @@ def landsat_timelapse(
 
 
 # List all functions in the imported module
-def list_functions_from_script(module):
+def list_functions_from_script(module: "module") -> list[str]:
     """List all functions in the imported module.
 
     Args:
-        module (module): The module from which to list functions.
+        module : The module from which to list functions.
 
     Returns:
         list: A list of function names available in the module.
@@ -1008,11 +1044,11 @@ def list_functions_from_script(module):
     return function_list
 
 
-def clean_asset_id(asset_id):
+def clean_asset_id(asset_id: str) -> str:
     """Clean the asset ID string by removing any whitespace, trailing slash, and quotes.
 
     Args:
-        asset_id (str): Input asset ID string
+        asset_id : Input asset ID string
 
     Returns:
         str: Cleaned asset ID string
@@ -1023,8 +1059,12 @@ def clean_asset_id(asset_id):
     return asset_id
 
 
-def check_ee_datatype(parameter, type_str):
-    """Check the Earth Engine data type of the input object."""
+def check_ee_datatype(parameter: "arcpy.Parameter", type_str: str) -> None:
+    """Check the Earth Engine data type of the input object.
+    Args:
+        parameter : The parameter to check.
+        type_str : The type to check.
+    """
     asset_id = parameter.valueAsText
     asset_id = clean_asset_id(asset_id)
     # type_str equals to "IMAGE" or "TABLE" or "IMAGE_COLLECTION".
@@ -1048,7 +1088,7 @@ def check_ee_datatype(parameter, type_str):
         return
 
 
-def get_ee_datatype(asset_id):
+def get_ee_datatype(asset_id: str) -> str:
     """Get the Earth Engine data type of the input object.
 
     Returns:
@@ -1061,12 +1101,12 @@ def get_ee_datatype(asset_id):
     return data_type
 
 
-def init_and_set_tags(project=None, workload_tag=None):
+def init_and_set_tags(project: str = None, workload_tag: str = None) -> None:
     """Initialize Earth Engine and set user agent and workload tags.
 
     Args:
-        project (str, optional): Google Cloud project ID. Defaults to None.
-        workload_tag (str, optional): Custom workload tag. Defaults to None.
+        project : Google Cloud project ID.
+        workload_tag : Custom workload tag.
     """
     ee.Initialize(project=project)
 
@@ -1095,7 +1135,7 @@ def get_roi_from_object(obj: "ee.Image | ee.FeatureCollection") -> "ee.Geometry.
     """Get the ROI from the object extent.
 
     Args:
-        obj (ee.Image or ee.FeatureCollection): Earth Engine object
+        obj : Earth Engine object
 
     Returns:
         ee.Geometry.BBox: ROI from the object extent
@@ -1110,12 +1150,14 @@ def get_roi_from_object(obj: "ee.Image | ee.FeatureCollection") -> "ee.Geometry.
 
 
 # Get centroid and extent coordinates of input image or feature collection.
-def get_object_centroid(obj, error_margin):
+def get_object_centroid(
+    obj: "ee.Image | ee.FeatureCollection", error_margin: float
+) -> tuple[list[float], list[list[float]]]:
     """Get the centroid and extent coordinates of an Earth Engine object.
 
     Args:
-        obj (ee.Image or ee.FeatureCollection): Earth Engine object
-        error_margin (float): Error margin for geometry calculations
+        obj : Earth Engine object
+        error_margin : Error margin for geometry calculations
 
     Returns:
         tuple: (centroid_coords, extent_coords) where:
@@ -1134,11 +1176,13 @@ def get_object_centroid(obj, error_margin):
 
 
 # Convert coordinates to bounding box values.
-def convert_coords_to_bbox(coords):
+def convert_coords_to_bbox(
+    coords: list[list[float]],
+) -> tuple[float, float, float, float]:
     """Convert coordinates to bounding box values.
 
     Args:
-        coords (list): List of coordinates
+        coords : List of coordinates
 
     Returns:
         tuple: (x_min, y_min, x_max, y_max)
@@ -1154,11 +1198,11 @@ def convert_coords_to_bbox(coords):
 
 
 # Get the coordinates from polygon feature layer.
-def get_polygon_coords(in_poly):
+def get_polygon_coords(in_poly: str) -> list[list[float]]:
     """Extract coordinates from a polygon feature layer and convert to WGS 84.
 
     Args:
-        in_poly (str): Input polygon feature layer path/name
+        in_poly : Input polygon feature layer path/name
 
     Returns:
         list: List of polygon coordinates in WGS 84
@@ -1203,11 +1247,11 @@ def get_polygon_coords(in_poly):
 
 
 # Check whether use projection or crs code for image to xarray dataset.
-def whether_use_projection(ic):
+def whether_use_projection(ic: "ee.ImageCollection") -> bool:
     """Check whether to use projection or CRS code for image to xarray dataset.
 
     Args:
-        ic (ee.ImageCollection): Input image collection
+        ic : Input image collection
 
     Returns:
         bool: True if projection should be used, False if CRS code should be used
@@ -1231,24 +1275,24 @@ def whether_use_projection(ic):
 
 # Download GEE Image to GeoTiff.
 def image_to_geotiff(
-    ic,
-    bands,
-    crs,
-    scale_ds,
-    roi,
-    use_projection,
-    out_tiff,
-):
+    ic: "ee.ImageCollection",
+    bands: list[str],
+    crs: str,
+    scale_ds: float,
+    roi: "ee.Geometry",
+    use_projection: bool,
+    out_tiff: str,
+) -> None:
     """Download a GEE Image to GeoTiff format.
 
     Args:
-        ic (ee.ImageCollection): Input image collection
-        bands (list): List of band names to include
-        crs (str): Coordinate reference system
-        scale_ds (float): Scale/resolution for downloading
-        roi (ee.Geometry): Region of interest geometry
-        use_projection (bool): Whether to use projection or CRS code
-        out_tiff (str): Output GeoTiff file path
+        ic : Input image collection
+        bands : List of band names to include
+        crs : Coordinate reference system
+        scale_ds : Scale/resolution for downloading
+        roi : Region of interest geometry
+        use_projection : Whether to use projection or CRS code
+        out_tiff : Output GeoTiff file path
     """
     import rasterio
     from rasterio.transform import from_origin
@@ -1338,15 +1382,18 @@ def image_to_geotiff(
 
 # Upload local file to Google Cloud Storage bucket.
 def upload_to_gcs_bucket(
-    storage_client, bucket_name, source_file_name, destination_blob_name
-):
+    storage_client: "google.cloud.storage.Client",
+    bucket_name: str,
+    source_file_name: str,
+    destination_blob_name: str,
+) -> None:
     """Upload a local file to Google Cloud Storage bucket.
 
     Args:
-        storage_client (google.cloud.storage.Client): Storage client instance
-        bucket_name (str): Name of the GCS bucket
-        source_file_name (str): Local file path to upload
-        destination_blob_name (str): Destination path in GCS bucket
+        storage_client : Storage client instance
+        bucket_name : Name of the GCS bucket
+        source_file_name : Local file path to upload
+        destination_blob_name : Destination path in GCS bucket
     """
     arcpy.AddMessage("Upload to Google Cloud Storage ...")
     # Get the bucket that the file will be uploaded to.
@@ -1363,13 +1410,13 @@ def upload_to_gcs_bucket(
 
 
 # Convert Google Cloud Storage file to Earth Engine asset.
-def gcs_file_to_ee_asset(asset_type, asset_id, bucket_uri):
+def gcs_file_to_ee_asset(asset_type: str, asset_id: str, bucket_uri: str) -> None:
     """Convert a Google Cloud Storage file to an Earth Engine asset.
 
     Args:
-        asset_type (str): Type of Earth Engine asset to create
-        asset_id (str): ID for the new Earth Engine asset
-        bucket_uri (str): URI of the file in Google Cloud Storage
+        asset_type : Type of Earth Engine asset to create
+        asset_id : ID for the new Earth Engine asset
+        bucket_uri : URI of the file in Google Cloud Storage
     """
     import subprocess
 
@@ -1399,11 +1446,11 @@ def gcs_file_to_ee_asset(asset_type, asset_id, bucket_uri):
 
 
 # Create an Earth Engine image collection.
-def create_image_collection(asset_folder):
+def create_image_collection(asset_folder: str) -> None:
     """Create an Earth Engine image collection.
 
     Args:
-        asset_folder (str): Path where the image collection will be created
+        asset_folder : Path where the image collection will be created
     """
     import subprocess
 
@@ -1426,11 +1473,11 @@ def create_image_collection(asset_folder):
 
 
 # Create a folder on Earth Engine.
-def create_ee_folder(asset_folder):
+def create_ee_folder(asset_folder: str) -> None:
     """Create a folder on Earth Engine.
 
     Args:
-        asset_folder (str): Path where the folder will be created
+        asset_folder : Path where the folder will be created
     """
     import subprocess
 
@@ -1453,14 +1500,14 @@ def create_ee_folder(asset_folder):
 
 
 # Check if an Earth Engine asset already exists.
-def asset_exists(asset_id):
+def asset_exists(asset_id: str) -> bool:
     """Check if an Earth Engine asset already exists.
 
     Args:
-        asset_id (str): ID of the Earth Engine asset to check
+        asset_id : ID of the Earth Engine asset to check
 
     Returns:
-        bool: True if asset exists, False otherwise
+        bool : True if asset exists, False otherwise
     """
     try:
         # Try to retrieve asset information.
@@ -1472,13 +1519,17 @@ def asset_exists(asset_id):
 
 
 # List all folders in the bucket.
-def list_folders_recursive(storage_client, bucket_name, prefix=""):
+def list_folders_recursive(
+    storage_client: "google.cloud.storage.Client",
+    bucket_name: str,
+    prefix: str = "",
+) -> list[str]:
     """Recursively list all folders in a Google Cloud Storage bucket.
 
     Args:
-        storage_client (google.cloud.storage.Client): Storage client instance
-        bucket_name (str): Name of the GCS bucket
-        prefix (str, optional): Prefix to filter folders. Defaults to "".
+        storage_client : Storage client instance
+        bucket_name : Name of the GCS bucket
+        prefix : Prefix to filter folders. Defaults to "".
 
     Returns:
         list: Sorted list of folder paths in the bucket
@@ -1504,13 +1555,17 @@ def list_folders_recursive(storage_client, bucket_name, prefix=""):
 
 
 # List files within a folder in the bucket.
-def list_files_in_folder(storage_client, bucket_name, folder_name):
+def list_files_in_folder(
+    storage_client: "google.cloud.storage.Client",
+    bucket_name: str,
+    folder_name: str,
+) -> list[str]:
     """List files within a specified folder in a Google Cloud Storage bucket.
 
     Args:
-        storage_client (google.cloud.storage.Client): Storage client instance
-        bucket_name (str): Name of the GCS bucket
-        folder_name (str): Path to the folder within the bucket
+        storage_client : Storage client instance
+        bucket_name : Name of the GCS bucket
+        folder_name : Path to the folder within the bucket
 
     Returns:
         list: List of file paths within the specified folder
@@ -1524,11 +1579,11 @@ def list_files_in_folder(storage_client, bucket_name, folder_name):
 
 
 # Check if the start date is given when end date is provided for filter by dates.
-def check_start_date(parameter):
+def check_start_date(parameter: "arcpy.Parameter") -> None:
     """Check if the start date is given when end date is provided for filter by dates.
 
     Args:
-        parameter (Parameter): The parameter to check
+        parameter : The parameter to check
     """
     val_list = parameter.values
     # Display error message if start date is not provided when end date is provided.
@@ -1538,12 +1593,13 @@ def check_start_date(parameter):
 
 
 # Check if an image has valid pixels.
-def has_valid_pixels(image: "ee.Image", roi: "ee.Geometry", scale: int) -> bool:
+def has_valid_pixels(image: "ee.Image", roi: "ee.Geometry", scale: float) -> bool:
     """Check if an image has valid pixels.
 
     Args:
         image : Input image
         roi : Region of interest
+        scale : Scale of the image
 
     Returns:
         bool: True if the image has valid pixels, False otherwise
