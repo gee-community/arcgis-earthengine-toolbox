@@ -801,20 +801,26 @@ class AddImgCol2MapbyID:
 
         param3 = arcpy.Parameter(
             name="filter_bounds",
-            displayName="Filter by location in coordinates",
-            datatype="GPValueTable",
+            displayName="Select the type of filter-by-location",
+            datatype="GPString",
             direction="Input",
             parameterType="Optional",
         )
-        param3.columns = [["GPString", "Longitude"], ["GPString", "Latitude"]]
+
+        param3.filter.list = [
+            "Map Centroid (Point)",
+            "Polygon Extent (Area)",
+            "Map Extent (Area)",
+        ]
 
         param4 = arcpy.Parameter(
-            name="use_centroid",
-            displayName="Use the center of the current map view extent",
-            datatype="GPBoolean",
+            name="use_polygon",
+            displayName="Filter by location with a polygon",
+            datatype="GPFeatureLayer",
             direction="Input",
             parameterType="Optional",
         )
+        param4.filter.list = ["Polygon"]
 
         param5 = arcpy.Parameter(
             name="image",
@@ -916,26 +922,29 @@ class AddImgCol2MapbyID:
             start_date = None
             end_date = None
 
+        # Disable polygon if not selected.
+        parameters[4].enabled = False
+        if parameters[3].valueAsText == "Polygon Extent (Area)":
+            parameters[4].enabled = True
+
         # Get the filter bounds.
-        if parameters[4].value:
-            # Disable input coordinates if map extent is used.
-            parameters[3].enabled = False
+        roi = None
+        if parameters[3].valueAsText == "Map Centroid (Point)":
             xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             # Get the centroid of map extent.
             lon = (xmin + xmax) / 2
             lat = (ymin + ymax) / 2
-        else:
-            parameters[3].enabled = True
-            if parameters[3].valueAsText:
-                val_list = parameters[3].values
-                lon = val_list[0][0]
-                lat = val_list[0][1]
-            else:
-                lon = None
-                lat = None
+            roi = ee.Geometry.Point((float(lon), float(lat)))
+        elif parameters[3].valueAsText == "Polygon Extent (Area)":
+            # Only when polygon is selected.
+            if parameters[4].valueAsText:
+                coords = arcgee.data.get_polygon_coords(parameters[4].valueAsText)
+                roi = ee.Geometry.MultiPolygon(coords)
+        elif parameters[3].valueAsText == "Map Extent (Area)":
+            xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
+            roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
 
-        # Image collection size could be huge, may take long to load without filters.
-        # Only retrieve the list of images, when either filter dates or filter bounds are selected.
+        # Image collection size could be huge, load maximum of 100 images.
         if parameters[0].valueAsText:
             asset_id = arcgee.data.clean_asset_id(parameters[0].valueAsText)
             collection = ee.ImageCollection(asset_id)
@@ -945,11 +954,11 @@ class AddImgCol2MapbyID:
                 for row in value_list:
                     if row[0] and row[1] and row[2]:
                         collection = arcgee.data.filter_by_properties(collection, row)
-            if lon is not None and lat is not None:
-                collection = collection.filterBounds(
-                    ee.Geometry.Point((float(lon), float(lat)))
-                )
-            if start_date is not None and end_date is not None:
+            # Filter by location.
+            if roi:
+                collection = collection.filterBounds(roi)
+            # Filter by date.
+            if start_date and end_date:
                 collection = collection.filterDate(start_date, end_date)
             # Get image IDs from collection, limit to 100 images to avoid slow response.
             image_ids = collection.limit(100).aggregate_array("system:index").getInfo()
@@ -1097,22 +1106,20 @@ class AddImgCol2MapbyID:
                 end_date = None
 
             # Get the filter bounds.
-            if parameters[4].value:
-                # Disable input coordinates if map extent is used.
-                parameters[3].enabled = False
+            roi = None
+            if parameters[3].valueAsText == "Map Centroid (Point)":
                 xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
                 # Get the centroid of map extent.
                 lon = (xmin + xmax) / 2
                 lat = (ymin + ymax) / 2
-            else:
-                parameters[3].enabled = True
-                if parameters[3].valueAsText:
-                    val_list = parameters[3].values
-                    lon = val_list[0][0]
-                    lat = val_list[0][1]
-                else:
-                    lon = None
-                    lat = None
+                roi = ee.Geometry.Point((float(lon), float(lat)))
+            elif parameters[3].valueAsText == "Polygon Extent (Area)":
+                if parameters[4].valueAsText:
+                    coords = arcgee.data.get_polygon_coords(parameters[4].valueAsText)
+                    roi = ee.Geometry.MultiPolygon(coords)
+            elif parameters[3].valueAsText == "Map Extent (Area)":
+                xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
+                roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
 
             collection = ee.ImageCollection(asset_id)
             # Filter image collection as specified.
@@ -1121,11 +1128,11 @@ class AddImgCol2MapbyID:
                 for row in value_list:
                     if row[0] and row[1] and row[2]:
                         collection = arcgee.data.filter_by_properties(collection, row)
-            if lon is not None and lat is not None:
-                collection = collection.filterBounds(
-                    ee.Geometry.Point((float(lon), float(lat)))
-                )
-            if start_date is not None and end_date is not None:
+            # Filter by location.
+            if roi:
+                collection = collection.filterBounds(roi)
+            # Filter by date.
+            if start_date and end_date:
                 collection = collection.filterDate(start_date, end_date)
 
             arcgee.data.save_ee_result(collection, out_json)
@@ -1417,7 +1424,7 @@ class AddFeatCol2MapbyID:
         )
 
         param2.filter.list = [
-            "Polygon (Area)",
+            "Polygon Extent (Area)",
             "Map Extent (Area)",
         ]
 
@@ -1552,7 +1559,7 @@ class AddFeatCol2MapbyID:
             parameters[1].filters[0].list = []
 
         # Enable polygon feature input when polygon filter is selected.
-        parameters[3].enabled = parameters[2].valueAsText == "Polygon (Area)"
+        parameters[3].enabled = parameters[2].valueAsText == "Polygon Extent (Area)"
 
         # TODO: add reset parameters if script refreshing takes too long
         # # Reset parameters when reset_params is checked
@@ -1662,7 +1669,7 @@ class AddFeatCol2MapbyID:
             xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
             fc = fc.filterBounds(roi)
-        elif filter_bounds == "Polygon (Area)":
+        elif filter_bounds == "Polygon Extent (Area)":
             if parameters[3].valueAsText:
                 # Get input feature coordinates to list.
                 coords = arcgee.data.get_polygon_coords(parameters[3].valueAsText)
@@ -2599,7 +2606,7 @@ class DownloadImgColbyID:
                 collection = collection.filterBounds(
                     ee.Geometry.Point((float(lon), float(lat)))
                 )
-            if start_date is not None and end_date is not None:
+            if start_date and end_date:
                 collection = collection.filterDate(start_date, end_date)
             # Get image IDs from collection. Limit to 100 images to avoid slow response.
             image_list = collection.limit(100).aggregate_array("system:index").getInfo()
@@ -3194,7 +3201,7 @@ class DownloadImgColbyIDMultiRegion:
             asset_id = arcgee.data.clean_asset_id(asset_id)
             collection = ee.ImageCollection(asset_id)
             # Filter image collection as specified.
-            if start_date is not None and end_date is not None:
+            if start_date and end_date:
                 collection = collection.filterDate(start_date, end_date)
 
             # Get the first select image.
@@ -3262,7 +3269,7 @@ class DownloadImgColbyIDMultiRegion:
             end_date = None
 
         # Filter image collection as specified.
-        if start_date is not None and end_date is not None:
+        if start_date and end_date:
             collection = collection.filterDate(start_date, end_date)
 
         # Get the coordinate list of the selected polygons.
@@ -3431,7 +3438,7 @@ class DownloadFeatColbyID:
             parameterType="Required",
         )
 
-        param2.filter.list = ["Polygon (Area)", "Map Extent (Area)"]
+        param2.filter.list = ["Polygon Extent (Area)", "Map Extent (Area)"]
 
         param3 = arcpy.Parameter(
             name="use_poly",
@@ -3503,7 +3510,7 @@ class DownloadFeatColbyID:
             parameters[1].filters[0].list = []
 
         # Enable polygon feature input when polygon filter is selected.
-        parameters[3].enabled = parameters[2].valueAsText == "Polygon (Area)"
+        parameters[3].enabled = parameters[2].valueAsText == "Polygon Extent (Area)"
 
         return
 
@@ -3568,7 +3575,7 @@ class DownloadFeatColbyID:
             xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
             roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
             fc = fc.filterBounds(roi)
-        elif filter_bounds == "Polygon (Area)":
+        elif filter_bounds == "Polygon Extent (Area)":
             if parameters[3].valueAsText:
                 # Get input feature coordinates to list.
                 coords = arcgee.data.get_polygon_coords(parameters[3].valueAsText)
@@ -3980,7 +3987,7 @@ class DownloadImgCol2Gif:
                     ee.Geometry.Point((float(lon), float(lat)))
                 )
                 has_filter = True
-            if start_date is not None and end_date is not None:
+            if start_date and end_date:
                 collection = collection.filterDate(start_date, end_date)
                 has_filter = True
 
@@ -4074,7 +4081,7 @@ class DownloadImgCol2Gif:
             collection = collection.filterBounds(
                 ee.Geometry.Point((float(lon), float(lat)))
             )
-        if start_date is not None and end_date is not None:
+        if start_date and end_date:
             collection = collection.filterDate(start_date, end_date)
 
         # Define animation function parameters.
