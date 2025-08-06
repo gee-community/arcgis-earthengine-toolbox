@@ -1,4 +1,30 @@
 {
+    "types": [
+        {
+            "type": "feat",
+            "section": "Features"
+        },
+        {
+            "type": "fix",
+            "section": "Bug Fixes"
+        },
+        {
+            "type": "chore",
+            "section": "Miscellaneous"
+        },
+        {
+            "type": "docs",
+            "section": "Documentation"
+        },
+        {
+            "type": "refactor",
+            "section": "Code Refactoring"
+        },
+        {
+            "type": "test",
+            "section": "Tests"
+        }
+    ],
     "packages": {
         ".": {
             "release-type": "python",
