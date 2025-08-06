@@ -28,17 +28,16 @@ import arcpy
 import ee
 
 
-# Import version from parent package
-# from arcgee import __version__
-
-__version__ = "0.1.1"
+__version__ = "1.0.0"
 
 
 def is_valid_workload_tag(tag: str) -> bool:
     """
     Check if a tag is valid for a workload.
+
     Args:
         tag : The tag to check.
+
     Returns:
         bool : True if the tag is valid, False otherwise.
     """
@@ -53,8 +52,10 @@ def is_valid_workload_tag(tag: str) -> bool:
 def has_spaces_or_special_chars(filepath: str) -> bool:
     """
     Check if a file path has spaces or special characters.
+
     Args:
         filepath : The file path to check.
+
     Returns:
         bool : True if the file path has spaces or special characters, False otherwise.
     """
@@ -63,19 +64,10 @@ def has_spaces_or_special_chars(filepath: str) -> bool:
     return bool(re.search(r"[^a-zA-Z0-9_.-]", filename))
 
 
-def get_version_info() -> str:
-    """
-    Returns version information about the GEE Connector.
-
-    Returns:
-        str: A formatted string with version information
-    """
-    return f"GEE Connector v{__version__}"
-
-
 def auth(project: str = None) -> None:
     """
     Authenticate with Google Cloud and Earth Engine.
+
     Args:
         project : The project to authenticate with.
     """
@@ -96,6 +88,7 @@ def auth(project: str = None) -> None:
 def save_ee_result(ee_object: "ee.ComputedObject", path: str) -> None:
     """
     Save an Earth Engine object to a JSON file.
+
     Args:
         ee_object : The Earth Engine object to save.
         path : The file path to save the Earth Engine object.
@@ -284,9 +277,11 @@ def filter_by_properties(
 ) -> "ee.ImageCollection | ee.FeatureCollection":
     """
     Filter an image collection or feature collection by properties.
+
     Args:
         collection : The collection to filter.
         value_list : A list of strings, containing a property name, operator, and value.
+
     Returns:
         ee.ImageCollection | ee.FeatureCollection: The filtered collection.
     """
@@ -550,8 +545,12 @@ def landsat_timeseries(
         frequency : Frequency of the timelapse: year, quarter, month. Defaults to 'year'.
         date_format : Format of the date. Defaults to None.
         step : The step size to use when creating the date sequence. Defaults to 1.
+
     Returns:
         ee.ImageCollection: Returns an ImageCollection containing annual Landsat images.
+
+    Raises:
+        RuntimeError: If the roi is not a valid ee.Geometry.
     """
 
     # Input and output parameters.
@@ -1061,9 +1060,13 @@ def clean_asset_id(asset_id: str) -> str:
 
 def check_ee_datatype(parameter: "arcpy.Parameter", type_str: str) -> None:
     """Check the Earth Engine data type of the input object.
+
     Args:
         parameter : The parameter to check.
         type_str : The type to check.
+
+    Raises:
+        RuntimeError: If the asset ID is not a valid asset ID.
     """
     asset_id = parameter.valueAsText
     asset_id = clean_asset_id(asset_id)
@@ -1623,6 +1626,9 @@ def check_start_date(parameter: "arcpy.Parameter") -> None:
 
     Args:
         parameter : The parameter to check
+
+    Raises:
+        RuntimeError: If the start date is not provided when end date is provided.
     """
     val_list = parameter.values
     # Display error message if start date is not provided when end date is provided.
@@ -1644,8 +1650,9 @@ def has_valid_pixels(image: "ee.Image", roi: "ee.Geometry", scale: float) -> boo
         bool: True if the image has valid pixels, False otherwise
     """
     sample = image.sample(region=roi, scale=scale, numPixels=30)
+    result = sample.size().gt(0).getInfo()
 
-    return sample.size().gt(0).getInfo()
+    return bool(result) if result is not None else False
 
 
 # Check if the JSON file is valid.
@@ -1657,6 +1664,9 @@ def is_valid_json(json_file: str) -> bool:
 
     Returns:
         bool: True if the JSON file is valid, False otherwise
+
+    Raises:
+        RuntimeError: If the JSON file is not valid.
     """
     try:
         with open(json_file, "r") as f:
