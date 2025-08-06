@@ -1,7 +1,10 @@
 {
     "packages": {
         ".": {
-            "release-type": "python"
+            "release-type": "python",
+            "changelog-sections": {
+                "": "#### 🔗 [Compare changes](https://github.com/gee-community/arcgis-earthengine-toolbox/compare/${previousTag}...${currentTag})"
+            }
         }
     }
 }
