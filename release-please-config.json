@@ -1,36 +1,7 @@
 {
     "packages": {
         ".": {
-            "release-type": "python",
-            "types": [
-                {
-                    "type": "feat",
-                    "section": "Features"
-                },
-                {
-                    "type": "fix",
-                    "section": "Bug Fixes"
-                },
-                {
-                    "type": "chore",
-                    "section": "Miscellaneous"
-                },
-                {
-                    "type": "docs",
-                    "section": "Documentation"
-                },
-                {
-                    "type": "refactor",
-                    "section": "Code Refactoring"
-                },
-                {
-                    "type": "test",
-                    "section": "Tests"
-                }
-            ],
-            "changelog-sections": {
-                "": "#### 🔗 [Compare changes](https://github.com/gee-community/arcgis-earthengine-toolbox/compare/${previousTag}...${currentTag})"
-            }
+            "release-type": "python"
         }
     }
 }
