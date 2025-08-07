@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import json
 import pathlib
 
@@ -1594,7 +1593,8 @@ class AddFeatCol2MapbyID:
                     prop_list.append(prop_name)
                 else:
                     parameters[1].setWarningMessage(
-                        f"The property name '{prop_name}' is used more than once. You can confirm and proceed."
+                        f"The property name '{prop_name}' is used more than once. "
+                        "You can confirm and proceed."
                     )
                     return
 
@@ -1717,7 +1717,8 @@ class AddFeatCol2MapbyID:
 
         else:
             arcpy.AddWarning(
-                "No data record returned after applying filters! Please reset the filters and try again."
+                "No data record returned after applying filters! "
+                "Please reset the filters and try again."
             )
 
         return
@@ -1939,7 +1940,8 @@ class AddFeatCol2MapbyObj:
 
         else:
             arcpy.AddWarning(
-                "No data record returned after applying filters! Please reset the filters and try again."
+                "No data record returned after applying filters! "
+                "Please reset the filters and try again."
             )
 
         return
@@ -2612,7 +2614,8 @@ class DownloadImgColbyID:
             image_list = collection.limit(100).aggregate_array("system:index").getInfo()
             parameters[4].filter.list = image_list
 
-        # Check the band list of the first selected image, assuming all selected images have the same bands.
+        # Check the band list of the first selected image,
+        # assuming all selected images have the same bands.
         img_names = parameters[4].valueAsText
         # Update only when filter list is empty.
         if img_names:
@@ -2747,7 +2750,8 @@ class DownloadImgColbyID:
             # Check if the image has valid pixels.
             if not arcgee.data.has_valid_pixels(image.first(), roi, scale_ds):
                 arcpy.AddWarning(
-                    f"Image {img_id} has no valid pixels in the region of interest. Skip this image."
+                    f"Image {img_id} has no valid pixels in the region of interest. "
+                    "Skip this image."
                 )
                 continue
             else:
@@ -3033,7 +3037,8 @@ class DownloadImgColbyObj:
             # Check if the image has valid pixels.
             if not arcgee.data.has_valid_pixels(image.first(), roi, scale_ds):
                 arcpy.AddWarning(
-                    f"Image {img_id} has no valid pixels in the region of interest. Skip this image."
+                    f"Image {img_id} has no valid pixels in the region of interest. "
+                    "Skip this image."
                 )
                 continue
             else:
@@ -3195,8 +3200,10 @@ class DownloadImgColbyIDMultiRegion:
         # Check image list of a given collection asset.
         asset_id = parameters[0].valueAsText
 
-        # Image collection size could be huge, may take long time to load image IDs without filters.
-        # Only retrieve the list of images, when either filter dates or filter bounds are selected.
+        # Image collection size could be huge,
+        # may take long time to load image IDs without filters.
+        # Only retrieve the list of images,
+        # when either filter dates or filter bounds are selected.
         if asset_id:
             asset_id = arcgee.data.clean_asset_id(asset_id)
             collection = ee.ImageCollection(asset_id)
@@ -3313,7 +3320,8 @@ class DownloadImgColbyIDMultiRegion:
                     f"Found {collection_region.size().getInfo()} images at region {icount}."
                 )
 
-            # CRS could change per region, so get the first image of the collection after filter by ROI.
+            # CRS could change per region,
+            # so get the first image of the collection after filter by ROI.
             image = collection_region.first()
 
             # Get crs code for xarray metadata.
@@ -3347,16 +3355,19 @@ class DownloadImgColbyIDMultiRegion:
                 image = ee.ImageCollection(ee.Image(img_id))
                 # Filter image by selected bands.
                 image = image.select(bands_only)
-                # Even the image collection has images after filtering by ROI, the ROI could be masked out.
+                # Even the image collection has images after filtering by ROI,
+                # the ROI could be masked out.
                 # Check if the image has valid pixels.
                 if not arcgee.data.has_valid_pixels(image.first(), roi, scale_ds):
                     arcpy.AddWarning(
-                        f"Image {img_id} has no valid pixels in the region of interest. Skip this image."
+                        f"Image {img_id} has no valid pixels in the region of interest. "
+                        "Skip this image."
                     )
                     continue
                 else:
                     arcpy.AddMessage(
-                        f"Image {img_id} has valid pixels in the region of interest. Downloading ..."
+                        f"Image {img_id} has valid pixels in the region of interest. "
+                        "Downloading ..."
                     )
 
                 # Create output file name based on image IDs.
@@ -3531,7 +3542,8 @@ class DownloadFeatColbyID:
                     prop_list.append(prop_name)
                 else:
                     parameters[1].setWarningMessage(
-                        f"The property name '{prop_name}' is used more than once. You can confirm and proceed."
+                        f"The property name '{prop_name}' is used more than once. "
+                        "You can confirm and proceed."
                     )
                     return
 
@@ -3994,7 +4006,8 @@ class DownloadImgCol2Gif:
                 img_num = collection.size().getInfo()
                 parameters[4].value = img_num
 
-            # Check the band list of the first selected image, assuming all selected images have the same bands.
+            # Check the band list of the first selected image,
+            # assuming all selected images have the same bands.
             # Update only when filter list is empty.
             if not parameters[5].filter.list:
                 # Get the first select image.
@@ -4932,7 +4945,8 @@ class GCSFile2Asset:
         asset_type = parameters[4].valueAsText
         asset_id = parameters[5].valueAsText
 
-        # Create storage client since self.storage_client can not transfer from updateParameters here.
+        # Create storage client since self.storage_client can not transfer
+        # from updateParameters here.
         self.storage_client = storage.Client(project=project_id)
 
         # Get the list of selected files.
@@ -5293,8 +5307,6 @@ class ApplyMapFunctionbyID:
         validation is performed.  This method is called whenever a parameter
         has been changed."""
 
-        import importlib
-
         # When the map function file is selected.
         if parameters[2].valueAsText:
             # Get the file name of input map function file.
@@ -5320,8 +5332,6 @@ class ApplyMapFunctionbyID:
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        import importlib
-
         # Read input parameters.
         data_type = parameters[0].valueAsText
         asset_id = parameters[1].valueAsText
@@ -5438,8 +5448,6 @@ class ApplyMapFunctionbyObj:
         """Modify the values and properties of parameters before internal
         validation is performed.  This method is called whenever a parameter
         has been changed."""
-
-        import importlib
 
         # When the map function file is selected.
         if parameters[2].valueAsText:

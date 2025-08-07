@@ -1,0 +1,34 @@
+[MASTER]
+ignore-patterns=test_.*  # Ignore test files if needed
+extension-pkg-whitelist=arcpy
+load-plugins=pylint.extensions.docparams
+
+[MESSAGES CONTROL]
+# Disable warnings that conflict with ArcPy-required method names or patterns
+disable=
+    invalid-name,
+    useless-return,
+    missing-class-docstring,
+    missing-function-docstring,
+    too-few-public-methods,
+    unused-argument,
+    fixme,
+    too-many-lines,
+    pointless-string-statement
+
+[FORMAT]
+# ArcPy methods like 'getParameterInfo' don’t follow snake_case
+max-line-length=100
+
+[DESIGN]
+max-args=10
+max-locals=20
+max-branches=15
+max-statements=50
+
+[REPORTS]
+output-format=colorized
+reports=no
+
+[TYPECHECK]
+generated-members=arcpy.*
