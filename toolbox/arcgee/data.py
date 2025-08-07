@@ -16,7 +16,8 @@ import datetime
 import json
 import os
 import re
-from pathlib import Path
+import pathlib
+from types import ModuleType
 
 import numpy as np
 import requests
@@ -59,7 +60,7 @@ def has_spaces_or_special_chars(filepath: str) -> bool:
     Returns:
         bool : True if the file path has spaces or special characters, False otherwise.
     """
-    filename = Path(filepath).name
+    filename = pathlib.Path(filepath).name
     # Matches any character that is not a-z, A-Z, 0-9, underscore, dash, or dot.
     return bool(re.search(r"[^a-zA-Z0-9_.-]", filename))
 
@@ -95,9 +96,7 @@ def save_ee_result(ee_object: "ee.ComputedObject", path: str) -> None:
     """
     serialized_obj = ee_object.serialize()
 
-    with open(path, "w") as f:
-        ujson.dump(serialized_obj, f)
-
+    pathlib.Path(path).write_text(ujson.dumps(serialized_obj))
     return
 
 
@@ -115,8 +114,7 @@ def load_ee_result(path: str) -> "ee.ComputedObject":
         RuntimeError: If deserialization fails.
     """
     try:
-        with open(path, "r") as f:
-            ee_object = ujson.load(f)
+        ee_object = ujson.loads(pathlib.Path(path).read_text())
 
         # Attempt to deserialize the Earth Engine object.
         return ee.deserializer.fromJSON(ee_object)
@@ -408,13 +406,13 @@ def download_ee_video(
         proxies : A dictionary of proxy servers to use. Defaults to None.
     """
 
-    out_gif = os.path.abspath(out_gif)
-    if not out_gif.endswith(".gif"):
+    out_gif = pathlib.Path(out_gif).resolve()
+    if not out_gif.suffix == ".gif":
         print("The output file must have an extension of .gif.")
         return
 
-    if not os.path.exists(os.path.dirname(out_gif)):
-        os.makedirs(os.path.dirname(out_gif))
+    if not out_gif.parent.exists():
+        out_gif.parent.mkdir(parents=True)
 
     if "region" in video_args.keys():
         roi = video_args["region"]
@@ -443,9 +441,7 @@ def download_ee_video(
             print(r.json()["error"]["message"])
             return
         else:
-            with open(out_gif, "wb") as fd:
-                for chunk in r.iter_content(chunk_size=1024):
-                    fd.write(chunk)
+            out_gif.write_bytes(b"".join(r.iter_content(chunk_size=1024)))
             print(f"The GIF image has been saved to: {out_gif}")
     except Exception as e:
         print(e)
@@ -956,11 +952,10 @@ def landsat_timelapse(
     else:
         arcpy.AddError("The provided roi is invalid. It must be an ee.Geometry")
 
-    out_gif = os.path.abspath(out_gif)
-    out_dir = os.path.dirname(out_gif)
+    out_gif = pathlib.Path(out_gif).resolve()
 
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
+    if not out_gif.parent.exists():
+        out_gif.parent.mkdir(parents=True)
 
     if end_year is None:
         end_year = get_current_year()
@@ -1012,13 +1007,13 @@ def landsat_timelapse(
         video_args["min"] = 0
         video_args["max"] = 255
 
-        download_ee_video(col, video_args, out_gif)
+        download_ee_video(col, video_args, str(out_gif))
 
-        if os.path.exists(out_gif):
+        if out_gif.exists():
             date_list = col.aggregate_array("system:date").getInfo()
-            add_date_to_gif(out_gif, out_gif, date_list)
+            add_date_to_gif(str(out_gif), str(out_gif), date_list)
 
-        return out_gif
+        return str(out_gif)
 
     except Exception as e:
         arcpy.AddError(e)
@@ -1656,7 +1651,7 @@ def has_valid_pixels(image: "ee.Image", roi: "ee.Geometry", scale: float) -> boo
 
 
 # Check if the JSON file is valid.
-def is_valid_json(json_file: str) -> bool:
+def is_valid_json(json_file: pathlib.Path) -> bool:
     """Check if the JSON file is valid.
 
     Args:
@@ -1669,8 +1664,7 @@ def is_valid_json(json_file: str) -> bool:
         RuntimeError: If the JSON file is not valid.
     """
     try:
-        with open(json_file, "r") as f:
-            data = json.load(f)
+        data = ujson.loads(json_file.read_text())
 
         # If 'error' key exists at the top level, it's invalid.
         if "error" in data:
@@ -1688,3 +1682,28 @@ def is_valid_json(json_file: str) -> bool:
     except Exception as e:
         arcpy.AddError(f"Failed to read file: {e}")
         return False
+
+
+def load_module_from_file(file_path: str) -> ModuleType:
+    """
+    Dynamically loads a Python module from a file path.
+
+    Parameters:
+        file_path (str): Full path to the .py file
+
+    Returns:
+        ModuleType: The imported Python module
+    """
+    import importlib
+
+    file_path = pathlib.Path(file_path)
+    module_name = file_path.stem  # Filename without .py extension
+
+    spec = importlib.util.spec_from_file_location(module_name, str(file_path))
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Cannot load module from {file_path}")
+
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    return module

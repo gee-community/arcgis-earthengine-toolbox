@@ -327,9 +327,9 @@ class GEEAuth:
 
         # Define functions.
         def clear_credentials():
-            credentials_path = os.path.expanduser("~/.config/earthengine/credentials")
-            if os.path.exists(credentials_path):
-                os.remove(credentials_path)
+            credentials_path = pathlib.Path.home() / ".config/earthengine/credentials"
+            if credentials_path.exists():
+                credentials_path.unlink()
                 arcpy.AddMessage(
                     "Previous credentials are removed. Re-authenticate now ..."
                 )
@@ -3584,8 +3584,8 @@ class DownloadFeatColbyID:
                 fc = fc.filterBounds(roi)
 
         # Download feature collection to a temporary GeoJSON.
-        upper_path = os.path.dirname(arcpy.env.workspace)
-        out_json = os.path.join(upper_path, "temp.geojson")
+        upper_path = pathlib.Path(arcpy.env.workspace).parent
+        out_json = upper_path / "temp.geojson"
 
         # Prepare the download URL.
         params_dict = {}
@@ -3594,12 +3594,11 @@ class DownloadFeatColbyID:
         download_url = fc.getDownloadURL(**params_dict)
 
         arcpy.AddMessage("Download URL is: " + download_url)
-        arcpy.AddMessage("Downloading to " + out_json + " ...")
+        arcpy.AddMessage(f"Downloading to {out_json} ...")
 
         # Download the file to your local machine.
         response = requests.get(download_url)
-        with open(out_json, "wb") as file:
-            file.write(response.content)
+        out_json.write_bytes(response.content)
 
         # Check if the JSON file is valid.
         if not arcgee.data.is_valid_json(out_json):
@@ -3612,10 +3611,10 @@ class DownloadFeatColbyID:
             out_feat = out_filename + "_" + geo
             out_feat_list.append(out_feat)
             arcpy.AddMessage(f"Converting to {geo} feature class: {out_feat} ...")
-            arcpy.conversion.JSONToFeatures(out_json, out_feat, geo.upper())
+            arcpy.conversion.JSONToFeatures(str(out_json), out_feat, geo.upper())
 
         # Clean up the temp file.
-        os.remove(out_json)
+        out_json.unlink()
 
         # Add output feature class to map layer.
         if load_feat:
@@ -3724,8 +3723,8 @@ class DownloadFeatColbyObj:
         fc = arcgee.data.load_ee_result(json_path)
 
         # Download feature collection to a temporary GeoJSON.
-        upper_path = os.path.dirname(arcpy.env.workspace)
-        out_json = os.path.join(upper_path, "temp.geojson")
+        upper_path = pathlib.Path(arcpy.env.workspace).parent
+        out_json = upper_path / "temp.geojson"
 
         # Prepare the download URL.
         params_dict = {}
@@ -3734,12 +3733,11 @@ class DownloadFeatColbyObj:
         download_url = fc.getDownloadURL(**params_dict)
 
         arcpy.AddMessage("Download URL is: " + download_url)
-        arcpy.AddMessage("Downloading to " + out_json + " ...")
+        arcpy.AddMessage(f"Downloading to {out_json} ...")
 
         # Download the file to your local machine.
         response = requests.get(download_url)
-        with open(out_json, "wb") as file:
-            file.write(response.content)
+        out_json.write_bytes(response.content)
 
         # Check if the JSON file is valid.
         if not arcgee.data.is_valid_json(out_json):
@@ -3752,10 +3750,10 @@ class DownloadFeatColbyObj:
             out_feat = out_filename + "_" + geo
             out_feat_list.append(out_feat)
             arcpy.AddMessage(f"Converting to {geo} feature class: {out_feat} ...")
-            arcpy.conversion.JSONToFeatures(out_json, out_feat, geo.upper())
+            arcpy.conversion.JSONToFeatures(str(out_json), out_feat, geo.upper())
 
         # Clean up the temp file.
-        os.remove(out_json)
+        out_json.unlink()
 
         # Add output feature class to map layer.
         if load_feat:
@@ -4148,10 +4146,9 @@ class DownloadImgCol2Gif:
             )
 
             # Read the GeoJSON file.
-            upper_path = os.path.dirname(arcpy.env.workspace)
-            file_geojson = os.path.join(upper_path, "temp.geojson")
-            with open(file_geojson) as f:
-                geojson_data = json.load(f)
+            upper_path = pathlib.Path(arcpy.env.workspace).parent
+            file_geojson = upper_path / "temp.geojson"
+            geojson_data = json.loads(file_geojson.read_text())
 
             # Collect polygon object coordinates.
             coords = []
@@ -4162,7 +4159,7 @@ class DownloadImgCol2Gif:
             # Create an Earth Engine MultiPolygon from the GeoJSON.
             roi = ee.Geometry.MultiPolygon(coords, None, False)
             # Delete temporary geojson.
-            arcpy.management.Delete(file_geojson)
+            file_geojson.unlink()
             # Get the region of interest.
             videoArgs["region"] = roi
         # Not using any ROI, download entire image.
@@ -4206,9 +4203,9 @@ class DownloadImgCol2Gif:
                 arcpy.AddMessage(r.json()["error"]["message"])
                 return
             else:
-                with open(out_gif, "wb") as fd:
-                    for chunk in r.iter_content(chunk_size=1024):
-                        fd.write(chunk)
+                pathlib.Path(out_gif).write_bytes(
+                    b"".join(r.iter_content(chunk_size=1024))
+                )
                 arcpy.AddMessage(f"The GIF image has been saved to: {out_gif}")
         except Exception as e:
             arcpy.AddError(e)
@@ -4414,10 +4411,9 @@ class DownloadLandsatTimelapse2Gif:
             )
 
             # Read the GeoJSON file.
-            upper_path = os.path.dirname(arcpy.env.workspace)
-            file_geojson = os.path.join(upper_path, "temp.geojson")
-            with open(file_geojson) as f:
-                geojson_data = json.load(f)
+            upper_path = pathlib.Path(arcpy.env.workspace).parent
+            file_geojson = upper_path / "temp.geojson"
+            geojson_data = json.loads(file_geojson.read_text())
 
             # Collect polygon object coordinates.
             coords = []
@@ -4428,7 +4424,7 @@ class DownloadLandsatTimelapse2Gif:
             # Create an Earth Engine MultiPolygon from the GeoJSON.
             roi = ee.Geometry.MultiPolygon(coords, None, False)
             # Delete temporary geojson.
-            arcpy.management.Delete(file_geojson)
+            file_geojson.unlink()
 
         arcpy.AddMessage(f"Region of Interest: {roi.getInfo()}['coordinates']")
 
@@ -4721,14 +4717,14 @@ class Upload2GCS:
         # Upload files to the selected bucket name.
         gcs_file_list = []
         for ifile in file_list:
-            file_name = os.path.basename(ifile)
+            file_name = pathlib.Path(ifile).name
             out_file = bucket_folder + file_name
             arcgee.data.upload_to_gcs_bucket(
                 storage_client, bucket_name, ifile, out_file
             )
             gcs_file_list.append(out_file)
             # Check file extension.
-            file_extension = os.path.splitext(file_name)[1]
+            file_extension = pathlib.Path(file_name).suffix
             # For shape file, need to upload accessary files.
             if file_extension == ".shp":
                 for extension in [".shx", ".dbf", ".prj", ".cpg"]:
@@ -4770,7 +4766,7 @@ class Upload2GCS:
                 if is_col:
                     # Upload to collection folder.
                     # Use file name as item id.
-                    file_name = os.path.splitext(os.path.basename(bucket_uri))[0]
+                    file_name = pathlib.Path(bucket_uri).stem
                     item_id = f"{collection_asset_folder}/{file_name}"
                     arcgee.data.gcs_file_to_ee_asset(asset_type, item_id, bucket_uri)
                 else:
@@ -4974,7 +4970,7 @@ class GCSFile2Asset:
             if is_col:
                 # Upload to collection folder.
                 # Use file name as item id.
-                file_name = os.path.splitext(os.path.basename(bucket_uri))[0]
+                file_name = pathlib.Path(bucket_uri).stem
                 item_id = f"{collection_asset_folder}/{file_name}"
                 arcgee.data.gcs_file_to_ee_asset(asset_type, item_id, bucket_uri)
             else:
@@ -5303,8 +5299,7 @@ class ApplyMapFunctionbyID:
         if parameters[2].valueAsText:
             # Get the file name of input map function file.
             file_path = parameters[2].valueAsText
-            map_lib = os.path.splitext(os.path.basename(file_path))[0]
-            module = importlib.import_module(map_lib)
+            module = arcgee.data.load_module_from_file(file_path)
 
             function_list = arcgee.data.list_functions_from_script(module)
             parameters[3].filter.list = function_list
@@ -5340,8 +5335,7 @@ class ApplyMapFunctionbyID:
         function_list = map_functions.split(";")
 
         # Import module first.
-        map_lib = os.path.splitext(os.path.basename(map_file))[0]
-        module = importlib.import_module(map_lib)
+        module = arcgee.data.load_module_from_file(map_file)
 
         # Retrieve the Earth Engine object based on the asset id and data type.
         if data_type == "FeatureCollection":
@@ -5451,8 +5445,7 @@ class ApplyMapFunctionbyObj:
         if parameters[2].valueAsText:
             # Get the file name of input map function file.
             file_path = parameters[2].valueAsText
-            map_lib = os.path.splitext(os.path.basename(file_path))[0]
-            module = importlib.import_module(map_lib)
+            module = arcgee.data.load_module_from_file(file_path)
 
             function_list = arcgee.data.list_functions_from_script(module)
             parameters[3].filter.list = function_list
@@ -5474,7 +5467,6 @@ class ApplyMapFunctionbyObj:
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        import importlib
 
         # Read input parameters.
         data_type = parameters[0].valueAsText
@@ -5489,8 +5481,7 @@ class ApplyMapFunctionbyObj:
         function_list = map_functions.split(";")
 
         # Import module first.
-        map_lib = os.path.splitext(os.path.basename(map_file))[0]
-        module = importlib.import_module(map_lib)
+        module = arcgee.data.load_module_from_file(map_file)
 
         # Load collection object.
         ee_object = arcgee.data.load_ee_result(json_path)
