@@ -32,6 +32,8 @@ We have created template for feature requests and bug reports. Please use them w
 
 ## Contributing examples
 
+Under development. Please check back later.
+
 ## Contributing code and documentation
 
 To contribute code and documentation, follow these steps:
@@ -59,7 +61,9 @@ To contribute code and documentation, follow these steps:
     git push -u origin <your-branch-name>
     ```
 
-6. Push your changes to your forked repository.
+6. Test your changes in ArcGIS Pro with versions 3.2 and 3.5. It is highly recommended to test the toolbox with both versions to ensure compatibility.
+
+7. Push your changes to your forked repository.
 
     ```bash
     git add .
@@ -67,9 +71,9 @@ To contribute code and documentation, follow these steps:
     git push
     ```
 
-7. Submit a pull request to the main repository.
+8. Submit a pull request to the main repository.
 
-8. Wait for the pull request to be reviewed and merged.
+9. Wait for the pull request to be reviewed and merged.
 
 ### Code quality checks
 
@@ -81,7 +85,7 @@ The `arcgis-earthengine-toolbox` uses the following code quality checks:
 * [mypy](https://mypy.readthedocs.io/en/stable/) to check for type errors.
 * [pylint](https://pylint.pycqa.org/en/stable/) to check for code style violations.
 
-The pre-commit yaml file currently contains xml file format, black and codespell checks. If you don't have pre-commit installed, run the following command:
+The pre-commit yaml file currently contains `xml` file format, `black` and `codespell` checks. If you don't have pre-commit installed, run the following command:
 
 ```bash
 pip install pre-commit
@@ -99,7 +103,7 @@ To run the checks manually, run the following command:
 pre-commit run --all-files
 ```
 
-Since the ArcGIS Pro Python Toolbox does not fully comply with the Python code style, we recommend to run mypy and pylint checks manually as there will be many warnings and errors. Please also note that this package has to be compatible with ArcGIS Pro 3.2 (Python 3.9). Therefore, Python 3.10 type hints (e.g. str | None) are not supported.
+**Since the ArcGIS Pro Python Toolbox does not fully comply with the Python code style, we recommend to run `mypy` and `pylint` checks manually as there will be many warnings and errors. Please also note that this package has to be compatible with ArcGIS Pro 3.2 (Python 3.9). Therefore, Python 3.10 type hints (e.g. `str | None`) are not supported.**
 
 ## Contribution process
 
