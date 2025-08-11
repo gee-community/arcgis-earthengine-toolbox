@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/gee-community/arcgis-earthengine-toolbox/compare/v1.1.1...v1.1.2) (2025-08-11)
+
+
+### Documentation
+
+* add instruction for testing to contributing guidelines ([efb71fc](https://github.com/gee-community/arcgis-earthengine-toolbox/commit/efb71fc9f87865d03f2bebbe81592b6290e3e6d4))
+
 ## [1.1.1](https://github.com/gee-community/arcgis-earthengine-toolbox/compare/v1.1.0...v1.1.1) (2025-08-08)
 
 
