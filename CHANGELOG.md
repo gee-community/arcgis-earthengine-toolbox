@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/gee-community/arcgis-earthengine-toolbox/compare/v1.1.2...v1.2.0) (2025-08-15)
+
+
+### Features
+
+* add script to add composite image from image collection dataset to map ([#120](https://github.com/gee-community/arcgis-earthengine-toolbox/issues/120)) ([6f8520f](https://github.com/gee-community/arcgis-earthengine-toolbox/commit/6f8520fbca1a47fd05678c0988d4b11629f2b3f2))
+
 ## [1.1.2](https://github.com/gee-community/arcgis-earthengine-toolbox/compare/v1.1.1...v1.1.2) (2025-08-11)
 
 
