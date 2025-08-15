@@ -21,12 +21,13 @@ from types import ModuleType
 
 import numpy as np
 import requests
-import ujson
+import ujson  # type: ignore
 import xarray
 import google.auth
 
-import arcpy
+import arcpy  # type: ignore
 import ee
+from . import map as arcgee_map
 
 
 __version__ = "1.0.0"
@@ -1147,6 +1148,39 @@ def get_roi_from_object(obj: "ee.Image | ee.FeatureCollection") -> "ee.Geometry.
     return ee.Geometry.BBox(x_min, y_min, x_max, y_max)
 
 
+# Get ROI by bound type.
+def get_roi_by_bound_type(
+    bound_type: str, polygon_layer: str = None
+) -> "ee.Geometry.BBox":
+    """Get the ROI from the object extent.
+
+    Args:
+        obj : Earth Engine object
+        bound_type : The type of bound to use
+
+    Returns:
+        ee.Geometry.BBox: ROI from the object extent
+    """
+    # Get the filter bounds.
+    roi = None
+    if bound_type == "Map Centroid (Point)":
+        xmin, ymin, xmax, ymax = arcgee_map.get_map_view_extent()
+        # Get the centroid of map extent.
+        lon = (xmin + xmax) / 2
+        lat = (ymin + ymax) / 2
+        roi = ee.Geometry.Point((float(lon), float(lat)))
+    elif bound_type == "Polygon Extent (Area)":
+        # Only when polygon is selected.
+        if polygon_layer:
+            coords = get_polygon_coords(polygon_layer)
+            roi = ee.Geometry.MultiPolygon(coords)
+    elif bound_type == "Map Extent (Area)":
+        xmin, ymin, xmax, ymax = arcgee_map.get_map_view_extent()
+        roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
+
+    return roi
+
+
 # Get centroid and extent coordinates of input image or feature collection.
 def get_object_centroid(
     obj: "ee.Image | ee.FeatureCollection", error_margin: float
@@ -1707,3 +1741,55 @@ def load_module_from_file(file_path: str) -> ModuleType:
     spec.loader.exec_module(module)
 
     return module
+
+
+def get_band_list(image: "ee.Image") -> list[str]:
+    """Get the band list of an image.
+
+    Args:
+        image : Input image
+
+    Returns:
+        list: List of band names with resolution information
+    """
+    band_list = image.bandNames().getInfo()
+    # Add band resolution information to display.
+    band_res_list = []
+    for iband in band_list:
+        band_tmp = image.select(iband)
+        proj = band_tmp.projection()
+        res = proj.nominalScale().getInfo()
+        band_res_list.append(f"{iband}--{round(res, 1)}--m")
+
+    return band_res_list
+
+
+def get_composite_by_method(
+    collection: "ee.ImageCollection", method: str, percentile_value: float = None
+) -> "ee.Image":
+    """Get the composite image by method.
+
+    Args:
+        collection : Input image collection
+        method : The method to use for the composite
+
+    Returns:
+        ee.Image: The composite image
+    """
+    # Get the composite method.
+    if method == "Mosaic":
+        img = collection.mosaic()
+    elif method == "First":
+        img = collection.first()
+    elif method == "Mean":
+        img = collection.mean()
+    elif method == "Min":
+        img = collection.min()
+    elif method == "Max":
+        img = collection.max()
+    elif method == "Median":
+        img = collection.median()
+    elif method == "Percentile":
+        img = collection.reduce(ee.Reducer.percentile([percentile_value]))
+
+    return img

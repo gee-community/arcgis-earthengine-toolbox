@@ -15,7 +15,7 @@
 import json
 import pathlib
 
-import arcpy
+import arcpy  # type: ignore
 import ee
 import requests
 from google.cloud import storage
@@ -42,6 +42,7 @@ class Toolbox:
         # data exploration tools
         tools.append(AddImg2MapbyID)
         tools.append(AddImg2MapbyObj)
+        tools.append(AddComp2MapbyID)
         tools.append(AddImgCol2MapbyID)
         tools.append(AddImgCol2MapbyObj)
         tools.append(AddFeatCol2MapbyID)
@@ -754,6 +755,351 @@ class AddImg2MapbyObj:
         return
 
 
+# Add GEE Image Collection Composite to Map by Asset ID
+class AddComp2MapbyID:
+
+    def __init__(self):
+        """Define the tool: Add Image Collection Composite to Map by Asset ID"""
+        self.label = "Add Image Collection Composite to Map by Asset ID"
+        self.description = ""
+        self.category = "Data Exploration Tools"
+        self.canRunInBackgroud = False
+
+    def getParameterInfo(self):
+        """Define the tool parameters."""
+
+        param0 = arcpy.Parameter(
+            name="asset_id",
+            displayName="Specify the image collection asset ID",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+        param1 = arcpy.Parameter(
+            name="filter_props",
+            displayName="Filter by properties",
+            datatype="GPValueTable",
+            direction="Input",
+            parameterType="Optional",
+        )
+        param1.columns = [
+            ["GPString", "Property Name"],
+            ["GPString", "Operator"],
+            ["GPString", "Filter Value"],
+        ]
+        param1.filters[1].list = ["==", "!=", ">", ">=", "<", "<="]
+
+        param2 = arcpy.Parameter(
+            name="filter_dates",
+            displayName="Filter by dates",
+            datatype="GPValueTable",
+            direction="Input",
+            parameterType="Optional",
+            multiValue=False,
+        )
+        param2.columns = [["GPString", "Starting Date"], ["GPString", "Ending Date"]]
+
+        param3 = arcpy.Parameter(
+            name="filter_bounds",
+            displayName="Select the type of filter-by-location",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param3.filter.list = [
+            "Map Centroid (Point)",
+            "Polygon Extent (Area)",
+            "Map Extent (Area)",
+        ]
+
+        param4 = arcpy.Parameter(
+            name="use_polygon",
+            displayName="Filter by location with a polygon",
+            datatype="GPFeatureLayer",
+            direction="Input",
+            parameterType="Optional",
+        )
+        param4.filter.list = ["Polygon"]
+
+        param5 = arcpy.Parameter(
+            name="composite_method",
+            displayName="Select the compositing method",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+
+        param5.filter.list = [
+            "Mosaic",
+            "Mean",
+            "Max",
+            "Min",
+            "Median",
+            "Percentile",
+            "First",
+        ]
+
+        param6 = arcpy.Parameter(
+            name="percentile_value",
+            displayName="Specify the percentile value",
+            datatype="GPDouble",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param6.value = 90
+
+        param7 = arcpy.Parameter(
+            name="bands",
+            displayName="Specify up to three bands for RGB visualization",
+            datatype="GPString",
+            direction="Input",
+            multiValue=True,
+            parameterType="Optional",
+        )
+
+        param8 = arcpy.Parameter(
+            name="min_val",
+            displayName="Specify the minimum value for visualization",
+            datatype="GPDouble",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param9 = arcpy.Parameter(
+            name="max_val",
+            displayName="Specify the maximum value for visualization",
+            datatype="GPDouble",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param10 = arcpy.Parameter(
+            name="gamma",
+            displayName="Specify gamma correction factors",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param11 = arcpy.Parameter(
+            name="palette",
+            displayName="Choose a color palette for visualization",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Optional",
+        )
+        param11.filter.list = arcgee.map.list_color_ramps()
+
+        param12 = arcpy.Parameter(
+            name="out_json",
+            displayName="Save the composite image to serialized JSON file",
+            datatype="DEFile",
+            direction="Output",
+            parameterType="Optional",
+        )
+
+        param12.filter.list = ["json"]
+
+        params = [
+            param0,
+            param1,
+            param2,
+            param3,
+            param4,
+            param5,
+            param6,
+            param7,
+            param8,
+            param9,
+            param10,
+            param11,
+            param12,
+        ]
+        return params
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+
+        if parameters[0].valueAsText:
+            asset_id = arcgee.data.clean_asset_id(parameters[0].valueAsText)
+            collection = ee.ImageCollection(asset_id)
+            # Get properties from the image collection.
+            properties = collection.first().propertyNames().getInfo()
+            parameters[1].filters[0].list = sorted(properties)
+            # Get band list from first image in the collection.
+            parameters[7].filter.list = arcgee.data.get_band_list(collection.first())
+
+        # Disable polygon if not selected.
+        parameters[4].enabled = False
+        if parameters[3].valueAsText == "Polygon Extent (Area)":
+            parameters[4].enabled = True
+
+        # Disable the percentile value when percentile method is not selected.
+        parameters[6].enabled = False
+        if parameters[5].valueAsText == "Percentile":
+            parameters[6].enabled = True
+
+        # Disable the color palette when more than 1 band is selected.
+        if parameters[7].valueAsText:
+            bands = parameters[7].valueAsText.split(";")
+            parameters[11].enabled = len(bands) == 1
+
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter. This method is called after internal validation."""
+
+        # Start date is required when end date is provided for filter by dates.
+        if parameters[2].valueAsText:
+            arcgee.data.check_start_date(parameters[2])
+
+        # Check if the JSON file name contains spaces or special characters.
+        json_path = parameters[12].valueAsText
+        if json_path:
+            if arcgee.data.has_spaces_or_special_chars(json_path):
+                parameters[12].setErrorMessage(
+                    "The JSON file name contains spaces or special characters. "
+                    "Please specify a valid file name."
+                )
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+        asset_id = parameters[0].valueAsText
+        composite_method = parameters[5].valueAsText
+        percentile_value = parameters[6].valueAsText
+        band_str = parameters[7].valueAsText
+        min_val = parameters[8].valueAsText
+        max_val = parameters[9].valueAsText
+        gamma_str = parameters[10].valueAsText
+        palette_str = parameters[11].valueAsText
+
+        asset_id = arcgee.data.clean_asset_id(asset_id)
+        collection = ee.ImageCollection(asset_id)
+        arcpy.AddMessage("Filtering image collection ...")
+
+        # Filter image collection by properties.
+        if parameters[1].valueAsText:
+            value_list = parameters[1].values
+            for row in value_list:
+                if row[0] and row[1] and row[2]:
+                    collection = arcgee.data.filter_by_properties(collection, row)
+
+        # Filter by date.
+        if parameters[2].valueAsText:
+            val_list = parameters[2].values
+            start_date = val_list[0][0]
+            end_date = val_list[0][1]
+            if start_date and end_date:
+                collection = collection.filterDate(start_date, end_date)
+
+        # Filter by location.
+        if parameters[3].valueAsText:
+            roi = arcgee.data.get_roi_by_bound_type(
+                parameters[3].valueAsText, parameters[4].valueAsText
+            )
+            if roi:
+                collection = collection.filterBounds(roi)
+
+        arcpy.AddMessage("Compositing image collection ...")
+        # Get the composite image.
+        img = arcgee.data.get_composite_by_method(
+            collection, composite_method, float(percentile_value)
+        )
+
+        arcpy.AddMessage("Preparing visualization parameters...")
+        # Define visualization parameters.
+        vis_params = {}
+
+        # Add bands to vis_params if specified.
+        if band_str:
+            # Remove ' in band string in case users add it.
+            if "'" in band_str:
+                band_str = band_str.replace("'", "")
+            bands = band_str.split(";")
+            bands_only = [iband.split("--")[0] for iband in bands]
+            # Append the percentile value to each band name if specified.
+            if composite_method == "Percentile" and percentile_value:
+                bands_only = [
+                    f"{iband}_p{percentile_value.replace('.', '_')}"
+                    for iband in bands_only
+                ]
+            # Ignore the resolution part.
+            vis_params["bands"] = bands_only
+
+        # Add min and max values if specified.
+        if min_val:
+            vis_params["min"] = float(min_val)
+        if max_val:
+            vis_params["max"] = float(max_val)
+
+        # Add gamma correction factors if specified.
+        if gamma_str:
+            # Remove ' in gamma string in case users add it.
+            if "'" in gamma_str:
+                gamma_str = gamma_str.replace("'", "")
+            gamma = [float(item) for item in gamma_str.split(",")]
+            vis_params["gamma"] = gamma
+
+        # Add color palette if specified.
+        if palette_str:
+            vis_params["palette"] = arcgee.map.get_color_ramp(palette_str)
+
+        arcpy.AddMessage("Constructing map URL...")
+
+        # Get the map ID and token.
+        map_id_dict = img.getMapId(vis_params)
+
+        # Construct the URL.
+        map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
+
+        arcpy.AddMessage("Adding map URL to the current ArcMap...")
+        # Add map URL to the current ArcMap.
+        aprx = arcpy.mp.ArcGISProject("CURRENT")
+        aprxMap = aprx.listMaps("Map")[0]
+        tsl = aprxMap.addDataFromPath(map_url)
+        # Add band information to map name.
+        if band_str:
+            tsl.name = asset_id + "--" + composite_method + "--" + "--".join(bands_only)
+        else:
+            tsl.name = asset_id + "--" + composite_method
+
+        # Zoom to image centroid if provided by dataset.
+        try:
+            centroid_coords, bounds_coords = arcgee.data.get_object_centroid(img, 1)
+            arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
+        except:
+            arcpy.AddWarning(
+                "Automatic zoom to the image failed. Please zoom manually."
+            )
+            pass
+
+        # Save composite image to serialized JSON file.
+        if parameters[12].valueAsText:
+            arcpy.AddMessage("Saving composite image to serialized JSON file.")
+            out_json = parameters[12].valueAsText
+            if not out_json.endswith(".json"):
+                out_json = out_json + ".json"
+
+            arcgee.data.save_ee_result(img, out_json)
+
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and
+        added to the display."""
+        return
+
+
 # Add GEE Image Collection to Map by Asset ID
 class AddImgCol2MapbyID:
 
@@ -928,20 +1274,10 @@ class AddImgCol2MapbyID:
 
         # Get the filter bounds.
         roi = None
-        if parameters[3].valueAsText == "Map Centroid (Point)":
-            xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
-            # Get the centroid of map extent.
-            lon = (xmin + xmax) / 2
-            lat = (ymin + ymax) / 2
-            roi = ee.Geometry.Point((float(lon), float(lat)))
-        elif parameters[3].valueAsText == "Polygon Extent (Area)":
-            # Only when polygon is selected.
-            if parameters[4].valueAsText:
-                coords = arcgee.data.get_polygon_coords(parameters[4].valueAsText)
-                roi = ee.Geometry.MultiPolygon(coords)
-        elif parameters[3].valueAsText == "Map Extent (Area)":
-            xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
-            roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
+        if parameters[3].valueAsText:
+            roi = arcgee.data.get_roi_by_bound_type(
+                parameters[3].valueAsText, parameters[4].valueAsText
+            )
 
         # Image collection size could be huge, load maximum of 100 images.
         if parameters[0].valueAsText:
@@ -969,15 +1305,7 @@ class AddImgCol2MapbyID:
         if img_name:
             img_id = asset_id + "/" + img_name
             image = ee.Image(img_id)
-            band_list = image.bandNames().getInfo()
-            # Add band resolution information to display.
-            band_res_list = []
-            for iband in band_list:
-                band_tmp = image.select(iband)
-                proj = band_tmp.projection()
-                res = proj.nominalScale().getInfo()
-                band_res_list.append(f"{iband}--{round(res, 1)}--m")
-            parameters[6].filter.list = band_res_list
+            parameters[6].filter.list = arcgee.data.get_band_list(image)
 
         # Reset image and band filter list when asset ID changes.
         if not parameters[0].valueAsText:
@@ -1106,19 +1434,10 @@ class AddImgCol2MapbyID:
 
             # Get the filter bounds.
             roi = None
-            if parameters[3].valueAsText == "Map Centroid (Point)":
-                xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
-                # Get the centroid of map extent.
-                lon = (xmin + xmax) / 2
-                lat = (ymin + ymax) / 2
-                roi = ee.Geometry.Point((float(lon), float(lat)))
-            elif parameters[3].valueAsText == "Polygon Extent (Area)":
-                if parameters[4].valueAsText:
-                    coords = arcgee.data.get_polygon_coords(parameters[4].valueAsText)
-                    roi = ee.Geometry.MultiPolygon(coords)
-            elif parameters[3].valueAsText == "Map Extent (Area)":
-                xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
-                roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
+            if parameters[3].valueAsText:
+                roi = arcgee.data.get_roi_by_bound_type(
+                    parameters[3].valueAsText, parameters[4].valueAsText
+                )
 
             collection = ee.ImageCollection(asset_id)
             # Filter image collection as specified.

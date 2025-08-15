@@ -158,3 +158,24 @@ Here is the video guide for adding image collection to map by serialized object:
     <img src="https://img.youtube.com/vi/QYHzdQvGtAg/0.jpg" alt="Add Image Collection to Map by Serialized Object" width="640" height="360" border="10" />
   </a>
 </div>
+
+### Add Image Collection Composite to Map by Asset ID
+
+This script adds the Earth Engine Image Collection composite image to ArcGIS Pro as a base map by its asset ID and customizes the visualization parameters. **Please note that running this script can be computationally intensive if the filtered image collection contains a large number of images. It is recommended to apply additional filters to reduce the dataset size.** Please note that the dataset is added as a Tiled Map Service Layer, which cannot be edited directly. The user will need to download the dataset for analysis in ArcGIS Pro. To browse all datasets, please visit this [link](https://developers.google.com/earth-engine/datasets/catalog).
+
+![Alt Text](images/AddComp2MapbyID.png)
+
+#### Parameters
+
+ 1. Asset ID
+ 2. Filter by dataset properties
+ 3. Filter by dates
+ 4. Choose filter-by-location type: point or area
+ 5. Select the compositing method
+ 6. Specify the percentile value (only available when the compositing method is "Percentile")
+ 7. Select bands for visualization (up to 3)
+ 8. Minimum value for visualization (value to map to 0, up to 3 comma-seperated numbers)
+ 9. Maximum value for visualization (value to map to 255, up to 3 comma-seperated numbers)
+ 10. Gamma correction factors (value to multiply each pixel value, up to 3 comma-seperated numbers)
+ 11. Choose a color palette for visualization (single-band images only)
+ 12. Save the composite image to serialized JSON file
