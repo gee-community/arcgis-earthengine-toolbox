@@ -48,17 +48,6 @@ def format_xml(file_path):
 
 
 def main():
-    # root_folder = Path(".").resolve()
-    # xml_files = list(root_folder.rglob("*.xml"))
-
-    # if not xml_files:
-    #     print("No XML files found.")
-    #     return
-
-    # print(f"Found {len(xml_files)} XML files. Prettifying...")
-    # for file in xml_files:
-    #     format_xml(file)
-
     # Get list of staged files
     result = subprocess.run(
         ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],
