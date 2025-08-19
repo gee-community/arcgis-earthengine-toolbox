@@ -1021,7 +1021,7 @@ def landsat_timelapse(
 
 
 # List all functions in the imported module
-def list_functions_from_script(module: "module") -> list[str]:
+def list_functions_from_script(module: ModuleType) -> list[str]:
     """List all functions in the imported module.
 
     Args:
@@ -1793,3 +1793,66 @@ def get_composite_by_method(
         img = collection.reduce(ee.Reducer.percentile([percentile_value]))
 
     return img
+
+
+def export_image_to_asset(
+    image: "ee.Image",
+    asset_id: str,
+    description: str = None,
+    pyramiding_policy: dict = None,
+    dimensions: int = None,
+    region: "ee.Geometry" = None,
+    scale: float = None,
+    crs: str = None,
+    crs_transform: list[float] = None,
+    max_pixels: int = None,
+    shard_size: int = None,
+    priority: int = None,
+) -> None:
+    """Export an image to an Earth Engine asset.
+
+    Args:
+        image : Input image
+        asset_id : ID of the Earth Engine asset
+        description : Description of the export task
+        pyramiding_policy : Pyramiding policy
+        dimensions : Dimensions
+        region : Region
+        scale : Scale
+        crs : CRS
+        crsTransform : CRS transform
+        maxPixels : Max pixels
+        shardSize : Shard size
+        priority : Priority
+    """
+    # Prepare input parameters
+    in_params = {
+        "image": image,
+        "assetId": asset_id,
+    }
+    if description is not None:
+        in_params["description"] = description
+    if pyramiding_policy is not None:
+        in_params["pyramidingPolicy"] = pyramiding_policy
+    if dimensions is not None:
+        in_params["dimensions"] = dimensions
+    if crs is not None:
+        in_params["crs"] = crs
+    if crs_transform is not None:
+        in_params["crsTransform"] = crs_transform
+    if region is not None:
+        in_params["region"] = region
+    if scale is not None:
+        in_params["scale"] = float(scale)
+    if max_pixels is not None:
+        in_params["maxPixels"] = int(max_pixels)
+    if shard_size is not None:
+        in_params["shardSize"] = int(shard_size)
+    if priority is not None:
+        in_params["priority"] = int(priority)
+
+    # Export the image to an Earth Engine asset.
+    task = ee.batch.Export.image.toAsset(
+        **in_params,
+    )
+    task.start()

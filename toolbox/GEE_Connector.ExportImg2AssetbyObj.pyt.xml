@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<metadata xml:lang="en">
+  <Esri>
+    <CreaDate>20250818</CreaDate>
+    <CreaTime>14345800</CreaTime>
+    <ArcGISFormat>1.0</ArcGISFormat>
+    <SyncOnce>TRUE</SyncOnce>
+    <ModDate>20250818</ModDate>
+    <ModTime>23121800</ModTime>
+    <scaleRange>
+      <minScale>150000000</minScale>
+      <maxScale>5000</maxScale>
+    </scaleRange>
+    <ArcGISProfile>ItemDescription</ArcGISProfile>
+  </Esri>
+  <tool xmlns="" name="ExportImg2AssetbyObj" displayname="Export Image or Image Collection to Earth Engine Asset by Serialized Object" toolboxalias="GEE_Connector">
+    <arcToolboxHelpPath>c:\program files\arcgis\pro\Resources\Help\gp</arcToolboxHelpPath>
+    <parameters>
+      <param name="ee_obj" displayname="Select the JSON file of the serialized object" type="Required" direction="Input" datatype="File" expression="ee_obj">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;The serialized Google Earth Engine object in JSON format. Browse and select the target JSON file to load. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN /&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="data_type" displayname="Choose the type of the serialized object" type="Required" direction="Input" datatype="String" expression="Image | ImageCollection">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Select either Image or Image Collection. If Image Collection is chosen, the script will export each image in the collection individually.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="bands" displayname="Select the bands to be exported" type="Optional" direction="Input" datatype="Multiple Value" expression="{bands;bands...}">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Select the bands to export. If not selected, all bands will be exported. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="asset_id" displayname="Specify the asset ID" type="Required" direction="Input" datatype="String" expression="asset_id">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Specify the asset ID for the exported dataset within your asset folder. The asset ID must begin with projects/YOUR_PROJECT_ID/assets/, followed by any additional path you wish to include.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="description" displayname="Specify the description" type="Optional" direction="Input" datatype="String" expression="{description}">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;This string is used as the task name for each export. For image collections, the image ID is appended to the description to ensure each export task name is unique.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="pyramiding_policy" displayname="Specify the pyramiding policy" type="Optional" direction="Input" datatype="String" expression="{pyramiding_policy}">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;The pyramiding policy to apply to each band in the image, keyed by band name. Values must be one of: mean, sample, min, max, or mode. Defaults to "mean". A special key, ".default" may be used to change the default for all bands.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="dimensions" displayname="Specify the dimensions" type="Optional" direction="Input" datatype="String" expression="{dimensions}">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;The dimensions to use for the exported image. Takes either a single positive integer as the maximum dimension or "WIDTHxHEIGHT" where WIDTH and HEIGHT are each positive integers.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="region" displayname="Specify the region" type="Optional" direction="Input" datatype="String" expression="{Map Extent | Polygon}">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Choose between using the current map extent and specifying a polygon feature layer.  &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="polygon_layer" displayname="Select the polygon layer" type="Optional" direction="Input" datatype="Feature Layer" expression="{polygon_layer}">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Specify the polygon layer if you choose polygon as region of interest. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="scale" displayname="Specify the scale" type="Optional" direction="Input" datatype="Double" expression="{scale}">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Resolution in meters per pixel. Defaults to 1000.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="max_pixels" displayname="Specify the max pixels" type="Optional" direction="Input" datatype="Long" expression="{max_pixels}">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Restrict the number of pixels in the export. By default, you will see an error if the export exceeds 1e8 pixels. Setting this value explicitly allows one to raise or lower this limit.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="shard_size" displayname="Specify the shard size" type="Optional" direction="Input" datatype="Long" expression="{shard_size}">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;Size in pixels of the tiles in which this image will be computed. Defaults to 256.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+      <param name="priority" displayname="Specify the priority" type="Optional" direction="Input" datatype="Long" expression="{priority}">
+        <dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;The priority of the task within the project. Higher priority tasks are scheduled sooner. Must be an integer between 0 and 9999. Defaults to 100.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference>
+      </param>
+    </parameters>
+    <summary>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;This script exports the serialized JSON object of an image or image collection to an Earth Engine asset. It is intended for cases where the user has applied filters, mapping, or reduction operations and wants to save the processed dataset to avoid repeated computation.&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;&lt;/DIV&gt;</summary>
+  </tool>
+  <dataIdInfo>
+    <idCitation>
+      <resTitle>Export Image or Image Collection to Earth Engine Asset by Serialized Object</resTitle>
+    </idCitation>
+    <searchKeys>
+      <keyword>management</keyword>
+    </searchKeys>
+  </dataIdInfo>
+  <distInfo>
+    <distributor>
+      <distorFormat>
+        <formatName>ArcToolbox Tool</formatName>
+      </distorFormat>
+    </distributor>
+  </distInfo>
+  <mdHrLv>
+    <ScopeCd value="005"/>
+  </mdHrLv>
+  <mdDateSt Sync="TRUE">20250818</mdDateSt>
+</metadata>

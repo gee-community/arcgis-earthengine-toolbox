@@ -56,6 +56,7 @@ class Toolbox:
         tools.append(DownloadImgColbyIDMultiRegion)
         tools.append(DownloadFeatColbyID)
         tools.append(DownloadFeatColbyObj)
+        tools.append(ExportImg2AssetbyObj)
 
         # TODO: update the following tools
         # currently not used, because the timelapse function causes too much data usage
@@ -5308,6 +5309,308 @@ class GCSFile2Asset:
                 arcgee.data.gcs_file_to_ee_asset(asset_type, item_id, bucket_uri)
             else:
                 arcgee.data.gcs_file_to_ee_asset(asset_type, asset_id, bucket_uri)
+
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and
+        added to the display."""
+        return
+
+
+# Export Serialized Object to Earth Engine Asset
+class ExportImg2AssetbyObj:
+
+    def __init__(self):
+        """Define the tool: Export Image or Image Collection to Earth Engine Asset by Serialized Object"""
+        self.label = "Export Image or Image Collection to Earth Engine Asset by Serialized Object"
+        self.description = ""
+        self.category = "Data Management Tools"
+        self.canRunInBackgroud = False
+
+    def getParameterInfo(self):
+        """Define the tool parameters."""
+        param0 = arcpy.Parameter(
+            name="ee_obj",
+            displayName="Select the JSON file of the serialized object",
+            datatype="DEFile",
+            direction="Input",
+            parameterType="Required",
+        )
+        param0.filter.list = ["json"]
+
+        param1 = arcpy.Parameter(
+            name="data_type",
+            displayName="Choose the type of the serialized object",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+        param1.filter.list = ["Image", "ImageCollection"]
+
+        param2 = arcpy.Parameter(
+            name="bands",
+            displayName="Select the bands to be exported",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Optional",
+            multiValue=True,
+        )
+
+        param3 = arcpy.Parameter(
+            name="asset_id",
+            displayName="Specify the asset ID",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Required",
+        )
+
+        param4 = arcpy.Parameter(
+            name="description",
+            displayName="Specify the description",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param5 = arcpy.Parameter(
+            name="pyramiding_policy",
+            displayName="Specify the pyramiding policy",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param6 = arcpy.Parameter(
+            name="dimensions",
+            displayName="Specify the dimensions",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param7 = arcpy.Parameter(
+            name="region",
+            displayName="Specify the region",
+            datatype="GPString",
+            direction="Input",
+            parameterType="Optional",
+        )
+        param7.filter.list = ["Map Extent", "Polygon"]
+
+        param8 = arcpy.Parameter(
+            name="polygon_layer",
+            displayName="Select the polygon layer",
+            datatype="GPFeatureLayer",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param9 = arcpy.Parameter(
+            name="scale",
+            displayName="Specify the scale",
+            datatype="GPDouble",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param10 = arcpy.Parameter(
+            name="max_pixels",
+            displayName="Specify the max pixels",
+            datatype="GPLong",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param11 = arcpy.Parameter(
+            name="shard_size",
+            displayName="Specify the shard size",
+            datatype="GPLong",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        param12 = arcpy.Parameter(
+            name="priority",
+            displayName="Specify the priority",
+            datatype="GPLong",
+            direction="Input",
+            parameterType="Optional",
+        )
+
+        params = [
+            param0,
+            param1,
+            param2,
+            param3,
+            param4,
+            param5,
+            param6,
+            param7,
+            param8,
+            param9,
+            param10,
+            param11,
+            param12,
+        ]
+        return params
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+
+        # Get the list of bands and resolution.
+        if parameters[0].valueAsText and parameters[1].valueAsText == "Image":
+            image = arcgee.data.load_ee_result(parameters[0].valueAsText)
+            bands_res_list = arcgee.data.get_band_list(image)
+            parameters[2].filter.list = bands_res_list
+            if not parameters[9].valueAsText:
+                parameters[9].value = bands_res_list[0].split("--")[1]
+        elif (
+            parameters[0].valueAsText and parameters[1].valueAsText == "ImageCollection"
+        ):
+            collection = arcgee.data.load_ee_result(parameters[0].valueAsText)
+            # The JSON object may lose the type information after filtering, mapping and reducing.
+            collection = ee.ImageCollection(collection)
+            image = collection.first()
+            bands_res_list = arcgee.data.get_band_list(image)
+            parameters[2].filter.list = bands_res_list
+            if not parameters[9].valueAsText:
+                parameters[9].value = bands_res_list[0].split("--")[1]
+        else:
+            parameters[2].filter.list = []
+            parameters[9].value = None
+
+        # Fetch the project ID from the credentials.
+        if not parameters[3].valueAsText:
+            try:
+                project_id = ee.data.getProjectConfig()["name"].split("/")[1]
+                parameters[3].value = f"projects/{project_id}/assets/"
+            except:
+                parameters[3].value = "projects/YOUR_PROJECT_ID/assets/"
+        # Enable polygon layer parameter when region is set to polygon.
+        if parameters[7].valueAsText == "Polygon":
+            parameters[8].enabled = True
+        else:
+            parameters[8].enabled = False
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter. This method is called after internal validation."""
+
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+        ee_obj = parameters[0].valueAsText
+        data_type = parameters[1].valueAsText
+        bands = parameters[2].valueAsText
+        asset_id = parameters[3].valueAsText
+        description = parameters[4].valueAsText  # task description
+        pyramiding_policy = parameters[5].valueAsText
+        dimensions = parameters[6].valueAsText
+        region = parameters[7].valueAsText
+        polygon_layer = parameters[8].valueAsText
+        scale = parameters[9].valueAsText
+        max_pixels = parameters[10].valueAsText
+        shard_size = parameters[11].valueAsText
+        priority = parameters[12].valueAsText
+
+        arcpy.AddMessage("Getting the region of interests ...")
+        # Use map view extent if checked.
+        if region == "Map Extent":
+            xmin, ymin, xmax, ymax = arcgee.map.get_map_view_extent()
+            roi = ee.Geometry.BBox(xmin, ymin, xmax, ymax)
+        # Use input feature layer as ROI.
+        elif region == "Polygon":
+            # Get input feature coordinates to list.
+            coords = arcgee.data.get_polygon_coords(polygon_layer)
+            # Create an Earth Engine MultiPolygon from the GeoJSON.
+            roi = ee.Geometry.MultiPolygon(coords)
+        # Not using any ROI, download entire image.
+        else:
+            roi = None
+
+        # Load the serialized object.
+        ee_object = arcgee.data.load_ee_result(ee_obj)
+
+        # Data type.
+        if data_type == "Image":
+            image = ee.Image(ee_object)
+            # Get the list of bands.
+            if bands:
+                bands_res_list = bands.split(";")
+                bands_list = [band.split("--")[0] for band in bands_res_list]
+                image = image.select(bands_list)
+            # Get the projection.
+            projection = image.select(0).projection().getInfo()
+            # Export the image to the specified asset.
+            arcpy.AddMessage(f"Exporting {asset_id} ...")
+            arcgee.data.export_image_to_asset(
+                image=image,
+                asset_id=asset_id,
+                description=description,
+                pyramiding_policy=pyramiding_policy,
+                dimensions=dimensions,
+                region=roi,
+                scale=scale,
+                crs=projection["crs"],
+                crs_transform=projection["transform"],
+                max_pixels=max_pixels,
+                shard_size=shard_size,
+                priority=priority,
+            )
+        elif data_type == "ImageCollection":
+            collection = ee.ImageCollection(ee_object)
+            # Get the list of bands.
+            if bands:
+                bands_res_list = bands.split(";")
+                bands_list = [band.split("--")[0] for band in bands_res_list]
+                collection = collection.select(bands_list)
+            # Create image collection if it does not exist.
+            if not arcgee.data.asset_exists(asset_id):
+                arcgee.data.create_image_collection(asset_id)
+            else:
+                arcpy.AddMessage("The image collection already exists.")
+            # Get the list of images in the collection.
+            img_list = collection.aggregate_array("system:index").getInfo()
+            # Export the images in the collection in loop.
+            arcpy.AddMessage(f"Exporting {len(img_list)} images to {asset_id} ...")
+            img_count = 1
+            for img in img_list:
+                # img could be empty string. Then use a default name.
+                if not img:
+                    img = f"image_{img_count:04d}"
+                img_count += 1
+                img_id = f"{asset_id}/{img}"
+                image = collection.filter(ee.Filter.eq("system:index", img)).first()
+                # Get the projection.
+                projection = image.select(0).projection().getInfo()
+
+                arcpy.AddMessage(f"Exporting {img_id} ...")
+                arcgee.data.export_image_to_asset(
+                    image=image,
+                    asset_id=img_id,
+                    description=f"{description}_{img}",  # unique task description per image
+                    pyramiding_policy=pyramiding_policy,
+                    dimensions=dimensions,
+                    region=roi,
+                    scale=scale,
+                    crs=projection["crs"],
+                    crs_transform=projection["transform"],
+                    max_pixels=max_pixels,
+                    shard_size=shard_size,
+                    priority=priority,
+                )
+                img_count += 1
+        else:
+            raise ValueError(f"Unsupported data type: {data_type}")
 
         return
 

@@ -19,6 +19,7 @@ Please see the [Installation](03_installation.md) page to get started on set up 
 - [Data Exploration Tools](05_data_exploration_tools.md)
   - Add Feature Collection to Map by Asset ID
   - Add Feature Collection to Map by Serialized Object
+  - Add Image Collection Composite to Map by Asset ID
   - Add Image Collection to Map by Asset ID
   - Add Image Collection to Map by Serialized Object
   - Add Image to Map by Asset ID
@@ -32,6 +33,7 @@ Please see the [Installation](03_installation.md) page to get started on set up 
   - Download Image Collection by Asset ID
   - Download Image Collection by Asset ID at Multiple Regions
   - Download Image Collection by Serialized Object
+  - Export Image or Image Collection to Earth Engine Asset by Serialized Object
   - Save Earth Engine Asset to Serialized JSON File
   - Upload File(s) to Goolge Cloud Storage and Convert to Earth Engine Asset
 - [Data Processing Tools](07_data_processing_tools.md)
