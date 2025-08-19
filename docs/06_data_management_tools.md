@@ -220,6 +220,27 @@ Here is the video guide for downloading image collection by serialized object:
   </a>
 </div>
 
+### Export Image or Image Collection to Earth Engine Asset by Serialized Object
+
+This script exports the serialized JSON object of an image or image collection to an Earth Engine asset. It is intended for cases where the user has applied filters, mapping, or reduction operations and wants to save the processed dataset to avoid repeated computation.
+
+![Alt Text](images/ExportImg2AssetbyObj.png)
+
+#### Parameters
+
+1. Choose the serialized JSON file
+2. Select the type of data
+3. Select the bands to export
+4. Specify the asset ID
+5. Specify the task description
+6. Specify the pyramiding policy
+7. Specify the dimensions
+8. Specify the region of interest
+9. Specify the scale in meters (image resolution)
+10. Specify the maximum pixels
+11. Specify the shard size
+12. Specify the priority
+
 ### Save Earth Engine Asset to Serialized JSON File
 
 This script exports Earth Engine dataset from an asset ID to a serialized JSON file, allowing for quick access in the future without needing to recall the asset ID.
