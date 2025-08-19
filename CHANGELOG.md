@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/gee-community/arcgis-earthengine-toolbox/compare/v1.2.0...v1.3.0) (2025-08-19)
+
+
+### Features
+
+* add script to export processed image or image collection to earth engine asset ([#86](https://github.com/gee-community/arcgis-earthengine-toolbox/issues/86)) ([ec4bc29](https://github.com/gee-community/arcgis-earthengine-toolbox/commit/ec4bc29875c5784eee409a33d570ad6f79533ad7))
+
 ## [1.2.0](https://github.com/gee-community/arcgis-earthengine-toolbox/compare/v1.1.2...v1.2.0) (2025-08-15)
 
 
