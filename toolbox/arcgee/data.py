@@ -309,6 +309,33 @@ def filter_by_properties(
     return collection
 
 
+def filter_by_date(
+    collection: "ee.ImageCollection",
+    val_list: list[list[str]],
+) -> "ee.ImageCollection":
+    """
+    Filter an image collection by date.
+
+    Args:
+        collection : The collection to filter.
+        val_list : A list of strings, containing a start date and an end date.
+
+    Returns:
+        ee.ImageCollection: The filtered collection.
+    """
+    start_date = val_list[0][0]
+    end_date = val_list[0][1]
+
+    if start_date and end_date:
+        collection = collection.filterDate(start_date, end_date)
+    elif start_date:
+        collection = collection.filterDate(start_date, "2099-12-31")
+    elif end_date:
+        collection = collection.filterDate("1900-01-01", end_date)
+
+    return collection
+
+
 def add_date_to_gif(
     input_gif: str,
     output_gif: str,
