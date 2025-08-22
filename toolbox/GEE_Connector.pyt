@@ -959,10 +959,6 @@ class AddComp2MapbyID:
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
 
-        # Start date is required when end date is provided for filter by dates.
-        if parameters[2].valueAsText:
-            arcgee.data.check_start_date(parameters[2])
-
         # Check if the JSON file name contains spaces or special characters.
         json_path = parameters[12].valueAsText
         if json_path:
@@ -997,11 +993,7 @@ class AddComp2MapbyID:
 
         # Filter by date.
         if parameters[2].valueAsText:
-            val_list = parameters[2].values
-            start_date = val_list[0][0]
-            end_date = val_list[0][1]
-            if start_date and end_date:
-                collection = collection.filterDate(start_date, end_date)
+            collection = arcgee.data.filter_by_date(collection, parameters[2].values)
 
         # Filter by location.
         if parameters[3].valueAsText:
@@ -1259,15 +1251,6 @@ class AddImgCol2MapbyID:
             properties = collection.first().propertyNames().getInfo()
             parameters[1].filters[0].list = sorted(properties)
 
-        # Get the filter dates.
-        if parameters[2].valueAsText:
-            val_list = parameters[2].values
-            start_date = val_list[0][0]
-            end_date = val_list[0][1]
-        else:
-            start_date = None
-            end_date = None
-
         # Disable polygon if not selected.
         parameters[4].enabled = False
         if parameters[3].valueAsText == "Polygon Extent (Area)":
@@ -1293,9 +1276,11 @@ class AddImgCol2MapbyID:
             # Filter by location.
             if roi:
                 collection = collection.filterBounds(roi)
-            # Filter by date.
-            if start_date and end_date:
-                collection = collection.filterDate(start_date, end_date)
+            # Filter by date if specified.
+            if parameters[2].valueAsText:
+                collection = arcgee.data.filter_by_date(
+                    collection, parameters[2].values
+                )
             # Get image IDs from collection, limit to 100 images to avoid slow response.
             image_ids = collection.limit(100).aggregate_array("system:index").getInfo()
             parameters[5].filter.list = image_ids
@@ -1324,10 +1309,6 @@ class AddImgCol2MapbyID:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
-
-        # Start date is required when end date is provided for filter by dates.
-        if parameters[2].valueAsText:
-            arcgee.data.check_start_date(parameters[2])
 
         # Check if the JSON file name contains spaces or special characters.
         json_path = parameters[11].valueAsText
@@ -1424,15 +1405,6 @@ class AddImgCol2MapbyID:
             if not out_json.endswith(".json"):
                 out_json = out_json + ".json"
 
-            # Get the filter dates.
-            if parameters[2].valueAsText:
-                val_list = parameters[2].values
-                start_date = val_list[0][0]
-                end_date = val_list[0][1]
-            else:
-                start_date = None
-                end_date = None
-
             # Get the filter bounds.
             roi = None
             if parameters[3].valueAsText:
@@ -1450,9 +1422,11 @@ class AddImgCol2MapbyID:
             # Filter by location.
             if roi:
                 collection = collection.filterBounds(roi)
-            # Filter by date.
-            if start_date and end_date:
-                collection = collection.filterDate(start_date, end_date)
+            # Filter by date if specified.
+            if parameters[2].valueAsText:
+                collection = arcgee.data.filter_by_date(
+                    collection, parameters[2].values
+                )
 
             arcgee.data.save_ee_result(collection, out_json)
 
@@ -2888,15 +2862,6 @@ class DownloadImgColbyID:
         validation is performed.  This method is called whenever a parameter
         has been changed."""
 
-        # Get the filter dates.
-        if parameters[1].valueAsText:
-            val_list = parameters[1].values
-            start_date = val_list[0][0]
-            end_date = val_list[0][1]
-        else:
-            start_date = None
-            end_date = None
-
         # Get the filter bounds.
         if parameters[3].value:  # Use map extent.
             # Disable input coordinates if map extent is used.
@@ -2928,8 +2893,11 @@ class DownloadImgColbyID:
                 collection = collection.filterBounds(
                     ee.Geometry.Point((float(lon), float(lat)))
                 )
-            if start_date and end_date:
-                collection = collection.filterDate(start_date, end_date)
+            # Filter by date if specified.
+            if parameters[1].valueAsText:
+                collection = arcgee.data.filter_by_date(
+                    collection, parameters[1].values
+                )
             # Get image IDs from collection. Limit to 100 images to avoid slow response.
             image_list = collection.limit(100).aggregate_array("system:index").getInfo()
             parameters[4].filter.list = image_list
@@ -2978,10 +2946,6 @@ class DownloadImgColbyID:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
-
-        # Start date is required when end date is provided for filter by dates.
-        if parameters[1].valueAsText:
-            arcgee.data.check_start_date(parameters[1])
 
         return
 
@@ -3508,15 +3472,6 @@ class DownloadImgColbyIDMultiRegion:
         validation is performed.  This method is called whenever a parameter
         has been changed."""
 
-        # Get the filter dates.
-        if parameters[1].valueAsText:
-            val_list = parameters[1].values
-            start_date = val_list[0][0]
-            end_date = val_list[0][1]
-        else:
-            start_date = None
-            end_date = None
-
         # Check image list of a given collection asset.
         asset_id = parameters[0].valueAsText
 
@@ -3527,9 +3482,11 @@ class DownloadImgColbyIDMultiRegion:
         if asset_id:
             asset_id = arcgee.data.clean_asset_id(asset_id)
             collection = ee.ImageCollection(asset_id)
-            # Filter image collection as specified.
-            if start_date and end_date:
-                collection = collection.filterDate(start_date, end_date)
+            # Filter image collection by date if specified.
+            if parameters[1].valueAsText:
+                collection = arcgee.data.filter_by_date(
+                    collection, parameters[1].values
+                )
 
             # Get the first select image.
             image = collection.first()
@@ -3563,10 +3520,6 @@ class DownloadImgColbyIDMultiRegion:
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
 
-        # Start date is required when end date is provided for filter by dates.
-        if parameters[1].valueAsText:
-            arcgee.data.check_start_date(parameters[1])
-
         return
 
     def execute(self, parameters, messages):
@@ -3587,17 +3540,9 @@ class DownloadImgColbyIDMultiRegion:
         asset_id = arcgee.data.clean_asset_id(asset_id)
         collection = ee.ImageCollection(asset_id)
 
-        # Get the filter dates.
-        if filter_dates:
-            start_date = filter_dates[0][0]
-            end_date = filter_dates[0][1]
-        else:
-            start_date = None
-            end_date = None
-
-        # Filter image collection as specified.
-        if start_date and end_date:
-            collection = collection.filterDate(start_date, end_date)
+        # Filter image collection by date if specified.
+        if parameters[1].valueAsText:
+            collection = arcgee.data.filter_by_date(collection, filter_dates)
 
         # Get the coordinate list of the selected polygons.
         coords_list = arcgee.data.get_polygon_coords(in_poly)
@@ -4276,15 +4221,6 @@ class DownloadImgCol2Gif:
         validation is performed.  This method is called whenever a parameter
         has been changed."""
 
-        # Get the filter dates.
-        if parameters[1].valueAsText:
-            val_list = parameters[1].values
-            start_date = val_list[0][0]
-            end_date = val_list[0][1]
-        else:
-            start_date = None
-            end_date = None
-
         # Get the filter bounds.
         if parameters[3].value:  # Use map extent.
             # Disable input coordinates if map extent is used.
@@ -4317,8 +4253,10 @@ class DownloadImgCol2Gif:
                     ee.Geometry.Point((float(lon), float(lat)))
                 )
                 has_filter = True
-            if start_date and end_date:
-                collection = collection.filterDate(start_date, end_date)
+            if parameters[1].valueAsText:
+                collection = arcgee.data.filter_by_date(
+                    collection, parameters[1].values
+                )
                 has_filter = True
 
             # Get the total number of images in the collection.
@@ -4377,15 +4315,6 @@ class DownloadImgCol2Gif:
         palette_str = parameters[13].valueAsText
         out_gif = parameters[14].valueAsText
 
-        # Get the filter dates.
-        if parameters[1].valueAsText:
-            val_list = parameters[1].values
-            start_date = val_list[0][0]
-            end_date = val_list[0][1]
-        else:
-            start_date = None
-            end_date = None
-
         # Get the filter bounds.
         if parameters[3].value:  # Use map extent.
             # Disable input coordinates if map extent is used.
@@ -4412,8 +4341,8 @@ class DownloadImgCol2Gif:
             collection = collection.filterBounds(
                 ee.Geometry.Point((float(lon), float(lat)))
             )
-        if start_date and end_date:
-            collection = collection.filterDate(start_date, end_date)
+        if parameters[1].valueAsText:
+            collection = arcgee.data.filter_by_date(collection, parameters[1].values)
 
         # Define animation function parameters.
         videoArgs = {}
