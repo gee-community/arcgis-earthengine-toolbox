@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.1](https://github.com/gee-community/arcgis-earthengine-toolbox/compare/v1.3.0...v1.3.1) (2025-08-22)
+
+
+### Bug Fixes
+
+* filtering by date did not work when only start date was provided ([e3fbe3d](https://github.com/gee-community/arcgis-earthengine-toolbox/commit/e3fbe3d03c3d171ba2d33c3cd0d6e5c2623d46bb))
+* filtering by date did not work when only start date was provided ([#148](https://github.com/gee-community/arcgis-earthengine-toolbox/issues/148)) ([59d4917](https://github.com/gee-community/arcgis-earthengine-toolbox/commit/59d491797c4676e50ed48c623d7a6bc1ad5483b5))
+
 ## [1.3.0](https://github.com/gee-community/arcgis-earthengine-toolbox/compare/v1.2.0...v1.3.0) (2025-08-19)
 
 
