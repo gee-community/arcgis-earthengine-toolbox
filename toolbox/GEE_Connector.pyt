@@ -527,31 +527,8 @@ class AddImg2MapbyID:
         # Get image by label.
         img_id = arcgee.data.clean_asset_id(img_id)
         img = ee.Image(img_id)
-        # Get the map ID and token.
-        map_id_dict = img.getMapId(vis_params)
-
-        # Construct the URL.
-        map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
-
-        # Add map URL to the current ArcMap.
-        aprx = arcpy.mp.ArcGISProject("CURRENT")
-        aprxMap = aprx.listMaps("Map")[0]
-        tsl = aprxMap.addDataFromPath(map_url)
-        # Add band information to map name.
-        if band_str:
-            tsl.name = img_id + "--" + "--".join(bands_only)
-        else:
-            tsl.name = img_id
-
-        # Zoom to image centroid if provided by dataset.
-        try:
-            centroid_coords, bounds_coords = arcgee.data.get_object_centroid(img, 1)
-            arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
-        except:
-            arcpy.AddWarning(
-                "Automatic zoom to the image failed. Please zoom manually."
-            )
-            pass
+        # Add ee layer to map view
+        arcgee.map.add_ee_layer_to_map(img, vis_params, img_id)
 
         # Save image object to serialized JSON file.
         if parameters[6].valueAsText:
@@ -723,31 +700,8 @@ class AddImg2MapbyObj:
         if not img_id:
             img_id = pathlib.Path(json_path).stem
 
-        # Get the map ID and token.
-        map_id_dict = img.getMapId(vis_params)
-
-        # Construct the URL.
-        map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
-
-        # Add map URL to the current ArcMap.
-        aprx = arcpy.mp.ArcGISProject("CURRENT")
-        aprxMap = aprx.listMaps("Map")[0]
-        tsl = aprxMap.addDataFromPath(map_url)
-        # Add band information to map name.
-        if band_str:
-            tsl.name = img_id + "--" + "--".join(bands_only)
-        else:
-            tsl.name = img_id
-
-        # Zoom to image centroid if provided by dataset.
-        try:
-            centroid_coords, bounds_coords = arcgee.data.get_object_centroid(img, 1)
-            arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
-        except:
-            arcpy.AddWarning(
-                "Automatic zoom to the image failed. Please zoom manually."
-            )
-            pass
+        # Add ee layer to map view
+        arcgee.map.add_ee_layer_to_map(img, vis_params, img_id)
         return
 
     def postExecute(self, parameters):
@@ -1047,34 +1001,10 @@ class AddComp2MapbyID:
         if palette_str:
             vis_params["palette"] = arcgee.map.get_color_ramp(palette_str)
 
-        arcpy.AddMessage("Constructing map URL...")
-
-        # Get the map ID and token.
-        map_id_dict = img.getMapId(vis_params)
-
-        # Construct the URL.
-        map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
-
-        arcpy.AddMessage("Adding map URL to the current ArcMap...")
-        # Add map URL to the current ArcMap.
-        aprx = arcpy.mp.ArcGISProject("CURRENT")
-        aprxMap = aprx.listMaps("Map")[0]
-        tsl = aprxMap.addDataFromPath(map_url)
-        # Add band information to map name.
-        if band_str:
-            tsl.name = asset_id + "--" + composite_method + "--" + "--".join(bands_only)
-        else:
-            tsl.name = asset_id + "--" + composite_method
-
-        # Zoom to image centroid if provided by dataset.
-        try:
-            centroid_coords, bounds_coords = arcgee.data.get_object_centroid(img, 1)
-            arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
-        except:
-            arcpy.AddWarning(
-                "Automatic zoom to the image failed. Please zoom manually."
-            )
-            pass
+        # Add ee layer to map view
+        arcgee.map.add_ee_layer_to_map(
+            img, vis_params, asset_id + "--" + composite_method
+        )
 
         # Save composite image to serialized JSON file.
         if parameters[12].valueAsText:
@@ -1366,35 +1296,11 @@ class AddImgCol2MapbyID:
         if palette_str:
             vis_params["palette"] = arcgee.map.get_color_ramp(palette_str)
 
-        arcpy.AddMessage("Constructing map URL...")
         # Get image by label.
         img = ee.Image(img_id)
-        # Get the map ID and token.
-        map_id_dict = img.getMapId(vis_params)
 
-        # Construct the URL.
-        map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
-
-        arcpy.AddMessage("Adding map URL to the current ArcMap...")
-        # Add map URL to the current ArcMap.
-        aprx = arcpy.mp.ArcGISProject("CURRENT")
-        aprxMap = aprx.listMaps("Map")[0]
-        tsl = aprxMap.addDataFromPath(map_url)
-        # Add band information to map name.
-        if band_str:
-            tsl.name = img_id + "--" + "--".join(bands_only)
-        else:
-            tsl.name = img_id
-
-        # Zoom to image centroid if provided by dataset.
-        try:
-            centroid_coords, bounds_coords = arcgee.data.get_object_centroid(img, 1)
-            arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
-        except:
-            arcpy.AddWarning(
-                "Automatic zoom to the image failed. Please zoom manually."
-            )
-            pass
+        # Add ee layer to map view
+        arcgee.map.add_ee_layer_to_map(img, vis_params, img_id)
 
         # Save filtered image collection to serialized JSON file.
         if parameters[11].valueAsText:
@@ -1624,31 +1530,8 @@ class AddImgCol2MapbyObj:
         if palette_str:
             vis_params["palette"] = arcgee.map.get_color_ramp(palette_str)
 
-        # Get the map ID and token.
-        map_id_dict = img.getMapId(vis_params)
-
-        # Construct the URL.
-        map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
-
-        # Add map URL to the current ArcMap.
-        aprx = arcpy.mp.ArcGISProject("CURRENT")
-        aprxMap = aprx.listMaps("Map")[0]
-        tsl = aprxMap.addDataFromPath(map_url)
-        # Add band information to map name.
-        if band_str:
-            tsl.name = img_id + "--" + "--".join(bands_only)
-        else:
-            tsl.name = img_id
-
-        # Zoom to image centroid if provided by dataset.
-        try:
-            centroid_coords, bounds_coords = arcgee.data.get_object_centroid(img, 1)
-            arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
-        except:
-            arcpy.AddWarning(
-                "Automatic zoom to the image failed. Please zoom manually."
-            )
-            pass
+        # Add ee layer to map view
+        arcgee.map.add_ee_layer_to_map(img, vis_params, img_id)
 
         return
 
@@ -1979,28 +1862,8 @@ class AddFeatCol2MapbyID:
             arcpy.AddMessage(
                 "Google Earth Engine is preparing the map URL of the selected dataset ..."
             )
-            # Get the map ID and token.
-            map_id_dict = fc.getMapId(vis_params)
-
-            # Construct the URL.
-            map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
-
-            # Add map URL to the current ArcMap.
-            arcpy.AddMessage("Adding the map URL to ArcGIS ...")
-            aprx = arcpy.mp.ArcGISProject("CURRENT")
-            aprxMap = aprx.listMaps("Map")[0]
-            tsl = aprxMap.addDataFromPath(map_url)
-            tsl.name = asset_id
-
-            # Zoom to feature collection centroid if provided by dataset.
-            try:
-                centroid_coords, bounds_coords = arcgee.data.get_object_centroid(fc, 1)
-                arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
-            except:
-                arcpy.AddWarning(
-                    "Automatic zoom to the feature collection failed. Please zoom manually."
-                )
-                pass
+            # Add ee layer to map view
+            arcgee.map.add_ee_layer_to_map(fc, vis_params, asset_id)
 
             # Save object to serialized JSON file.
             if parameters[5].valueAsText:
@@ -2209,28 +2072,8 @@ class AddFeatCol2MapbyObj:
             arcpy.AddMessage(
                 "Google Earth Engine is preparing the map URL of the selected dataset ..."
             )
-            # Get the map ID and token.
-            map_id_dict = fc.getMapId(vis_params)
-
-            # Construct the URL.
-            map_url = f"https://earthengine.googleapis.com/v1alpha/{map_id_dict['mapid']}/tiles/{{z}}/{{x}}/{{y}}"
-
-            # Add map URL to the current ArcMap.
-            arcpy.AddMessage("Adding the map URL to ArcGIS ...")
-            aprx = arcpy.mp.ArcGISProject("CURRENT")
-            aprxMap = aprx.listMaps("Map")[0]
-            tsl = aprxMap.addDataFromPath(map_url)
-            tsl.name = feat_id
-
-            # Zoom to feature collection centroid if provided by dataset.
-            try:
-                centroid_coords, bounds_coords = arcgee.data.get_object_centroid(fc, 1)
-                arcgee.map.zoom_to_point(aprx, centroid_coords, bounds_coords)
-            except:
-                arcpy.AddWarning(
-                    "Automatic zoom to the feature collection failed. Please zoom manually."
-                )
-                pass
+            # Add ee layer to map view
+            arcgee.map.add_ee_layer_to_map(fc, vis_params, feat_id)
 
         else:
             arcpy.AddWarning(

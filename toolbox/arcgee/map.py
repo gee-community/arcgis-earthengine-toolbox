@@ -16,6 +16,7 @@ import arcpy
 import ee
 import matplotlib.colors as mcolors
 import matplotlib.cm as cm
+from arcgee import data
 
 
 def list_color_ramps() -> list[str]:
@@ -53,32 +54,40 @@ def get_color_ramp(name: str, n: int = 10) -> list[str]:
         raise ValueError(f"Colormap '{name}' is not recognized by Matplotlib.")
 
 
-def add_layer(
-    ee_object: "ee.Image | ee.ImageCollection",
-    vis_params: dict = None,
-    name: str = None,
+def add_ee_layer_to_map(
+    ee_object: "ee.Image | ee.FeatureCollection",
+    vis_params: dict,
+    asset_id: str,
 ) -> None:
     """Add an Earth Engine object to the current map view.
     Args:
         ee_object : Earth Engine object to add.
         vis_params : Visualization parameters for the Earth Engine object.
-        name : Name of the layer to add.
+        asset_id : Asset ID of the Earth Engine object.
     """
-
-    # Check if Earth Engine object is an Image Collection.
-    # If so, then create a mosaic before adding to the map.
-    if isinstance(ee_object, ee.ImageCollection):
-        ee_object = ee_object.mosaic()
-
+    arcpy.AddMessage("Constructing map URL ...")
     map_id_dict = ee_object.getMapId(vis_params)
+    map_url = map_id_dict["tile_fetcher"].url_format
 
     aprx = arcpy.mp.ArcGISProject("CURRENT")
-    m = aprx.listMaps("Map")[0]
-    layer = m.addDataFromPath(map_id_dict["tile_fetcher"].url_format)
-    if name is not None:
-        layer.name = name
+    aprxMap = aprx.activeMap
+    arcpy.AddMessage(f"Adding the layer to the current ArcMap: {aprxMap.name}")
+    layer = aprxMap.addDataFromPath(map_url)
+    # Add band information to layer name if specified.
+    if vis_params.get("bands") is not None:
+        layer.name = asset_id + "--" + "--".join(vis_params.get("bands"))
+    else:
+        layer.name = asset_id
 
-    return
+    # Zoom to image centroid if provided by dataset.
+    try:
+        centroid_coords, bounds_coords = data.get_object_centroid(ee_object, 1)
+        zoom_to_point(aprx, centroid_coords, bounds_coords)
+    except:
+        arcpy.AddWarning(
+            "Automatic zoom to the Earth Engine object failed. Please zoom manually."
+        )
+        pass
 
 
 # Zoom project map view to point.
