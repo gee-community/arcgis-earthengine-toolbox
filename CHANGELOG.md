@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.2](https://github.com/gee-community/arcgis-earthengine-toolbox/compare/v1.3.1...v1.3.2) (2025-11-15)
+
+
+### Bug Fixes
+
+* index error when adding dataset to nondefault map name ([#152](https://github.com/gee-community/arcgis-earthengine-toolbox/issues/152)) ([562b4d2](https://github.com/gee-community/arcgis-earthengine-toolbox/commit/562b4d28e21e921e28923a963ddd38b10f3f0530))
+* index error when adding dataset to nondefault map name ([#152](https://github.com/gee-community/arcgis-earthengine-toolbox/issues/152)) ([48f716b](https://github.com/gee-community/arcgis-earthengine-toolbox/commit/48f716b1d9b98e001f0c459cf474f06740018201))
+
 ## [1.3.1](https://github.com/gee-community/arcgis-earthengine-toolbox/compare/v1.3.0...v1.3.1) (2025-08-22)
 
 
