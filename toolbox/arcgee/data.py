@@ -1381,101 +1381,185 @@ def image_to_geotiff(
     use_projection: bool,
     out_tiff: str,
 ) -> None:
-    """Download a GEE Image to GeoTiff format.
+    """Download an Earth Engine ImageCollection (first image) to a GeoTIFF.
 
     Args:
-        ic : Input image collection
-        bands : List of band names to include
-        crs : Coordinate reference system
-        scale_ds : Scale/resolution for downloading
-        roi : Region of interest geometry
-        use_projection : Whether to use projection or CRS code
-        out_tiff : Output GeoTiff file path
+    ic : ee.ImageCollection
+        Input image collection; only the first image is used.
+    bands : list[str]
+        Band names to export.
+    crs : str
+        Target CRS (e.g., 'EPSG:3857'). If None and use_projection=False,
+        falls back to the image's native CRS.
+    scale_ds : float
+        Pixel size / resolution in units of CRS.
+    roi : ee.Geometry or None
+        Region of interest. If None, uses full image extent.
+    use_projection : bool
+        If True, sample in the image's native projection.
+        If False, sample in the given CRS (or native CRS if crs is None).
+    out_tiff : str
+        Path to output GeoTIFF.
     """
     import rasterio
-    from rasterio.transform import from_origin
+    from rasterio.transform import from_bounds
 
-    prj = ic.first().select(0).projection()
-    crs_code = prj.crs().getInfo()
+    # ---- Get native projection and CRS from the first band of the first image ----
+    first_img = ic.first().select(0)
+    prj = first_img.projection()
+    crs_code = prj.crs().getInfo()  # e.g. "EPSG:4326" or similar
 
-    # When EPSG is unknown or 4326, use projection.
+    # ---- Open dataset with xarray + ee engine ----
+    open_kwargs: dict = {"engine": "ee", "scale": scale_ds}
+    if roi is not None:
+        open_kwargs["geometry"] = roi
+
     if use_projection:
-        ds = xarray.open_dataset(
-            ic,
-            engine="ee",
-            projection=prj,
-            scale=scale_ds,
-            **({"geometry": roi} if roi is not None else {}),
-        )
-        # Use either X/Y or lat/lon depending on the availability.
-        if "X" in list(ds.variables.keys()):
-            arcpy.AddMessage("Use X/Y to define transform")
-            transform = from_origin(
-                ds["X"].values[0], ds["Y"].values[-1], scale_ds, -scale_ds
-            )
-        else:
-            arcpy.AddMessage("Use lat/lon to define transform")
-            scale_x = abs(ds["lon"].values[0] - ds["lon"].values[1])
-            scale_y = abs(ds["lat"].values[0] - ds["lat"].values[1])
-            transform = from_origin(
-                ds["lon"].values[0], ds["lat"].values[-1], scale_x, -scale_y
-            )
-    # ESPG is others, use crs code.
-    # ValueError: cannot convert float NaN to integer will occur if using projection.
+        open_kwargs["projection"] = prj
+        ds = xarray.open_dataset(ic, **open_kwargs)
     else:
-        ds = xarray.open_dataset(
-            ic,
-            engine="ee",
-            crs=crs_code,
-            scale=scale_ds,
-            **({"geometry": roi} if roi is not None else {}),
+        crs_to_use = crs or crs_code
+        if crs_to_use is None:
+            raise ValueError(
+                "No valid CRS found. Provide `crs` or set use_projection=True."
+            )
+        open_kwargs["crs"] = crs_to_use
+        ds = xarray.open_dataset(ic, **open_kwargs)
+
+    # ---- Identify coordinate names for X and Y ----
+    coord_candidates = [
+        ("X", "Y"),
+        ("x", "y"),
+        ("lon", "lat"),
+        ("longitude", "latitude"),
+        ("Lon", "Lat"),
+    ]
+    all_coord_names = set(ds.coords)
+
+    x_name = y_name = None
+    for x_candidate, y_candidate in coord_candidates:
+        if x_candidate in all_coord_names and y_candidate in all_coord_names:
+            x_name, y_name = x_candidate, y_candidate
+            break
+
+    if x_name is None or y_name is None:
+        raise ValueError(
+            f"Could not find spatial coordinates. Dataset coords: {list(ds.coords)}"
         )
-        if "X" in list(ds.variables.keys()):
-            arcpy.AddMessage("Use X/Y to define transform")
-            transform = from_origin(
-                ds["X"].values[0], ds["Y"].values[0], scale_ds, -scale_ds
-            )
-        else:
-            arcpy.AddMessage("Use lat/lon to define transform")
-            scale_x = abs(ds["lon"].values[0] - ds["lon"].values[1])
-            scale_y = abs(ds["lat"].values[0] - ds["lat"].values[1])
-            transform = from_origin(
-                ds["lon"].values[0], ds["lat"].values[0], scale_x, -scale_y
-            )
-    # Display transform parameters.
-    arcpy.AddMessage(transform)
+
+    x_coords = ds[x_name].values
+    y_coords = ds[y_name].values
+
+    if x_coords.ndim != 1 or y_coords.ndim != 1:
+        raise ValueError("Expected 1D coordinate arrays for X and Y / lon and lat.")
+
+    # ---- Prepare a sample DataArray to learn dim layout ----
+    data_var = ds[bands[0]]
+    dims = list(data_var.dims)
+
+    # Spatial dims are those that match our coord names
+    spatial_dims = [d for d in dims if d in (x_name, y_name)]
+    if len(spatial_dims) != 2:
+        raise ValueError(
+            f"Expected two spatial dims matching {x_name}/{y_name}, got {spatial_dims}"
+        )
+
+    # Non-spatial dims (e.g. time, band index) -> we'll take the first slice along each
+    non_spatial_dims = [d for d in dims if d not in (x_name, y_name)]
+    indexers = {d: 0 for d in non_spatial_dims}
+
+    # After isel, we explicitly transpose to (y_dim, x_dim)
+    y_dim = y_name
+    x_dim = x_name
+
+    sample_da = data_var.isel(indexers).transpose(y_dim, x_dim)
+    sample_arr = sample_da.values  # shape (ny, nx)
+
+    ny, nx = sample_arr.shape
+
+    if len(x_coords) != nx or len(y_coords) != ny:
+        raise ValueError(
+            f"Coordinate lengths (len({x_name})={len(x_coords)}, "
+            f"len({y_name})={len(y_coords)}) do not match data shape {sample_arr.shape}."
+        )
+
+    # ---- Normalize orientation: want
+    #      * x increasing west -> east
+    #      * y decreasing north -> south (i.e., y[0] is north)
+    # ----
+    x = x_coords.copy()
+    y = y_coords.copy()
+    flip_x = flip_y = False
+
+    # X: if descending (east -> west), flip horizontally and reverse x
+    if x[0] > x[-1]:
+        flip_x = True
+        x = x[::-1]
+
+    # Y: if ascending (south -> north), flip vertically and reverse y
+    if y[0] < y[-1]:
+        flip_y = True
+        y = y[::-1]
+
+    # Pixel sizes (center-to-center)
+    if nx < 2 or ny < 2:
+        raise ValueError("Not enough pixels to compute scale.")
+    dx = float(x[1] - x[0])  # >0
+    dy = float(y[0] - y[1])  # >0 (since y is now north -> south)
+
+    # Bounds from centers with half-pixel padding
+    west = float(x[0] - dx / 2.0)
+    east = float(x[-1] + dx / 2.0)
+    north = float(y[0] + dy / 2.0)
+    south = float(y[-1] - dy / 2.0)
+
+    # Build transform from bounds
+    transform = from_bounds(west, south, east, north, nx, ny)
+
+    arcpy.AddMessage(f"Using coords ({x_name}, {y_name})")
+    arcpy.AddMessage(f"x: {x_coords[0]} -> {x_coords[-1]}  (flip_x={flip_x})")
+    arcpy.AddMessage(f"y: {y_coords[0]} -> {y_coords[-1]}  (flip_y={flip_y})")
+    arcpy.AddMessage(f"Bounds: west={west}, south={south}, east={east}, north={north}")
+    arcpy.AddMessage(f"Transform: {transform}")
+
+    # ---- Output metadata ----
+    output_crs = crs or crs_code
+    if output_crs is None:
+        raise ValueError("Output CRS is unknown. Provide `crs` explicitly.")
 
     meta = {
         "driver": "GTiff",
-        "height": ds[bands[0]].shape[2],
-        "width": ds[bands[0]].shape[1],
-        "count": len(bands),  # Number of bands.
-        "dtype": ds[bands[0]].dtype,  # Data type of the array.
-        "crs": crs,  # Coordinate Reference System, change if needed.
+        "height": ny,
+        "width": nx,
+        "count": len(bands),
+        "dtype": str(sample_arr.dtype),
+        "crs": output_crs,
         "transform": transform,
     }
 
-    # Store band names.
-    band_names = {}
-    i = 1
-    for iband in bands:
-        band_names["band_" + str(i)] = iband
-        i += 1
+    band_tags = {f"band_{i+1}": b for i, b in enumerate(bands)}
 
-    # Write the array to a multiband GeoTIFF file.
-    arcpy.AddMessage("Save image to " + out_tiff + " ...")
-    i = 1
+    # ---- Write GeoTIFF ----
+    arcpy.AddMessage(f"Saving image to {out_tiff} ...")
     with rasterio.open(out_tiff, "w", **meta) as dst:
-        for iband in bands:
-            if use_projection:
-                dst.write(np.flipud(np.transpose(ds[iband].values[0])), i)
-            else:
-                dst.write(np.transpose(ds[iband].values[0]), i)
+        for i, band in enumerate(bands, start=1):
+            da = ds[band]
 
-            i += 1
-        # Write band names into output tiff.
-        dst.update_tags(**band_names)
-    return
+            # Same slicing & ordering as for sample_arr
+            da2 = da.isel(indexers).transpose(y_dim, x_dim)
+            arr = da2.values  # (ny, nx)
+
+            # Apply flips if needed to match transform orientation
+            if flip_y:
+                arr = np.flip(arr, axis=0)
+            if flip_x:
+                arr = np.flip(arr, axis=1)
+
+            dst.write(arr.astype(sample_arr.dtype), i)
+
+        dst.update_tags(**band_tags)
+
+    arcpy.AddMessage("Done.")
 
 
 # Upload local file to Google Cloud Storage bucket.
