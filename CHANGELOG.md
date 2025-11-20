@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.3](https://github.com/gee-community/arcgis-earthengine-toolbox/compare/v1.3.2...v1.3.3) (2025-11-20)
+
+
+### Bug Fixes
+
+* projection errors when downloading COPERNICUS/S5P/NRTI/L3_SO2 ([6c99609](https://github.com/gee-community/arcgis-earthengine-toolbox/commit/6c9960952964921e9164a90b6d41ec00d984813d))
+* projection errors when downloading COPERNICUS/S5P/NRTI/L3_SO2 ([#153](https://github.com/gee-community/arcgis-earthengine-toolbox/issues/153), [#156](https://github.com/gee-community/arcgis-earthengine-toolbox/issues/156)) ([58c351e](https://github.com/gee-community/arcgis-earthengine-toolbox/commit/58c351e9b4b79acf222cee763c3aca9f21185465))
+
 ## [1.3.2](https://github.com/gee-community/arcgis-earthengine-toolbox/compare/v1.3.1...v1.3.2) (2025-11-15)
 
 
