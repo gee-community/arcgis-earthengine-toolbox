@@ -2217,6 +2217,11 @@ class DownloadImgbyID:
             # Use the maximum scale of the selected band by default.
             parameters[2].value = max(scale_only)
 
+        # Disable map extent if input feature is used.
+        if parameters[3].valueAsText:
+            parameters[4].enabled = False
+        else:
+            parameters[4].enabled = True
         # Disable input feature if map extent is used.
         if parameters[4].value:
             parameters[3].enabled = False
@@ -2281,10 +2286,10 @@ class DownloadImgbyID:
         # crs information could be missing, then use wkt from projection.
         try:
             crs = image.select(0).projection().getInfo()["crs"]
-            arcpy.AddMessage("Image projection CRS is " + crs)
+            arcpy.AddMessage("Image CRS is " + crs)
         except:
             # CRS is not explicitly defined.
-            arcpy.AddMessage("Image projection CRS is unknown. Use WKT instead.")
+            arcpy.AddMessage("Image CRS is not explicitly defined. Use WKT instead.")
             wkt = image.select(0).projection().getInfo()["wkt"]
             crs = rasterio.crs.CRS.from_wkt(wkt)
 
@@ -2520,10 +2525,10 @@ class DownloadImgbyObj:
         # crs information could be missing, then use wkt from projection
         try:
             crs = image.select(0).projection().getInfo()["crs"]
-            arcpy.AddMessage("Image projection CRS is " + crs)
+            arcpy.AddMessage("Image CRS is " + crs)
         except:
             # crs is not explicitly defined.
-            arcpy.AddMessage("Image projection CRS is unknown. Use WKT instead.")
+            arcpy.AddMessage("Image CRS is not explicitly defined. Use WKT instead.")
             wkt = image.select(0).projection().getInfo()["wkt"]
             crs = rasterio.crs.CRS.from_wkt(wkt)
 
@@ -2778,8 +2783,14 @@ class DownloadImgColbyID:
             scale_only = [float(iband.split("--")[1]) for iband in bands]
             parameters[6].value = max(scale_only)
 
+        # Disable map extent if input feature is used.
+        if parameters[7].valueAsText:
+            parameters[8].enabled = False
+        else:
+            parameters[8].enabled = True
+
         # Disable input feature if map extent is used.
-        if parameters[8].value:  # Map extent selected.
+        if parameters[8].value:
             parameters[7].enabled = False
         else:
             parameters[7].enabled = True
@@ -2842,10 +2853,10 @@ class DownloadImgColbyID:
         # crs information could be missing, then use wkt from projection.
         try:
             crs = image.select(0).projection().getInfo()["crs"]
-            arcpy.AddMessage("Image projection CRS is " + crs)
+            arcpy.AddMessage("Image CRS is " + crs)
         except:
             # crs is not explicitly defined.
-            arcpy.AddMessage("Image projection CRS is unknown.")
+            arcpy.AddMessage("Image CRS is not explicitly defined. Use WKT instead.")
             wkt = image.select(0).projection().getInfo()["wkt"]
             crs = rasterio.crs.CRS.from_wkt(wkt)
 
@@ -3062,8 +3073,14 @@ class DownloadImgColbyObj:
             scale_only = [float(iband.split("--")[1]) for iband in bands]
             parameters[3].value = max(scale_only)
 
+        # Disable map extent if input feature is used.
+        if parameters[4].valueAsText:
+            parameters[5].enabled = False
+        else:
+            parameters[5].enabled = True
+
         # Disable input feature if map extent is used.
-        if parameters[5].value:  # Map extent selected.
+        if parameters[5].value:
             parameters[4].enabled = False
         else:
             parameters[4].enabled = True
@@ -3129,10 +3146,10 @@ class DownloadImgColbyObj:
         # crs information could be missing, then use wkt from projection.
         try:
             crs = image.select(0).projection().getInfo()["crs"]
-            arcpy.AddMessage("Image projection CRS is " + crs)
+            arcpy.AddMessage("Image CRS is " + crs)
         except:
             # crs is not explicitly defined.
-            arcpy.AddMessage("Image projection CRS is unknown.")
+            arcpy.AddMessage("Image CRS is not explicitly defined. Use WKT instead.")
             wkt = image.select(0).projection().getInfo()["wkt"]
             crs = rasterio.crs.CRS.from_wkt(wkt)
 
@@ -3436,10 +3453,12 @@ class DownloadImgColbyIDMultiRegion:
             # crs information could be missing, then use wkt from projection.
             try:
                 crs = image.select(0).projection().getInfo()["crs"]
-                arcpy.AddMessage("Image projection CRS is " + crs)
+                arcpy.AddMessage("Image CRS is " + crs)
             except:
                 # crs is not explicitly defined.
-                arcpy.AddMessage("Image projection CRS is unknown.")
+                arcpy.AddMessage(
+                    "Image CRS is not explicitly defined. Use WKT instead."
+                )
                 wkt = image.select(0).projection().getInfo()["wkt"]
                 crs = rasterio.crs.CRS.from_wkt(wkt)
 
@@ -4231,40 +4250,10 @@ class DownloadImgCol2Gif:
             videoArgs["region"] = roi
         # Use input feature layer as ROI.
         elif in_poly:
-            spatial_ref = arcpy.Describe(in_poly).spatialReference
-            poly_prj = spatial_ref.PCSCode
-            if poly_prj == 0:
-                poly_prj = spatial_ref.GCSCode
-            arcpy.AddMessage("Input feature layer projection is " + str(poly_prj))
-
-            # Project input feature to GEE image coordinate system if needed.
-            target_poly = in_poly
-            if str(poly_prj) not in "EPSG:4326":
-                arcpy.AddMessage("Projecting input feature layer to EPSG:4326 ...")
-                out_sr = arcpy.SpatialReference(4326)
-                arcpy.Project_management(in_poly, "poly_temp", out_sr)
-                target_poly = "poly_temp"
-
-            # Convert input feature to geojson.
-            arcpy.FeaturesToJSON_conversion(
-                target_poly, "temp.geojson", "FORMATTED", "", "", "GEOJSON"
-            )
-
-            # Read the GeoJSON file.
-            upper_path = pathlib.Path(arcpy.env.workspace).parent
-            file_geojson = upper_path / "temp.geojson"
-            geojson_data = json.loads(file_geojson.read_text())
-
-            # Collect polygon object coordinates.
-            coords = []
-            for feature in geojson_data["features"]:
-                coords.append(feature["geometry"]["coordinates"])
-            arcpy.AddMessage("Total number of polygon objects: " + str(len(coords)))
-
+            # Get input feature coordinates to list.
+            coords = arcgee.data.get_polygon_coords(in_poly)
             # Create an Earth Engine MultiPolygon from the GeoJSON.
             roi = ee.Geometry.MultiPolygon(coords, None, False)
-            # Delete temporary geojson.
-            file_geojson.unlink()
             # Get the region of interest.
             videoArgs["region"] = roi
         # Not using any ROI, download entire image.
@@ -4288,7 +4277,7 @@ class DownloadImgCol2Gif:
         if not crs:
             crs = collection.first().select(0).projection().getInfo()["crs"]
 
-        arcpy.AddMessage("Image asset projection is " + crs)
+        arcpy.AddMessage("Image asset CRS is " + crs)
         videoArgs["crs"] = crs
 
         # Make sure output gif file ends with .gif.
@@ -4496,44 +4485,14 @@ class DownloadLandsatTimelapse2Gif:
             roi = ee.Geometry.Polygon(bbox.coordinates(), None, False)
         # Use input feature layer as ROI.
         else:
-            spatial_ref = arcpy.Describe(in_poly).spatialReference
-            poly_prj = spatial_ref.PCSCode
-            if poly_prj == 0:
-                poly_prj = spatial_ref.GCSCode
-            arcpy.AddMessage("Input feature layer projection is " + str(poly_prj))
-
-            # Project input feature to GEE image coordinate system if needed.
-            target_poly = in_poly
-            if str(poly_prj) not in "EPSG:4326":
-                arcpy.AddMessage("Projecting input feature layer to EPSG:4326 ...")
-                out_sr = arcpy.SpatialReference(4326)
-                arcpy.Project_management(in_poly, "poly_temp", out_sr)
-                target_poly = "poly_temp"
-
-            # Convert input feature to geojson.
-            arcpy.FeaturesToJSON_conversion(
-                target_poly, "temp.geojson", "FORMATTED", "", "", "GEOJSON"
-            )
-
-            # Read the GeoJSON file.
-            upper_path = pathlib.Path(arcpy.env.workspace).parent
-            file_geojson = upper_path / "temp.geojson"
-            geojson_data = json.loads(file_geojson.read_text())
-
-            # Collect polygon object coordinates.
-            coords = []
-            for feature in geojson_data["features"]:
-                coords.append(feature["geometry"]["coordinates"])
-            arcpy.AddMessage("Total number of polygon objects: " + str(len(coords)))
-
+            # Get input feature coordinates to list.
+            coords = arcgee.data.get_polygon_coords(in_poly)
             # Create an Earth Engine MultiPolygon from the GeoJSON.
             roi = ee.Geometry.MultiPolygon(coords, None, False)
-            # Delete temporary geojson.
-            file_geojson.unlink()
 
         arcpy.AddMessage(f"Region of Interest: {roi.getInfo()}['coordinates']")
 
-        arcpy.AddMessage("Image asset projection is " + crs)
+        arcpy.AddMessage("Image asset CRS is " + crs)
 
         # Make sure output gif file ends with .gif.
         if not out_gif.endswith(".gif"):

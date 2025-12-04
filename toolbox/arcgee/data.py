@@ -1267,6 +1267,7 @@ def get_polygon_coords(in_poly: str) -> list[list[list[float]]]:
         list: List of polygon coordinates in WGS 84 (list of rings, each ring is list of [x, y])
     """
     spatial_ref = arcpy.Describe(in_poly).spatialReference
+    arcpy.AddMessage(f"The polygon CRS is EPSG:{spatial_ref.factoryCode}.")
     poly_prj = spatial_ref.PCSCode
     if poly_prj == 0:
         poly_prj = spatial_ref.GCSCode
@@ -1274,6 +1275,7 @@ def get_polygon_coords(in_poly: str) -> list[list[list[float]]]:
     # Project to EPSG:4326 if needed
     target_poly = in_poly
     if str(poly_prj) not in "EPSG:4326":
+        arcpy.AddMessage(f"Converting the polygon to EPSG:4326.")
         out_sr = arcpy.SpatialReference(4326)
         arcpy.Project_management(in_poly, "poly_temp", out_sr)
         target_poly = "poly_temp"
