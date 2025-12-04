@@ -148,7 +148,7 @@ def get_map_view_extent(target_epsg: int = 4326) -> tuple[float, float, float, f
 
     # Extract the projection and the boundary coordinates (extent).
     spatial_ref = camera.getExtent().spatialReference
-    arcpy.AddMessage(f"The current map projection is EPSG:{spatial_ref.factoryCode}.")
+    arcpy.AddMessage(f"The current map CRS is EPSG:{spatial_ref.factoryCode}.")
     xmin = camera.getExtent().XMin
     ymin = camera.getExtent().YMin
     xmax = camera.getExtent().XMax
