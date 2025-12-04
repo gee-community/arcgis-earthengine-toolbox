@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.4](https://github.com/gee-community/arcgis-earthengine-toolbox/compare/v1.3.3...v1.3.4) (2025-12-04)
+
+
+### Bug Fixes
+
+* enhance messaging to users during ROI processing ([#160](https://github.com/gee-community/arcgis-earthengine-toolbox/issues/160)) ([8d41657](https://github.com/gee-community/arcgis-earthengine-toolbox/commit/8d4165796bdd7d51b3df01e047e28942792ec08a))
+* enhance messaging to users during ROI processing ([#160](https://github.com/gee-community/arcgis-earthengine-toolbox/issues/160)) ([2fcdcda](https://github.com/gee-community/arcgis-earthengine-toolbox/commit/2fcdcda8a2cead85e1526c64cc8c35a743edd8a1))
+
 ## [1.3.3](https://github.com/gee-community/arcgis-earthengine-toolbox/compare/v1.3.2...v1.3.3) (2025-11-20)
 
 
