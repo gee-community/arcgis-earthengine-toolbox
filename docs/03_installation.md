@@ -60,7 +60,17 @@ Once you run the Python Command Prompt,
 
 7. Install the specific version of `rasterio` from [the `esri` conda channel](https://anaconda.org/Esri/repo). The current default installation version of `rasterio=1.3.10` may be incompatible with ArcGIS Pro pre-installed `gdal`. (**Note: `rasterio` is only required for the image and image collection download scripts; other scripts do not depend on it.**)
 
-        conda install rasterio=1.3.9 --channel esri
+For ArcGIS Pro 3.5 and older versions, use the following command:
+
+```bash
+    conda install rasterio=1.3.9 --channel esri
+```
+
+For ArcGIS Pro 3.6 and newer versions, use the following command:
+
+```bash
+    conda install rasterio=1.4.3 --channel esri
+```
 
 8. Activate package `gee` within ArcGIS Pro
 
