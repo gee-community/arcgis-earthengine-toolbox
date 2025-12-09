@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.5](https://github.com/gee-community/arcgis-earthengine-toolbox/compare/v1.3.4...v1.3.5) (2025-12-09)
+
+
+### Bug Fixes
+
+* update installation guide with rasterio version compatible with ArcGIS Pro 3.6 ([9921400](https://github.com/gee-community/arcgis-earthengine-toolbox/commit/9921400ba5365d8eb088094b44e8db416f79d58e))
+* update installation guide with rasterio version compatible with ArcGIS Pro 3.6 ([#165](https://github.com/gee-community/arcgis-earthengine-toolbox/issues/165)) ([638fb2b](https://github.com/gee-community/arcgis-earthengine-toolbox/commit/638fb2b51d279b6b7ea9ce0c1fc46165d730f92f))
+
 ## [1.3.4](https://github.com/gee-community/arcgis-earthengine-toolbox/compare/v1.3.3...v1.3.4) (2025-12-04)
 
 
