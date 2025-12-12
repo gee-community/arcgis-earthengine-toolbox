@@ -2312,9 +2312,7 @@ class DownloadImgbyID:
 
         # Check if the image has valid pixels.
         if not arcgee.data.has_valid_pixels(image.first(), roi, scale_ds):
-            arcpy.AddWarning(
-                f"Image {img_id} has no valid pixels in the region of interest. Stop the tool."
-            )
+            arcpy.AddWarning(f"Image {img_id} valid pixel check failed. Stop the tool.")
             return
 
         # Check if use projection.
@@ -2551,9 +2549,7 @@ class DownloadImgbyObj:
 
         # Check if the image has valid pixels.
         if not arcgee.data.has_valid_pixels(image.first(), roi, scale_ds):
-            arcpy.AddWarning(
-                f"Image {img_id} has no valid pixels in the region of interest. Stop the tool."
-            )
+            arcpy.AddWarning(f"Image {img_id} valid pixel check failed. Stop the tool.")
             return
 
         # Check if use projection.
@@ -2888,13 +2884,12 @@ class DownloadImgColbyID:
             # Check if the image has valid pixels.
             if not arcgee.data.has_valid_pixels(image.first(), roi, scale_ds):
                 arcpy.AddWarning(
-                    f"Image {img_id} has no valid pixels in the region of interest. "
-                    "Skip this image."
+                    f"Image {img_id} valid pixel check failed. Skip the image download."
                 )
                 continue
             else:
                 arcpy.AddMessage(
-                    f"Image {img_id} has valid pixels in the region of interest. Downloading ..."
+                    f"Image {img_id} valid pixel check passed. Downloading ..."
                 )
 
             # Create output file name based on image IDs.
@@ -3181,13 +3176,12 @@ class DownloadImgColbyObj:
             # Check if the image has valid pixels.
             if not arcgee.data.has_valid_pixels(image.first(), roi, scale_ds):
                 arcpy.AddWarning(
-                    f"Image {img_id} has no valid pixels in the region of interest. "
-                    "Skip this image."
+                    f"Image {img_id} valid pixel check failed. Skip the image download."
                 )
                 continue
             else:
                 arcpy.AddMessage(
-                    f"Image {img_id} has valid pixels in the region of interest. Downloading ..."
+                    f"Image {img_id} valid pixel check passed. Downloading ..."
                 )
 
             # Create output file name based on image IDs.
@@ -3487,14 +3481,12 @@ class DownloadImgColbyIDMultiRegion:
                 # Check if the image has valid pixels.
                 if not arcgee.data.has_valid_pixels(image.first(), roi, scale_ds):
                     arcpy.AddWarning(
-                        f"Image {img_id} has no valid pixels in the region of interest. "
-                        "Skip this image."
+                        f"Image {img_id} valid pixel check failed. Skip the image download."
                     )
                     continue
                 else:
                     arcpy.AddMessage(
-                        f"Image {img_id} has valid pixels in the region of interest. "
-                        "Downloading ..."
+                        f"Image {img_id} valid pixel check passed. Downloading ..."
                     )
 
                 # Create output file name based on image IDs.

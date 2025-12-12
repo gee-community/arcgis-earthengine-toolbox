@@ -1791,10 +1791,25 @@ def has_valid_pixels(image: "ee.Image", roi: "ee.Geometry", scale: float) -> boo
     Returns:
         bool: True if the image has valid pixels, False otherwise
     """
+    arcpy.AddMessage(
+        "Checking if the image has valid pixels within the region of interest ..."
+    )
+    # First try with numPixels=30
     sample = image.sample(region=roi, scale=scale, numPixels=30)
     result = sample.size().gt(0).getInfo()
+    result_bool = bool(result) if result is not None else False
 
-    return bool(result) if result is not None else False
+    # If False, try again with numPixels=300
+    if not result_bool:
+        arcpy.AddWarning(
+            f"Image has no or very limited data coverage. Please check the data coverage and adjust the region of interest. "
+            "Trying to increase the sample size to 300 ..."
+        )
+        sample = image.sample(region=roi, scale=scale, numPixels=300)
+        result = sample.size().gt(0).getInfo()
+        result_bool = bool(result) if result is not None else False
+
+    return result_bool
 
 
 # Check if the JSON file is valid.
