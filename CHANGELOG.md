@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.6](https://github.com/gee-community/arcgis-earthengine-toolbox/compare/v1.3.5...v1.3.6) (2025-12-12)
+
+
+### Bug Fixes
+
+* valid-pixel check incorrectly returns False when ROI has limited data coverage ([f02acf2](https://github.com/gee-community/arcgis-earthengine-toolbox/commit/f02acf2e27bdd80d9035430e67cdf62a07940af5))
+* valid-pixel check incorrectly returns False when ROI has limited data coverage ([80a6096](https://github.com/gee-community/arcgis-earthengine-toolbox/commit/80a609605875f9e28267210df04910b700d1a6a6))
+
 ## [1.3.5](https://github.com/gee-community/arcgis-earthengine-toolbox/compare/v1.3.4...v1.3.5) (2025-12-09)
 
 
